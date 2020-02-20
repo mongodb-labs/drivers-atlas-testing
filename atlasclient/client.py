@@ -86,8 +86,11 @@ class _ApiResponse:
 
 class AtlasClient:
     """An easy-to-use MongoDB Atlas API client for Python. """
-    def __init__(self, *, username, password, base_url=None,
-                 api_version=None, timeout=None, verbose=None):
+    def __init__(self, *, username, password,
+                 base_url=DEFAULTS.BASE_URL,
+                 api_version=DEFAULTS.API_VERSION,
+                 timeout=DEFAULTS.HTTP_TIMEOUT,
+                 verbose=0):
         """
         Client for the `MongoDB Atlas API
         <https://docs.atlas.mongodb.com/api/>`_.
@@ -150,12 +153,10 @@ class AtlasClient:
             raise ValueError("Username and/or password cannot be empty.")
 
         config = ClientConfiguration(
-            base_url=base_url or DEFAULTS.BASE_URL,
-            api_version=api_version or DEFAULTS.API_VERSION,
-            auth=requests.auth.HTTPDigestAuth(username=username,
-                                              password=password),
-            timeout=timeout or DEFAULTS.HTTP_TIMEOUT,
-            verbose=verbose)
+            base_url=base_url, api_version=api_version,
+            timeout=timeout, verbose=verbose,
+            auth=requests.auth.HTTPDigestAuth(
+                username=username, password=password))
 
         self.config = config
         if config.verbose:
