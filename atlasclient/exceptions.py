@@ -28,8 +28,13 @@ class AtlasApiException(Exception):
 
     def __str__(self):
         if self.request_method and self.resource_url:
-            return '{} ({} {})'.format(self._msg, self.request_method,
-                                       self.resource_url)
+            if self.error_code:
+                return '{} Error Code: {!r} ({} {})'.format(
+                    self._msg, self.error_code, self.request_method,
+                    self.resource_url)
+            else:
+                return '{} ({} {})'.format(
+                    self._msg, self.request_method, self.resource_url)
         return self._msg
 
 
@@ -40,28 +45,16 @@ class AtlasClientError(AtlasApiException):
 class AtlasApiError(AtlasApiException):
     def __init__(self, msg, response=None, request_method=None,
                  error_code=None):
-        kwargs = {
-            'request_method': request_method,
-            'error_code': error_code,
-        }
+        kwargs = {'request_method': request_method,
+                  'error_code': error_code}
+
+        # Parse remaining fields from response object.
         if response is not None:
-            # Parse remaining fields from response object.
-            kwargs.update(
-                {
-                    'status_code': response.status_code,
-                    'resource_url': response.url,
-                    'headers': response.headers,
-                }
-            )
+            kwargs.update({'status_code': response.status_code,
+                           'resource_url': response.url,
+                           'headers': response.headers})
 
         super().__init__(msg, **kwargs)
-
-    def __str__(self):
-        if self.request_method and self.resource_url and self.error_code:
-            return '{} Error Code: {!r} ({} {})'.format(
-                self._msg, self.error_code, self.request_method,
-                self.resource_url)
-        return super().__str__()
 
 
 class AtlasRateLimitError(AtlasApiError):

@@ -244,11 +244,10 @@ class AtlasClient:
             raise AtlasApiError('Unable to decode JSON response.',
                                 response=response, request_method=method)
 
-        atlas_error_code = data.get('errorCode')
         kwargs = {
             'response': response,
             'request_method': method,
-            'error_code': atlas_error_code}
+            'error_code': data.get('errorCode')}
 
         if response.status_code == 400:
             raise AtlasApiError('400: Bad Request.', **kwargs)
@@ -265,5 +264,5 @@ class AtlasClient:
         if response.status_code == 409:
             raise AtlasApiError('409: Conflict.', **kwargs)
 
-        raise AtlasApiError(
-            'An unknown error occurred processing your request.', **kwargs)
+        raise AtlasApiError('{}: Unknown.'.format(response.status_code),
+                            **kwargs)
