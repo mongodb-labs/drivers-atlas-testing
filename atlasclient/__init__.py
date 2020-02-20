@@ -16,5 +16,5 @@
 
 from atlasclient.client import AtlasClient
 from atlasclient.exceptions import (
-    AtlasApiError, AtlasRateLimitError, AtlasClientError, AtlasApiException)
+    AtlasApiError, AtlasRateLimitError, AtlasClientError, AtlasApiBaseError)
 from atlasclient.utils import JSONObject

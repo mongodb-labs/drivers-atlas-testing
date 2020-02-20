@@ -15,7 +15,7 @@
 """Exceptions used by the Python client for the MongoDB Atlas API."""
 
 
-class AtlasApiException(Exception):
+class AtlasApiBaseError(Exception):
     """Base Exception class for all ``atlasclient`` errors."""
     def __init__(self, msg, resource_url=None, request_method=None,
                  status_code=None, error_code=None, headers=None):
@@ -38,11 +38,11 @@ class AtlasApiException(Exception):
         return self._msg
 
 
-class AtlasClientError(AtlasApiException):
+class AtlasClientError(AtlasApiBaseError):
     pass
 
 
-class AtlasApiError(AtlasApiException):
+class AtlasApiError(AtlasApiBaseError):
     def __init__(self, msg, response=None, request_method=None,
                  error_code=None):
         kwargs = {'request_method': request_method,

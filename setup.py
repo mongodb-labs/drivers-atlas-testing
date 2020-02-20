@@ -27,10 +27,8 @@ setup(
     description=("Command-line utility for testing Drivers against MongoDB "
                  "Atlas <https://www.mongodb.com/cloud/atlas>"),
     long_description=readme_content,
-    author="MongoDB, Inc.",
+    author="Prashant Mital",
     author_email="mongodb-user@googlegroups.com",
-    maintainer="Prashant Mital",
-    maintainer_email="prashant.mital@mongodb.com",
     url="https://github.com/mongodb-labs/drivers-atlas-testing",
     keywords=["mongodb", "mongodbatlas", "atlas", "mongo"],
     license="Apache License, Version 2.0",
