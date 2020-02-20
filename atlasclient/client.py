@@ -16,7 +16,8 @@
 
 import requests
 
-from atlasclient.configuration import get_client_configuration
+from atlasclient.configuration import (
+    ClientConfiguration, CONFIG_DEFAULTS as DEFAULTS)
 from atlasclient.exceptions import (
     AtlasAuthenticationError, AtlasClientError, AtlasApiError,
     AtlasRateLimitError)
@@ -73,12 +74,14 @@ class _ApiResponse:
     def __init__(self, response, request_method, json_data):
         self.resource_url = response.url
         self.headers = response.headers
+        self.status = response.status_code
         self.request_method = request_method
         self.data = json_data
 
     def __repr__(self):
-        return '<{}: {} {}>'.format(self.__class__.__name__,
-                                     self.request_method, self.resource_url)
+        return '<{}: {} {}, [HTTP status code: {}]>'.format(
+            self.__class__.__name__, self.request_method,
+            self.resource_url, self.status)
 
 
 class AtlasClient:
@@ -143,13 +146,17 @@ class AtlasClient:
             HTTP request to the Atlas API should timeout. Default: 10.0.
           - `verbose` (int, optional): logging level. Default: 0.
         """
-        config = get_client_configuration(
-            base_url=base_url,
-            api_version=api_version,
-            username=username,
-            password=password,
-            timeout=timeout,
+        if not username or not password:
+            raise ValueError("Username and/or password cannot be empty.")
+
+        config = ClientConfiguration(
+            base_url=base_url or DEFAULTS.BASE_URL,
+            api_version=api_version or DEFAULTS.API_VERSION,
+            auth=requests.auth.HTTPDigestAuth(username=username,
+                                              password=password),
+            timeout=timeout or DEFAULTS.HTTP_TIMEOUT,
             verbose=verbose)
+
         self.config = config
         if config.verbose:
             enable_http_logging(config.verbose)

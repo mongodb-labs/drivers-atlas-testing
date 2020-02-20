@@ -16,7 +16,7 @@
 
 from collections import namedtuple
 
-from requests.auth import HTTPDigestAuth
+from atlasclient.utils import JSONObject
 
 
 ClientConfiguration = namedtuple(
@@ -25,21 +25,7 @@ ClientConfiguration = namedtuple(
 
 
 # Default configuration values.
-_DEFAULT_HTTP_TIMEOUT = 10
-_DEFAULT_API_VERSION = 1.0
-_DEFAULT_BASE_URL = "https://cloud.mongodb.com/api/atlas"
-
-
-def get_client_configuration(*, base_url, api_version, username,
-                             password, timeout, verbose):
-    if not username or not password:
-        raise ValueError("Username and/or password cannot be empty.")
-
-    config = ClientConfiguration(
-        base_url=base_url or _DEFAULT_BASE_URL,
-        api_version=api_version or _DEFAULT_API_VERSION,
-        auth=HTTPDigestAuth(username=username,
-                            password=password),
-        timeout=timeout or _DEFAULT_HTTP_TIMEOUT,
-        verbose=verbose)
-    return config
+CONFIG_DEFAULTS = JSONObject({
+    "HTTP_TIMEOUT": 10.0,
+    "API_VERSION": 1.0,
+    "BASE_URL": "https://cloud.mongodb.com/api/atlas"})
