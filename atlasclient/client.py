@@ -83,7 +83,8 @@ class _ApiResponse:
 
 class AtlasClient:
     """An easy-to-use MongoDB Atlas API client for Python. """
-    def __init__(self, config):
+    def __init__(self, *, username, password, base_url=None,
+                 api_version=None, timeout=None, verbose=None):
         """
         Client for the `MongoDB Atlas API
         <https://docs.atlas.mongodb.com/api/>`_.
@@ -93,8 +94,7 @@ class AtlasClient:
         <https://docs.atlas.mongodb.com/configure-api-access/>`_. A client can
         then be instantiated using the public and private API keys::
 
-            client = AtlasClient.from_configuration_options(
-                username=public_key, password=private_key)
+            client = AtlasClient(username=public_key, password=private_key)
 
         Use the :meth:`~atlasclient.client.AtlasClient.root` method to check
         that the credentials are valid::
@@ -128,23 +128,6 @@ class AtlasClient:
           user-specified JSON input via the ``json`` keyword argument.
 
         :Parameters:
-          - `config` (instance of
-            :class:`~atlasclient.configuration.ClientConfiguration`):
-            configuration of the client to be created.
-        """
-        self.config = config
-        if config.verbose:
-            enable_http_logging(config.verbose)
-
-    @classmethod
-    def from_configuration_options(cls, *, username, password,
-                                   base_url=None, api_version=None,
-                                   timeout=None, verbose=None):
-        """
-        Constructor for creating an AtlasClient object directly from
-        configuration option values.
-
-        :Parameters:
           - `username` (string): username to use for authenticating with the
             MongoDB Atlas API. This is the Public Key part of the programmatic
             API key generated via the Atlas Web UI.
@@ -167,7 +150,9 @@ class AtlasClient:
             password=password,
             timeout=timeout,
             verbose=verbose)
-        return cls(config)
+        self.config = config
+        if config.verbose:
+            enable_http_logging(config.verbose)
 
     def __getattr__(self, path):
         return _ApiComponent(self, path)
