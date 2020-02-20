@@ -40,6 +40,7 @@ setup(
         'pymongo>=3.10,<4',
         'dnspython>=1.16,<2',
         'pyyaml>=5,<6',
+        'tabulate>=0.8,<0.9',
         'junitparser>=1,<2'],
     entry_points={
         'console_scripts': ['astrolabe=astrolabe.cli:cli']},
