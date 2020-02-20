@@ -16,7 +16,7 @@ with io.open(version_file, 'rt', encoding='utf-8') as fp:
 readme_file = os.path.realpath('README.rst')
 if os.path.exists(readme_file) and os.path.isfile(readme_file):
     with io.open('README.rst', 'rt', encoding='utf-8') as fp:
-        readme_content = f.read()
+        readme_content = fp.read()
 else:
     readme_content = ''
 

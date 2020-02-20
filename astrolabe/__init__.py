@@ -11,10 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Python client for the MongoDB Atlas API."""
-
-from atlasclient.client import AtlasClient
-from atlasclient.exceptions import (
-    AtlasApiError, AtlasRateLimitError, AtlasClientError, AtlasApiException)
-from atlasclient.utils import JSONObject
