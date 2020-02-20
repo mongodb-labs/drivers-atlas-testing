@@ -4,7 +4,7 @@ from requests.auth import HTTPDigestAuth
 
 from atlasclient.exceptions import AtlasClientError
 
-_Configuration = namedtuple(
+ClientConfiguration = namedtuple(
     "AtlasClientConfiguration",
     ["base_url", "api_version", "auth", "timeout", "verbose"])
 
@@ -20,7 +20,7 @@ def get_client_configuration(*, base_url, api_version, username,
     if not username or not password:
         raise ValueError("Username and/or password cannot be empty.")
 
-    config = _Configuration(
+    config = ClientConfiguration(
         base_url=base_url or _DEFAULT_BASE_URL,
         api_version=api_version or _DEFAULT_API_VERSION,
         auth=HTTPDigestAuth(username=username,

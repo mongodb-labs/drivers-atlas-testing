@@ -48,3 +48,7 @@ class AtlasApiError(AtlasApiException):
 
 class AtlasRateLimitError(AtlasApiError):
     pass
+
+
+class AtlasAuthenticationError(AtlasApiError):
+    pass
