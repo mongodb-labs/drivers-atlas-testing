@@ -1,0 +1,26 @@
+maintenancePlan:
+  initial:
+    clusterConfiguration:
+      clusterType: REPLICASET
+      providerSettings:
+        providerName: AWS
+        regionName: US_WEST_1
+        instanceSizeName: M10
+    processArgs:
+      javascriptEnabled: false
+  final:
+    clusterConfiguration:
+      providerSettings: {}
+    processArgs:
+      javascriptEnabled: true
+  uriOptions:
+    retryWrites: true
+driverWorkload:
+  database: test_database
+  collection: test_collection
+  operations:
+    -
+      object: collection
+      name: insertOne
+      arguments:
+        document: {data: 100}
