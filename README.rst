@@ -1,0 +1,47 @@
+=========
+astrolabe
+=========
+:Info: Developer tools for testing
+       `Drivers <https://docs.mongodb.com/ecosystem/drivers/>`_
+       against `MongoDB Atlas <https://www.mongodb.com/cloud/atlas>`_. See
+       `GitHub <https://github.com/mongodb-labs/drivers-atlas-testing>`_
+       for the latest source.
+:Author: Prashant Mital
+
+About
+=====
+
+The Astrolabe distribution contains tools for automating Atlas operations
+and running Atlas Planned Maintenance tests. The ``atlasclient`` package
+provides programmatic access to the
+`MongoDB Atlas API <https://docs.atlas.mongodb.com/api/>`_ via a fluent
+interface. The ``astrolabe`` package provides a convenient, command-line
+interface to the ``atlasclient`` and also contains the test harnesses
+necessary to run Atlas Planned Maintenance specification tests.
+
+Astrolabe supports Python 3.5+.
+
+Installation
+============
+
+Astrolabe can be installed with `pip <http://pypi.python.org/pypi/pip>`_::
+
+  $ python -m pip install astrolabe
+
+
+You can also download the project source and do::
+
+  $ python -m pip install .
+
+
+Dependencies
+============
+
+Astrolabe supports CPython 3.5+.
+
+Astrolabe requires `Click <https://pypi.org/project/click/>`_,
+`requests <https://pypi.org/project/requests/>`_,
+`PyMongo <https://pypi.org/project/pymongo/>`_,
+`dnspython <https://pypi.org/project/pymongo/>`_,
+`PyYAML <https://pypi.org/project/PyYAML/>`_, and
+`junitparser <https://pypi.org/project/junitparser/>`_.
