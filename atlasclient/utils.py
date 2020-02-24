@@ -14,25 +14,25 @@
 
 """Utilities for the Python client for the MongoDB Atlas API."""
 
+import json
+
 
 class JSONObject(dict):
-    """Dictionary with dot-notation read access."""
+    """Dictionary object with dot-notation read access."""
     def __getattr__(self, name):
         if name in self:
             return self[name]
-        raise AttributeError('{} has no property named {}}.'.format(
+        raise AttributeError('{} has no property named {}.'.format(
             self.__class__.__name__, name))
 
+    @classmethod
+    def from_dict(cls, raw_dict):
+        """
+        Create a JSONObject instance from the given dictionary.
 
-def enable_http_logging(loglevel):
-    """Enables logging of all HTTP requests."""
-    # Enable logging for HTTP Requests and Responses.
-    HTTPConnection.debuglevel = loglevel
-
-    # Python logging levels are 0, 10, 20, 30, 40, 50
-    py_loglevel = loglevel * 10
-    logging.basicConfig()
-    logging.getLogger().setLevel(py_loglevel)
-    requests_log = logging.getLogger("requests.packages.urllib3")
-    requests_log.setLevel(py_loglevel)
-    requests_log.propagate = True
+        Using this constructor is the recommended way to create JSONObject
+        instances from nested dictionaries as it guarantees the conversion
+        of all nested dicts into JSONObjects. This ensures that
+        dot-notation access works for keys at all nesting levels.
+        """
+        return json.loads(json.dumps(raw_dict), object_hook=JSONObject)
