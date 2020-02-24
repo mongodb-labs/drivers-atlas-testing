@@ -14,10 +14,6 @@
 
 """Utilities for the Python client for the MongoDB Atlas API."""
 
-import logging
-
-from http.client import HTTPConnection
-
 
 class JSONObject(dict):
     """Dictionary with dot-notation read access."""

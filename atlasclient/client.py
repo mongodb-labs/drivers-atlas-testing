@@ -21,7 +21,7 @@ from atlasclient.configuration import (
 from atlasclient.exceptions import (
     AtlasAuthenticationError, AtlasClientError, AtlasApiError,
     AtlasRateLimitError)
-from atlasclient.utils import enable_http_logging, JSONObject
+from atlasclient.utils import JSONObject
 
 
 _EMPTY_PATH_ERR_MSG_TEMPLATE = ('Calling {} on an empty API path is not '
@@ -74,14 +74,14 @@ class _ApiResponse:
     def __init__(self, response, request_method, json_data):
         self.resource_url = response.url
         self.headers = response.headers
-        self.status = response.status_code
+        self.status_code = response.status_code
         self.request_method = request_method
         self.data = json_data
 
     def __repr__(self):
         return '<{}: {} {}, [HTTP status code: {}]>'.format(
             self.__class__.__name__, self.request_method,
-            self.resource_url, self.status)
+            self.resource_url, self.status_code)
 
 
 class AtlasClient:
@@ -89,8 +89,7 @@ class AtlasClient:
     def __init__(self, *, username, password,
                  base_url=DEFAULTS.BASE_URL,
                  api_version=DEFAULTS.API_VERSION,
-                 timeout=DEFAULTS.HTTP_TIMEOUT,
-                 verbose=0):
+                 timeout=DEFAULTS.HTTP_TIMEOUT):
         """
         Client for the `MongoDB Atlas API
         <https://docs.atlas.mongodb.com/api/>`_.
@@ -147,20 +146,14 @@ class AtlasClient:
             use while issuing requests. Default: 1.0.
           - `timeout` (float, optional): time, in seconds, after which an
             HTTP request to the Atlas API should timeout. Default: 10.0.
-          - `verbose` (int, optional): logging level. Default: 0.
         """
         if not username or not password:
             raise ValueError("Username and/or password cannot be empty.")
 
-        config = ClientConfiguration(
+        self.config = ClientConfiguration(
             base_url=base_url, api_version=api_version,
-            timeout=timeout, verbose=verbose,
-            auth=requests.auth.HTTPDigestAuth(
+            timeout=timeout, auth=requests.auth.HTTPDigestAuth(
                 username=username, password=password))
-
-        self.config = config
-        if config.verbose:
-            enable_http_logging(config.verbose)
 
     def __getattr__(self, path):
         return _ApiComponent(self, path)
