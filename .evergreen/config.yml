@@ -1,0 +1,110 @@
+########################################
+# Evergreen Template for MongoDB Drivers
+########################################
+
+# When a task that used to pass starts to fail
+# Go through all versions that may have been skipped to detect
+# when the task started failing
+stepback: true
+
+# Mark a failure as a system/bootstrap failure (purple box) rather then a task
+# failure by default.
+# Actual testing tasks are marked with `type: test`
+command_type: system
+
+# Protect ourselves against rogue test case, or curl gone wild, that runs forever
+# Good rule of thumb: the average-ish length a task takes, times 5.
+# That roughly accounts for variable system performance for various build variants.
+exec_timeout_secs: 3600   # 1 hour is the longest we'll ever run
+
+# What to do when evergreen hits the timeout (`post:` tasks are run automatically)
+timeout:
+  - command: shell.exec
+    params:
+      script: |
+        ls -la
+
+functions:
+  "fetch source":
+    # Executes git clone and applies the submitted patch, if any
+    - command: git.get_project
+      params:
+        directory: "astrolabe-src"
+
+  "upload test results":
+    - command: attach.xunit_results
+      params:
+        file: "astrolabe-src/xunit-output/*.xml"
+
+  "run tests":
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "astrolabe-src"
+        script: |
+          PYTHON_BINARY=${PYTHON_BINARY} \
+          ATLAS_API_USERNAME=${atlas_key} \
+          ATLAS_API_PASSWORD=${atlas_secret} \
+          sh .evergreen/python/run-tests.sh
+
+  "make files executable":
+    - command: shell.exec
+      params:
+        working_dir: "astrolabe-src"
+        script: |
+          for i in $(find astrolabe-src/.evergreen -name \*.sh); do
+            chmod +x $i
+          done
+
+  "ls":
+    - command: shell.exec
+      params:
+        script: |
+          ls -la
+    - command: shell.exec
+      params:
+        working_dir: "astrolabe-src"
+        script: |
+          ls -la
+
+pre:
+  - func: "fetch source"
+  - func: "make files executable"
+
+post:
+  - func: "upload test results"
+  - func: "ls"
+
+tasks:
+    - name: "Python-Driver"
+      tags: ["pymongo"]
+      commands:
+        - func: "run tests"
+
+axes:
+  # Choice of driver
+  - id: driver
+    display_name: driver-language
+    values:
+      - id: python
+        display_name: pymongo
+        variables:
+          PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+
+  # Choice of distro
+  - id: platform
+    display_name: OS
+    values:
+      - id: ubuntu-16.04
+        display_name: "Ubuntu 16.04"
+        run_on: ubuntu1604-test
+        batchtime: 10080  # 7 days
+
+buildvariants:
+- matrix_name: "tests-python"
+  matrix_spec:
+    platform: "*"
+    driver: "python"
+  display_name: "${platform} ${driver}"
+  tasks:
+    - ".pymongo"
