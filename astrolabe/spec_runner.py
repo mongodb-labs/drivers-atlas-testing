@@ -34,7 +34,7 @@ from astrolabe.commands import (
 from astrolabe.exceptions import AstrolabeTestCaseError
 from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
-    assert_subset, cached_property, encode_cdata, SingleTestXUnitLogger,
+    assert_subset, encode_cdata, SingleTestXUnitLogger,
     Timer)
 
 
@@ -52,49 +52,45 @@ class AtlasTestCase:
         self.config = configuration
         self.failed = False
 
+        # Initialize attribute used for memoization of connection string.
+        self.__connection_string = None
+
         # Account for platform-specific interrupt signals.
         if sys.platform != 'win32':
             self.sigint = signal.SIGINT
         else:
             self.sigint = signal.CTRL_C_EVENT
 
-        # Validate organization and group.
-        self.get_organization()
-        self.get_group()
-
-    @cached_property
-    def get_organization(self):
-        return get_one_organization_by_name(
+        # Validate and store organization and group.
+        self.organization = get_one_organization_by_name(
             client=self.client,
             organization_name=self.config.organization_name)
-
-    @cached_property
-    def get_group(self):
-        return ensure_project(
+        self.group = ensure_project(
             client=self.client, group_name=self.config.group_name,
-            organization_id=self.get_organization().id)
+            organization_id=self.organization.id)
 
     @property
     def cluster_url(self):
-        return self.client.groups[self.get_group().id].clusters[
+        return self.client.groups[self.group.id].clusters[
             self.cluster_name]
 
-    @cached_property
     def get_connection_string(self):
-        cluster = self.cluster_url.get().data
-        prefix, suffix = cluster.srvAddress.split("//")
-        uri_options = self.spec.maintenancePlan.uriOptions.copy()
+        if self.__connection_string is None:
+            cluster = self.cluster_url.get().data
+            prefix, suffix = cluster.srvAddress.split("//")
+            uri_options = self.spec.maintenancePlan.uriOptions.copy()
 
-        # Boolean options must be converted to lowercase strings.
-        for key, value in uri_options.items():
-            if isinstance(value, bool):
-                uri_options[key] = str(value).lower()
+            # Boolean options must be converted to lowercase strings.
+            for key, value in uri_options.items():
+                if isinstance(value, bool):
+                    uri_options[key] = str(value).lower()
 
-        connection_string = (prefix + "//" + self.config.database_username
-                             + ":" + self.config.database_password + "@"
-                             + suffix + "/?")
-        connection_string += urlencode(uri_options)
-        return connection_string
+            connection_string = (prefix + "//" + self.config.database_username
+                                 + ":" + self.config.database_password + "@"
+                                 + suffix + "/?")
+            connection_string += urlencode(uri_options)
+            self.__connection_string = connection_string
+        return self.__connection_string
 
     def __repr__(self):
         return "<AtlasTestCase: {}>".format(self.id)
@@ -129,20 +125,20 @@ class AtlasTestCase:
             clusterConfiguration.copy()
         cluster_config["name"] = self.cluster_name
         try:
-            self.client.groups[self.get_group().id].clusters.post(
+            self.client.groups[self.group.id].clusters.post(
                 **cluster_config)
         except AtlasApiError as exc:
             if exc.error_code == 'DUPLICATE_CLUSTER_NAME':
                 # Cluster already exists. Simply re-configure it.
                 # Cannot send cluster name when updating existing cluster.
                 cluster_config.pop("name")
-                self.client.groups[self.get_group().id].\
+                self.client.groups[self.group.id].\
                     clusters[self.cluster_name].patch(**cluster_config)
 
         # Apply processArgs if provided.
         process_args = self.spec.maintenancePlan.initial.processArgs
         if process_args:
-            self.client.groups[self.get_group().id].\
+            self.client.groups[self.group.id].\
                 clusters[self.cluster_name].processArgs.patch(**process_args)
 
     def run(self, persist_cluster=False):
@@ -177,7 +173,8 @@ class AtlasTestCase:
         driver_workload = json.dumps(self.spec.driverWorkload)
         worker_subprocess = subprocess.Popen([
             self.config.workload_executor, connection_string,
-            driver_workload], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            driver_workload], preexec_fn=os.setsid,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         LOGGER.info("Started workload executor [PID: {}]".format(
             worker_subprocess.pid))
 
@@ -213,9 +210,10 @@ class AtlasTestCase:
         # Step-5: interrupt driver workload and capture streams
         LOGGER.info("Stopping workload executor [PID: {}]".format(
             worker_subprocess.pid))
-        os.kill(worker_subprocess.pid, self.sigint)
-        stdout, stderr = worker_subprocess.communicate()
-        LOGGER.info("Stopped workload executor")
+        os.killpg(worker_subprocess.pid, self.sigint)
+        stdout, stderr = worker_subprocess.communicate(timeout=10)
+        LOGGER.info("Stopped workload executor [exit code: {}]".format(
+            worker_subprocess.returncode))
 
         # Stop the timer
         timer.stop()
@@ -223,23 +221,27 @@ class AtlasTestCase:
         # Step-6: compute xunit entry.
         junit_test = junitparser.TestCase(self.id)
         junit_test.time = timer.elapsed
-        if worker_subprocess.returncode != 0:
+
+        try:
+            err_info = json.loads(stderr)
+        except json.JSONDecodeError:
+            err_info = {'numErrors': -1, 'numFailures': -1}
+
+        if err_info['numErrors'] or err_info['numFailures'] \
+                or worker_subprocess.returncode != 0:
             LOGGER.info("FAILED: {!r}".format(self.id))
-            self.failed = True
-            errmsg = """
-            Number of errors: {numErrors}
-            Number of failures: {numFailures}    
-            """
-            try:
-                err_info = json.loads(stderr)
-                junit_test.result = junitparser.Failure(
-                    errmsg.format(**err_info))
-            except json.JSONDecodeError:
-                junit_test.result = junitparser.Error(encode_cdata(stderr))
+            # Write xunit logs for failed tests.
+            errmsg = ("Number of errors: {numErrors}\n"
+                      "Number of failures: {numFailures}").format(**err_info)
+            junit_test.result = junitparser.Failure(errmsg)
+            junit_test.system_err = encode_cdata(stderr.decode('utf-8'))
+            junit_test.system_out = encode_cdata(stdout.decode('utf-8'))
         else:
             LOGGER.info("SUCCEEDED: {!r}".format(self.id))
-        junit_test.system_err = encode_cdata(stderr)
-        junit_test.system_out = encode_cdata(stdout)
+            # Directly log output of successful tests as xunit output
+            # is only visible for failed tests.
+        LOGGER.info("STDOUT: {}".format(stdout.decode('utf-8')))
+        LOGGER.info("STDERR: {}".format(stderr.decode('utf-8')))
 
         # Step 7: download logs asynchronously and delete cluster.
         # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4

@@ -68,21 +68,6 @@ class Timer:
         return self._end - self._start
 
 
-def cached_property(func):
-    """Decorator to memoize a class method that accepts no args/kwargs."""
-    memo = None
-
-    def memoized_function(self, *args, **kwargs):
-        if args or kwargs:
-            raise RuntimeError("cannot memoize methods that accept arguments")
-        nonlocal memo
-        if memo is None:
-            memo = func(self)
-        return memo
-
-    return memoized_function
-
-
 def encode_cdata(data):
     """Encode `data` to XML-recognized CDATA."""
     return "<![CDATA[{data}]]>".format(data=data)

@@ -14,6 +14,7 @@
 
 import logging
 from pprint import pprint
+from urllib.parse import unquote_plus
 
 import click
 
@@ -174,16 +175,16 @@ def atlas_projects():
     pass
 
 
-@atlas_projects.command('create')
+@atlas_projects.command('ensure')
 @ATLASORGANIZATIONNAME_OPTION
 @ATLASGROUPNAME_OPTION
 @click.pass_context
-def create_project(ctx, org_name, group_name,):
-    """Create a new Atlas Project."""
+def create_project_if_necessary(ctx, org_name, group_name,):
+    """Ensure that the given Atlas Project exists."""
     org = cmd.get_one_organization_by_name(
         client=ctx.obj, organization_name=org_name)
-    response = ctx.obj.groups.post(name=group_name, orgId=org.id)
-    pprint(response.data)
+    pprint(cmd.ensure_project(
+        client=ctx.obj, group_name=group_name, organization_id=org.id))
 
 
 @atlas_projects.command('list')
@@ -411,8 +412,8 @@ def run_single_test(ctx, spec_test_file, workload_executor,
         name_salt=cluster_name_salt,
         polling_timeout=polling_timeout,
         polling_frequency=polling_frequency,
-        database_username=db_username,
-        database_password=db_password,
+        database_username=unquote_plus(db_username),
+        database_password=unquote_plus(db_password),
         workload_executor=workload_executor)
     LOGGER.info(tabulate_astrolabe_configuration(config))
 
@@ -461,8 +462,8 @@ def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
         name_salt=cluster_name_salt,
         polling_timeout=polling_timeout,
         polling_frequency=polling_frequency,
-        database_username=db_username,
-        database_password=db_password,
+        database_username=unquote_plus(db_username),
+        database_password=unquote_plus(db_password),
         workload_executor=workload_executor)
     LOGGER.info(tabulate_astrolabe_configuration(config))
 

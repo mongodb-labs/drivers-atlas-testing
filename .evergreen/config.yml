@@ -1,0 +1,195 @@
+##############################################
+# Evergreen Template for Drivers Atlas Testing
+##############################################
+
+# Run previous commits to pinpoint a failure's origin.
+stepback: true
+
+# Mark failures other than test failures with a purple box.
+command_type: system
+
+# Limit maximum test running time.
+exec_timeout_secs: 7200   # 2 hours
+
+# What to do when evergreen hits the timeout (`post:` tasks are run automatically)
+timeout:
+  - command: shell.exec
+    params:
+      script: |
+        ls -la
+
+functions:
+  "install astrolabe":
+    # Clone astrolabe.
+    - command: git.get_project
+      params:
+        directory: astrolabe-src
+    # Create virtualenv using a CPython 3.5+ binary.
+    - command: subprocess.exec
+      params:
+        working_dir: astrolabe-src
+        command: |
+          ${PYTHON3_BINARY} -m virtualenv astrolabevenv
+    # Install astrolabe in the created virtualenv.
+    - command: subprocess.exec
+      params:
+        working_dir: astrolabe-src
+        command: |
+          astrolabevenv/${PYTHON_BIN_DIR}/pip install -e .
+
+  "install driver":
+    # Clone driver source code into the 'astrolabe-src/<driver-repo-name>' directory.
+    - command: subprocess.exec
+      params:
+        working_dir: astrolabe-src
+        command: |
+          git clone --recursive --branch ${DRIVER_REVISION} ${DRIVER_REPOSITORY}
+    # Install driver.
+    - command: subprocess.exec
+      params:
+        working_dir: astrolabe-src
+        add_expansions_to_env: true
+        binary: .evergreen/${DRIVER_DIRNAME}/install-driver.sh
+
+  "run test":
+    # Run the Atlas Planned Maintenance Tests.
+    - command: subprocess.exec
+      type: test
+      params:
+        working_dir: astrolabe-src
+        env:
+          ATLAS_PROJECT_NAME: ${project}
+          EVERGREEN_BUILD_ID: ${build_id}
+          ATLAS_API_USERNAME: ${atlas_key}
+          ATLAS_API_PASSWORD: ${atlas_secret}
+        add_expansions_to_env: true
+        command: |
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml -e .evergreen/${DRIVER_DIRNAME}/workload-executor.sh
+
+  "upload test results":
+    # Upload the xunit-format test results.
+    - command: attach.xunit_results
+      params:
+        file: "astrolabe-src/xunit-output/*.xml"
+
+# Functions to run before the test.
+pre:
+  - func: "install astrolabe"
+  - func: "install driver"
+
+# Functions to run after the test.
+post:
+  - func: "upload test results"
+
+tasks:
+    # One test-case per task.
+    - name: retryReads-resizeCluster
+      tags: ["all", "retryReads", "resizeCluster"]
+      commands:
+        - func: "run test"
+          vars:
+            TEST_NAME: retryReads-resizeCluster
+    - name: retryReads-toggleServerSideJS
+      tags: ["all", "retryReads", "toggleServerSideJS"]
+      commands:
+        - func: "run test"
+          vars:
+            TEST_NAME: retryReads-toggleServerSideJS
+    - name: retryWrites-resizeCluster
+      tags: ["all", "retryWrites", "resizeCluster"]
+      commands:
+        - func: "run test"
+          vars:
+            TEST_NAME: retryWrites-resizeCluster
+    - name: retryWrites-toggleServerSideJS
+      tags: ["all", "retryWrites", "toggleServerSideJS"]
+      commands:
+        - func: "run test"
+          vars:
+            TEST_NAME: retryWrites-toggleServerSideJS
+
+axes:
+  # The 'driver' axis specifies the driver to be tested (including driver version).
+  # Drivers MUST specify the DRIVER_REPOSITORY and DRIVER_REVISION variables.
+  - id: driver
+    display_name: driver
+    values:
+      - id: pymongo-master
+        display_name: "PyMongo (master)"
+        variables:
+          DRIVER_DIRNAME: "python/pymongo"
+          DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-python-driver"
+          DRIVER_REVISION: "master"
+          PYMONGO_VIRTUALENV_NAME: "pymongotestvenv"
+      - id: pymongo-3.10.x
+        display_name: "PyMongo (3.10.x)"
+        variables:
+          DRIVER_DIRNAME: "python/pymongo"
+          DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-python-driver"
+          DRIVER_REVISION: "3.10.1"
+          PYMONGO_VIRTUALENV_NAME: "pymongotestvenv"
+
+
+  # The 'platform' axis specifies the evergreen host distro to use.
+  # Platforms MUST specify the PYTHON3_BINARY variable as this is required to install astrolabe.
+  - id: platform
+    display_name: OS
+    values:
+      - id: ubuntu-16.04
+        display_name: "Ubuntu 16.04"
+        run_on: ubuntu1604-test
+        batchtime: 10080  # 7 days
+        variables:
+          PYTHON3_BINARY: "/opt/python/3.7/bin/python3"
+          PYTHON_BIN_DIR: "bin"
+      - id: windows-64
+        display_name: "Windows 64"
+        run_on: windows-64-vsMulti-small
+        batchtime: 10080  # 7 days
+        variables:
+          PYTHON3_BINARY: "C:/python/Python37/python.exe"
+          PYTHON_BIN_DIR: "Scripts"
+
+  # The 'runtime' axis specifies the language runtime to use.
+  # Runtimes SHOULD specify language and platform-specific variables needed by driver scripts.
+  - id: runtime
+    display_name: runtime
+    values:
+      - id: python27
+        display_name: CPython-2.7
+        variables:
+          PYTHON_BINARY: "/opt/python/2.7/bin/python"
+      - id: python36
+        display_name: CPython-3.6
+        variables:
+          PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+      - id: python37
+        display_name: CPython-3.7
+        variables:
+          PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+      - id: python38
+        display_name: CPython-3.8
+        variables:
+          PYTHON_BINARY: "/opt/python/3.8/bin/python3"
+      - id: python37-windows
+        display_name: CPython-3.7-Windows
+        variables:
+          PYTHON_BINARY: "C:/python/Python37/python.exe"
+
+buildvariants:
+- matrix_name: "tests-python"
+  matrix_spec:
+    driver: ["pymongo-master", "pymongo-3.10.x"]
+    platform: ["ubuntu-16.04"]
+    runtime: ["python27", "python36", "python37", "python38"]
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - ".all"
+- matrix_name: "tests-python-windows"
+  matrix_spec:
+    driver: ["pymongo-master", "pymongo-3.10.x"]
+    platform: ["windows-64"]
+    runtime: ["python37-windows",]
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - ".all"
