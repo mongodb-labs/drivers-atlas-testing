@@ -47,9 +47,9 @@ functions:
             export EVERGREEN_BUILD_ID="{build_id}"
             export ATLAS_API_USERNAME="${atlas_key}"
             export ATLAS_API_PASSWORD="${atlas_secret}"
-            export DRIVER_SRC_DIRECTORY="$DRIVER_SRC_DIRECTORY"
+            export TARGET_DRIVER_REPOSITORY="${DRIVER_REPOSITORY}"
             export TARGET_DRIVER_REVISION="${DRIVER_REVISION}"
-            export TARGET_DRIVER_SCRIPTS_DIRECTORY="$(pwd)/.evergreen/${DRIVER_SCRIPTS_DIRECTORY}"
+            export TARGET_DRIVER_SCRIPTS_DIRECTORY="$(pwd)/.evergreen/${DRIVER_DIRNAME}"
           EOT
           # See what we've done
           cat astrolabe-expansion.yml
@@ -161,14 +161,23 @@ axes:
         display_name: pymongo-py36
         variables:
           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+          DRIVER_REPOSITORY: &pymongo_url "https://github.com/mongodb/mongo-python-driver.git"
+          DRIVER_REVISION: &master "master"
+          DRIVER_DIRNAME: "python"
       - id: python37
         display_name: pymongo-py37
         variables:
           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+          DRIVER_REPOSITORY: *pymongo_url
+          DRIVER_REVISION: *master
+          DRIVER_DIRNAME: "python"
       - id: python38
         display_name: pymongo-py38
         variables:
           PYTHON_BINARY: "/opt/python/3.8/bin/python3"
+          DRIVER_REPOSITORY: *pymongo_url
+          DRIVER_REVISION: *master
+          DRIVER_DIRNAME: "python"
 
   # Choice of distro
   - id: platform
@@ -178,6 +187,8 @@ axes:
         display_name: "Ubuntu 16.04"
         run_on: ubuntu1604-test
         batchtime: 10080  # 7 days
+        variables:
+          SYSTEM_PYTHON3_BINARY: "/opt/python/3.7/bin/python3"
 
 buildvariants:
 - matrix_name: "tests-python"
