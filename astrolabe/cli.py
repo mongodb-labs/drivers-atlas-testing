@@ -174,16 +174,16 @@ def atlas_projects():
     pass
 
 
-@atlas_projects.command('create')
+@atlas_projects.command('ensure')
 @ATLASORGANIZATIONNAME_OPTION
 @ATLASGROUPNAME_OPTION
 @click.pass_context
-def create_project(ctx, org_name, group_name,):
-    """Create a new Atlas Project."""
+def create_project_if_necessary(ctx, org_name, group_name,):
+    """Ensure that the given Atlas Project exists."""
     org = cmd.get_one_organization_by_name(
         client=ctx.obj, organization_name=org_name)
-    response = ctx.obj.groups.post(name=group_name, orgId=org.id)
-    pprint(response.data)
+    pprint(cmd.ensure_project(
+        client=ctx.obj, group_name=group_name, organization_id=org.id))
 
 
 @atlas_projects.command('list')

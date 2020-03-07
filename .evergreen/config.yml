@@ -95,7 +95,7 @@ functions:
         script: |
           ${PREPARE_SHELL_COMMON}
           ${PREPARE_SHELL_DRIVER}
-          "$ASTROLABE_BINARY" --log-level debug spec-tests run astrolabe-src/temp-tests -e "$TARGET_DRIVER_SCRIPTS_DIRECTORY"/workload-executor.sh --group-name testproject --cluster-name-salt somesalt
+          "$ASTROLABE_BINARY" --log-level debug spec-tests run astrolabe-src/temp-tests -e "$TARGET_DRIVER_SCRIPTS_DIRECTORY"/workload-executor.sh --group-name testproject --cluster-name-salt somesalt --no-delete
 
   "upload test results":
     - command: attach.xunit_results
