@@ -51,8 +51,7 @@ functions:
             export TARGET_DRIVER_REVISION="${DRIVER_REVISION}"
             export TARGET_DRIVER_SCRIPTS_DIRECTORY="$(pwd)/.evergreen/${DRIVER_DIRNAME}"
           EOT
-          # See what we've done
-          cat astrolabe-expansion.yml
+          # Don't print this as it contains credentials.
     - command: expansions.update
       params:
         file: astrolabe-src/astrolabe-expansion.yml
@@ -96,7 +95,7 @@ functions:
         script: |
           ${PREPARE_SHELL_COMMON}
           ${PREPARE_SHELL_DRIVER}
-          "$ASTROLABE_BINARY" --log-level debug spec-tests run astrolabe-src -e "$TARGET_DRIVER_SCRIPTS_DIRECTORY"/workload-executor.sh --group-name testproject --cluster-name-salt somesalt
+          "$ASTROLABE_BINARY" --log-level debug spec-tests run astrolabe-src/temp-tests -e "$TARGET_DRIVER_SCRIPTS_DIRECTORY"/workload-executor.sh --group-name testproject --cluster-name-salt somesalt
 
   "upload test results":
     - command: attach.xunit_results
@@ -125,7 +124,7 @@ functions:
         working_dir: driver-src
         script: |
           cat <<EOT > pymongo-expansion.yml
-          PREPARE_SHELL_DRIVEr: |
+          PREPARE_SHELL_DRIVER: |
             set -o errexit
             export PYTHON_BINARY="${PYTHON_BINARY}"
           EOT
