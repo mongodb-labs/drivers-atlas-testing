@@ -25,36 +25,83 @@ timeout:
         ls -la
 
 functions:
-  "fetch source":
+  "install astrolabe":
     # Executes git clone and applies the submitted patch, if any
     - command: git.get_project
       params:
-        directory: "astrolabe-src"
-
-  "upload test results":
-    - command: attach.xunit_results
+        directory: astrolabe-src
+    - command: shell.exec
       params:
-        file: "astrolabe-src/xunit-output/*.xml"
+        working_dir: astrolabe-src
+        script: |
+          export ASTROLABE_SRC_DIRECTORY="$(pwd)"
+          export ASTROLABE_VIRTUALENV_NAME="astrolabevenv"
+          export ASTROLABE_BINARY="$ASTROLABE_SRC_DIRECTORY/$ASTROLABE_VIRTUALENV_NAME/bin/astrolabe"
+          cat <<EOT > astrolabe-expansion.yml
+          PREPARE_SHELL_COMMON: |
+            set -o errexit
+            export ASTROLABE_PY3_BINARY="${SYSTEM_PYTHON3_BINARY}"
+            export ASTROLABE_VIRTUALENV_NAME="$ASTROLABE_VIRTUALENV_NAME"
+            export ASTROLABE_BINARY="$ASTROLABE_BINARY"
+            export ATLAS_PROJECT_NAME="${project}"
+            export EVERGREEN_BUILD_ID="{build_id}"
+            export ATLAS_API_USERNAME="${atlas_key}"
+            export ATLAS_API_PASSWORD="${atlas_secret}"
+            export DRIVER_SRC_DIRECTORY="$DRIVER_SRC_DIRECTORY"
+            export TARGET_DRIVER_REVISION="${DRIVER_REVISION}"
+            export TARGET_DRIVER_SCRIPTS_DIRECTORY="$(pwd)/.evergreen/${DRIVER_SCRIPTS_DIRECTORY}"
+          EOT
+          # See what we've done
+          cat astrolabe-expansion.yml
+    - command: expansions.update
+      params:
+        file: astrolabe-src/astrolabe-expansion.yml
+    - command: shell.exec
+      params:
+        working_dir: astrolabe-src
+        script: |
+          ${PREPARE_SHELL_COMMON}
+          sh .evergreen/install-astrolabe.sh
+
+  "clone target driver":
+    - command: shell.exec
+      params:
+        script: |
+          ${PREPARE_SHELL_COMMON}
+          git clone --recursive --branch "$TARGET_DRIVER_REVISION" "$TARGET_DRIVER_REPOSITORY" driver-src
+
+  "make files executable":
+    - command: shell.exec
+      params:
+        script: |
+          ${PREPARE_SHELL_COMMON}
+          for i in $(find "$TARGET_DRIVER_SCRIPTS_DIRECTORY" -name \*.sh); do
+            chmod +x $i
+          done
+
+  "setup driver":
+    - command: shell.exec
+      params:
+        working_dir: driver-src
+        script: |
+          ${PREPARE_SHELL_COMMON}
+          ${PREPARE_SHELL_DRIVER}
+          sh "$TARGET_DRIVER_SCRIPTS_DIRECTORY"/setup-driver.sh
 
   "run tests":
     - command: shell.exec
       type: test
       params:
-        working_dir: "astrolabe-src"
+        working_dir:
         script: |
-          PYTHON_BINARY=${PYTHON_BINARY} \
-          ATLAS_API_USERNAME=${atlas_key} \
-          ATLAS_API_PASSWORD=${atlas_secret} \
-          sh .evergreen/python/run-tests.sh
+          ${PREPARE_SHELL_COMMON}
+          ${PREPARE_SHELL_DRIVER}
+          "$ASTROLABE_BINARY" --log-level debug spec-tests run astrolabe-src -e "$TARGET_DRIVER_SCRIPTS_DIRECTORY"/workload-executor.sh --group-name testproject --cluster-name-salt somesalt
 
-  "make files executable":
-    - command: shell.exec
+  "upload test results":
+    - command: attach.xunit_results
       params:
-        working_dir: "astrolabe-src"
-        script: |
-          for i in $(find astrolabe-src/.evergreen -name \*.sh); do
-            chmod +x $i
-          done
+        file: "xunit-output/*.xml"
 
   "ls":
     - command: shell.exec
@@ -63,13 +110,35 @@ functions:
           ls -la
     - command: shell.exec
       params:
-        working_dir: "astrolabe-src"
+        working_dir: astrolabe-src
+        script: |
+          ls -la
+    - command: shell.exec
+      params:
+        working_dir: driver-src
         script: |
           ls -la
 
+  "prepare shell pymongo":
+    - command: shell.exec
+      params:
+        working_dir: driver-src
+        script: |
+          cat <<EOT > pymongo-expansion.yml
+          PREPARE_SHELL_DRIVEr: |
+            set -o errexit
+            export PYTHON_BINARY="${PYTHON_BINARY}"
+          EOT
+          # See what we've done
+          cat pymongo-expansion.yml
+    - command: expansions.update
+      params:
+        file: driver-src/pymongo-expansion.yml
+
 pre:
-  - func: "fetch source"
+  - func: "install astrolabe"
   - func: "make files executable"
+  - func: "clone target driver"
 
 post:
   - func: "upload test results"
@@ -79,6 +148,8 @@ tasks:
     - name: "Python-Driver"
       tags: ["pymongo"]
       commands:
+        - func: "prepare shell pymongo"
+        - func: "setup driver"
         - func: "run tests"
 
 axes:
@@ -86,10 +157,18 @@ axes:
   - id: driver
     display_name: driver-language
     values:
-      - id: python
-        display_name: pymongo
+      - id: python36
+        display_name: pymongo-py36
+        variables:
+          PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+      - id: python37
+        display_name: pymongo-py37
         variables:
           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+      - id: python38
+        display_name: pymongo-py38
+        variables:
+          PYTHON_BINARY: "/opt/python/3.8/bin/python3"
 
   # Choice of distro
   - id: platform
@@ -104,7 +183,7 @@ buildvariants:
 - matrix_name: "tests-python"
   matrix_spec:
     platform: "*"
-    driver: "python"
-  display_name: "${platform} ${driver}"
+    driver: ["python36", "python37", "python38"]
+  display_name: "${driver} ${platform}"
   tasks:
     - ".pymongo"

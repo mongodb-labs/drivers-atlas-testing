@@ -27,7 +27,7 @@ CONFIG_DEFAULTS = JSONObject.from_dict({
 
 
 CONFIG_ENVVARS = JSONObject.from_dict({
-    "PROJECT_NAME": "EVERGREEN_PROJECT_ID",         # ${project} in EVG
+    "PROJECT_NAME": "ATLAS_PROJECT_NAME",         # ${project} in EVG
     "CLUSTER_NAME_SALT": "EVERGREEN_BUILD_ID",      # ${build_id} in EVG
     "POLLING_TIMEOUT": "ATLAS_POLLING_TIMEOUT",
     "POLLING_FREQUENCY": "ATLAS_POLLING_FREQUENCY",
