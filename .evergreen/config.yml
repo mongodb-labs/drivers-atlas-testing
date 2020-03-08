@@ -124,7 +124,7 @@ functions:
         working_dir: driver-src
         script: |
           export PYMONGO_VIRTUALENV_NAME="pymongotestvenv"
-          export PYMONGO_PYTHON_RUNTIME="$PYMONGO_VIRTUALENV_NAME/bin/python"
+          export PYMONGO_PYTHON_RUNTIME="$(pwd)/$PYMONGO_VIRTUALENV_NAME/bin/python"
           cat <<EOT > pymongo-expansion.yml
           PREPARE_SHELL_DRIVER: |
             set -o errexit
