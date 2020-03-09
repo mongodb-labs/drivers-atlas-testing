@@ -4,8 +4,6 @@ import re
 import sys
 import traceback
 
-import yaml
-
 from pymongo import MongoClient
 from pymongo.cursor import Cursor
 from pymongo.command_cursor import CommandCursor
@@ -91,6 +89,8 @@ if __name__ == '__main__':
     except json.decoder.JSONDecodeError:
         # We also support passing in a raw test YAML file to this
         # script to make it easy to run the script in debug mode.
+        # PyYAML is imported locally to avoid ImportErrors on EVG.
+        import yaml
         with open(workload_ptr, 'r') as fp:
             testspec = yaml.load(fp, Loader=yaml.FullLoader)
             workload_spec = testspec['driverWorkload']
