@@ -26,10 +26,11 @@ timeout:
 
 functions:
   "install astrolabe":
-    # Executes git clone and applies the submitted patch, if any
+    # Clone astrolabe.
     - command: git.get_project
       params:
         directory: astrolabe-src
+    # Setup global expansions.
     - command: shell.exec
       params:
         working_dir: astrolabe-src
@@ -47,29 +48,20 @@ functions:
             export EVERGREEN_BUILD_ID="{build_id}"
             export ATLAS_API_USERNAME="${atlas_key}"
             export ATLAS_API_PASSWORD="${atlas_secret}"
-            export TARGET_DRIVER_REPOSITORY="${DRIVER_REPOSITORY}"
-            export TARGET_DRIVER_REVISION="${DRIVER_REVISION}"
             export TARGET_DRIVER_SCRIPTS_DIRECTORY="$(pwd)/.evergreen/${DRIVER_DIRNAME}"
           EOT
           # Don't print this as it contains credentials.
     - command: expansions.update
       params:
         file: astrolabe-src/astrolabe-expansion.yml
+    # Install astrolabe.
     - command: shell.exec
       params:
         working_dir: astrolabe-src
         script: |
           ${PREPARE_SHELL_COMMON}
           sh .evergreen/install-astrolabe.sh
-
-  "clone target driver":
-    - command: shell.exec
-      params:
-        script: |
-          ${PREPARE_SHELL_COMMON}
-          git clone --recursive --branch "$TARGET_DRIVER_REVISION" "$TARGET_DRIVER_REPOSITORY" driver-src
-
-  "make files executable":
+    # Make *.sh files in driver scripts directory executable.
     - command: shell.exec
       params:
         script: |
@@ -79,6 +71,13 @@ functions:
           done
 
   "setup driver":
+    # Clone driver source code.
+    - command: shell.exec
+      params:
+        script: |
+          ${PREPARE_SHELL_COMMON}
+          git clone --recursive --branch "${DRIVER_REVISION}" "${DRIVER_REPOSITORY}" driver-src
+    # Run driver-supplied script to setup driver.
     - command: shell.exec
       params:
         working_dir: driver-src
@@ -88,6 +87,7 @@ functions:
           sh "$TARGET_DRIVER_SCRIPTS_DIRECTORY"/setup-driver.sh
 
   "run tests":
+    # Run the Atlas Planned Maintenance Tests.
     - command: shell.exec
       type: test
       params:
@@ -95,14 +95,16 @@ functions:
         script: |
           ${PREPARE_SHELL_COMMON}
           ${PREPARE_SHELL_DRIVER}
-          "$ASTROLABE_BINARY" --log-level debug spec-tests run astrolabe-src/temp-tests -e "$TARGET_DRIVER_SCRIPTS_DIRECTORY"/workload-executor.sh --group-name testproject --cluster-name-salt somesalt --no-delete
+          "$ASTROLABE_BINARY" spec-tests run astrolabe-src/temp-tests -e "$TARGET_DRIVER_SCRIPTS_DIRECTORY"/workload-executor.sh --group-name testproject --cluster-name-salt somesalt --no-delete
 
   "upload test results":
+    # Upload the xunit-format test results.
     - command: attach.xunit_results
       params:
         file: "xunit-output/*.xml"
 
   "ls":
+    # Useful command for debugging.
     - command: shell.exec
       params:
         script: |
@@ -119,9 +121,9 @@ functions:
           ls -la
 
   "prepare shell pymongo":
+    # Setup environment expansions.
     - command: shell.exec
       params:
-        working_dir: driver-src
         script: |
           export PYMONGO_VIRTUALENV_NAME="pymongotestvenv"
           export PYMONGO_PYTHON_RUNTIME="$(pwd)/$PYMONGO_VIRTUALENV_NAME/bin/python"
@@ -136,53 +138,61 @@ functions:
           cat pymongo-expansion.yml
     - command: expansions.update
       params:
-        file: driver-src/pymongo-expansion.yml
+        file: pymongo-expansion.yml
 
 pre:
   - func: "install astrolabe"
-  - func: "make files executable"
-  - func: "clone target driver"
 
 post:
   - func: "upload test results"
   - func: "ls"
 
 tasks:
-    - name: "Python-Driver"
-      tags: ["pymongo"]
+    # Tasks specify the driver (including version) to test.
+    - name: "pymongo-master"
       commands:
         - func: "prepare shell pymongo"
         - func: "setup driver"
+          vars:
+            DRIVER_REVISION: master
+        - func: "run tests"
+    - name: "pymongo-3.10"
+      commands:
+        - func: "prepare shell pymongo"
+        - func: "setup driver"
+          vars:
+            DRIVER_REVISION: 3.10.1
         - func: "run tests"
 
 axes:
-  # Choice of driver
+  # Specify the driver to be tested.
   - id: driver
-    display_name: driver-language
+    display_name: driver
     values:
-      - id: python36
-        display_name: pymongo-py36
+      - id: pymongo
+        display_name: pymongo
         variables:
-          PYTHON_BINARY: "/opt/python/3.6/bin/python3"
-          DRIVER_REPOSITORY: &pymongo_url "https://github.com/mongodb/mongo-python-driver.git"
-          DRIVER_REVISION: &master "master"
-          DRIVER_DIRNAME: "python"
-      - id: python37
-        display_name: pymongo-py37
-        variables:
-          PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-          DRIVER_REPOSITORY: *pymongo_url
-          DRIVER_REVISION: *master
-          DRIVER_DIRNAME: "python"
-      - id: python38
-        display_name: pymongo-py38
-        variables:
-          PYTHON_BINARY: "/opt/python/3.8/bin/python3"
-          DRIVER_REPOSITORY: *pymongo_url
-          DRIVER_REVISION: *master
+          DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-python-driver.git"
           DRIVER_DIRNAME: "python"
 
-  # Choice of distro
+  # Specify a driver-specific language runtime.
+  - id: language-runtime
+    display_name: runtime
+    values:
+      - id: python36
+        display_name: py36
+        variables:
+          PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+      - id: python37
+        display_name: py37
+        variables:
+          PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+      - id: python38
+        display_name: py38
+        variables:
+          PYTHON_BINARY: "/opt/python/3.8/bin/python3"
+
+  # Specify the platform.
   - id: platform
     display_name: OS
     values:
@@ -196,8 +206,10 @@ axes:
 buildvariants:
 - matrix_name: "tests-python"
   matrix_spec:
-    platform: "*"
-    driver: ["python36", "python37", "python38"]
-  display_name: "${driver} ${platform}"
+    driver: ["pymongo"]
+    language-runtime: ["python36", "python37", "python38"]
+    platform: ["ubuntu-16.04"]
+  display_name: "${driver} ${language-runtime} ${platform}"
   tasks:
-    - ".pymongo"
+    - "pymongo-master"
+    - "pymongo-3.10"
