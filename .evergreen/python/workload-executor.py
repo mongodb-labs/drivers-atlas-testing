@@ -1,8 +1,10 @@
+import copy
+import json
 import re
 import sys
 import traceback
-import json
 
+import yaml
 
 from pymongo import MongoClient
 from pymongo.cursor import Cursor
@@ -29,6 +31,11 @@ def prepare_operation(operation_spec):
 
 def run_operation(objects, prepared_operation):
     target_name, cmd_name, arguments, expected_result = prepared_operation
+
+    if cmd_name.lower().startswith('insert'):
+        # PyMongo's insert* methods mutate the inserted document, so we
+        # duplicate it to avoid the DuplicateKeyError.
+        arguments = copy.deepcopy(arguments)
 
     target = objects[target_name]
     cmd = getattr(target, cmd_name)
@@ -78,6 +85,14 @@ def workload_runner(srv_address, workload_spec):
 
 
 if __name__ == '__main__':
-    srv_address, workload_json = sys.argv[1], sys.argv[2]
-    workload_spec = json.loads(workload_json)
+    srv_address, workload_ptr = sys.argv[1], sys.argv[2]
+    try:
+        workload_spec = json.loads(workload_ptr)
+    except json.decoder.JSONDecodeError:
+        # We also support passing in a raw test YAML file to this
+        # script to make it easy to run the script in debug mode.
+        with open(workload_ptr, 'r') as fp:
+            testspec = yaml.load(fp, Loader=yaml.FullLoader)
+            workload_spec = testspec['driverWorkload']
+
     workload_runner(srv_address, workload_spec)
