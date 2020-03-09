@@ -123,11 +123,10 @@ functions:
   "prepare shell pymongo":
     # Setup environment expansions.
     - command: shell.exec
-      working_dir: driver-src
       params:
         script: |
           export PYMONGO_VIRTUALENV_NAME="pymongotestvenv"
-          export PYMONGO_PYTHON_RUNTIME="$(pwd)/$PYMONGO_VIRTUALENV_NAME/bin/python"
+          export PYMONGO_PYTHON_RUNTIME="$(pwd)/driver-src/$PYMONGO_VIRTUALENV_NAME/bin/python"
           cat <<EOT > pymongo-expansion.yml
           PREPARE_SHELL_DRIVER: |
             set -o errexit
