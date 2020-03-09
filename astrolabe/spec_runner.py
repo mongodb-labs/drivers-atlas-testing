@@ -177,7 +177,8 @@ class AtlasTestCase:
         driver_workload = json.dumps(self.spec.driverWorkload)
         worker_subprocess = subprocess.Popen([
             self.config.workload_executor, connection_string,
-            driver_workload], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            driver_workload], preexec_fn=os.setsid,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         LOGGER.info("Started workload executor [PID: {}]".format(
             worker_subprocess.pid))
 
@@ -213,7 +214,7 @@ class AtlasTestCase:
         # Step-5: interrupt driver workload and capture streams
         LOGGER.info("Stopping workload executor [PID: {}]".format(
             worker_subprocess.pid))
-        os.kill(worker_subprocess.pid, self.sigint)
+        os.killpg(worker_subprocess.pid, self.sigint)
         stdout, stderr = worker_subprocess.communicate(timeout=10)
 
         LOGGER.info("Stopped workload executor")
