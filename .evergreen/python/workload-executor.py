@@ -76,10 +76,6 @@ def workload_runner(srv_address, workload_spec):
             json.dumps(
                 {"numErrors": num_errors, "numFailures": num_failures}),
             file=sys.stderr)
-        if num_errors or num_failures:
-            exit(1)
-        else:
-            exit(0)
 
 
 if __name__ == '__main__':
