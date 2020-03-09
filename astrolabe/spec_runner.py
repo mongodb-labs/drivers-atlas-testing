@@ -227,7 +227,17 @@ class AtlasTestCase:
         # Step-6: compute xunit entry.
         junit_test = junitparser.TestCase(self.id)
         junit_test.time = timer.elapsed
-        if worker_subprocess.returncode != 0:
+
+        # Determine status to be reported.
+        is_failure = False
+        try:
+            err_info = json.loads(stderr)
+            if int(err_info['numErrors']) or int(err_info['numFailures']):
+                is_failure = True
+        except json.JSONDecodeError:
+            is_failure = True
+
+        if is_failure:
             LOGGER.info("FAILED: {!r}".format(self.id))
             self.failed = True
             errmsg = """
