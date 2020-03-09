@@ -216,8 +216,10 @@ class AtlasTestCase:
             worker_subprocess.pid))
         os.killpg(worker_subprocess.pid, self.sigint)
         stdout, stderr = worker_subprocess.communicate(timeout=10)
-
-        LOGGER.info("Stopped workload executor")
+        LOGGER.info("Stopped workload executor [exit code: {}]".format(
+            worker_subprocess.returncode))
+        LOGGER.debug("stdout:".format(stdout))
+        LOGGER.debug("stderr:".format(stderr))
 
         # Stop the timer
         timer.stop()
