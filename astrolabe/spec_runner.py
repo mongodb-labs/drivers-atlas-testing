@@ -214,7 +214,8 @@ class AtlasTestCase:
         LOGGER.info("Stopping workload executor [PID: {}]".format(
             worker_subprocess.pid))
         os.kill(worker_subprocess.pid, self.sigint)
-        stdout, stderr = worker_subprocess.communicate()
+        stdout, stderr = worker_subprocess.communicate(timeout=10)
+
         LOGGER.info("Stopped workload executor")
 
         # Stop the timer
