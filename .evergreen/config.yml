@@ -123,6 +123,7 @@ functions:
   "prepare shell pymongo":
     # Setup environment expansions.
     - command: shell.exec
+      working_dir: driver-src
       params:
         script: |
           export PYMONGO_VIRTUALENV_NAME="pymongotestvenv"
