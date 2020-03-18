@@ -218,8 +218,6 @@ class AtlasTestCase:
         stdout, stderr = worker_subprocess.communicate(timeout=10)
         LOGGER.info("Stopped workload executor [exit code: {}]".format(
             worker_subprocess.returncode))
-        LOGGER.debug("stdout:".format(stdout))
-        LOGGER.debug("stderr:".format(stderr))
 
         # Stop the timer
         timer.stop()
@@ -228,32 +226,28 @@ class AtlasTestCase:
         junit_test = junitparser.TestCase(self.id)
         junit_test.time = timer.elapsed
 
-        # Determine status to be reported.
-        is_failure = False
         try:
             err_info = json.loads(stderr)
-            if int(err_info['numErrors']) or int(err_info['numFailures']):
-                is_failure = True
         except json.JSONDecodeError:
-            is_failure = True
+            err_info = {'numErrors': '-1', 'numFailures': '-1'}
 
-        if is_failure:
+        if int(err_info['numErrors']) or int(err_info['numFailures']) \
+                or worker_subprocess.returncode != 0:
             LOGGER.info("FAILED: {!r}".format(self.id))
-            self.failed = True
+            # Write xunit logs for failed tests.
             errmsg = """
             Number of errors: {numErrors}
-            Number of failures: {numFailures}    
-            """
-            try:
-                err_info = json.loads(stderr)
-                junit_test.result = junitparser.Failure(
-                    errmsg.format(**err_info))
-            except json.JSONDecodeError:
-                junit_test.result = junitparser.Error(encode_cdata(stderr))
+            Number of failures: {numFailures}
+            """.format(**err_info)
+            junit_test.result = junitparser.Failure(errmsg)
+            junit_test.system_err = encode_cdata(stderr.decode('utf-8'))
+            junit_test.system_out = encode_cdata(stdout.decode('utf-8'))
         else:
             LOGGER.info("SUCCEEDED: {!r}".format(self.id))
-        junit_test.system_err = encode_cdata(stderr)
-        junit_test.system_out = encode_cdata(stdout)
+            # Directly log output of successful tests as xunit output
+            # is only visible for failed tests.
+            LOGGER.info("STDOUT: {}".format(stdout.decode('utf-8')))
+            LOGGER.info("STDERR: {}".format(stderr.decode('utf-8')))
 
         # Step 7: download logs asynchronously and delete cluster.
         # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4

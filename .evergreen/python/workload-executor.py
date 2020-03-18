@@ -72,6 +72,7 @@ def workload_runner(srv_address, workload_spec):
                 traceback.print_exc(file=sys.stdout)
                 num_errors += 1
     except KeyboardInterrupt:
+        print("Caught KeyboardInterrupt. Exiting gracefully.")
         print(
             json.dumps(
                 {"numErrors": num_errors, "numFailures": num_failures}),
