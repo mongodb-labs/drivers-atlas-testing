@@ -48,6 +48,7 @@ functions:
     - command: subprocess.exec
       params:
         working_dir: astrolabe-src
+        continue_on_err: true       # Because drivers are not required to provide this script.
         add_expansions_to_env: true
         binary: .evergreen/${DRIVER_DIRNAME}/install-driver.sh
 
