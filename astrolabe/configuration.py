@@ -17,7 +17,7 @@ from collections import namedtuple
 from atlasclient.utils import JSONObject
 
 CONFIG_DEFAULTS = JSONObject.from_dict({
-    "ORGANIZATION_NAME": "MongoDB",
+    "ORGANIZATION_NAME": "MongoDB Drivers Team",
     "DB_USERNAME": "atlasuser",
     "DB_PASSWORD": "mypassword123",
     "POLLING_TIMEOUT": 1200.0,
