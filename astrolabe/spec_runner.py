@@ -157,10 +157,10 @@ class AtlasTestCase:
 
         # Step-2: run driver workload.
         LOGGER.info("Starting workload executor")
-        connection_string = self.get_connection_string()
-        driver_workload = json.dumps(self.spec.driverWorkload)
         self.workload_runner.spawn(
-            self.config.workload_executor, connection_string, driver_workload)
+            workload_executor=self.config.workload_executor,
+            connection_string=self.get_connection_string(),
+            driver_workload=json.dumps(self.spec.driverWorkload))
         LOGGER.info("Started workload executor [PID: {}]".format(
             self.workload_runner.pid))
 
