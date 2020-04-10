@@ -20,6 +20,8 @@ from time import monotonic
 import click
 import junitparser
 
+from pymongo import MongoClient
+
 
 class ClickLogHandler(logging.Handler):
     """Handler for print log statements via Click's echo functionality."""
@@ -116,3 +118,20 @@ def get_cluster_name(test_name, name_salt):
     name_hash = sha256(test_name.encode('utf-8'))
     name_hash.update(name_salt.encode('utf-8'))
     return name_hash.hexdigest()[:10]
+
+
+def load_test_data(connection_string, driver_workload):
+    """Insert the test data into the cluster."""
+    kwargs = {'w': "majority"}
+    try:
+        import certifi
+        kwargs['tlsCAFile'] = certifi.where()
+    except ImportError:
+        pass
+
+    client = MongoClient(connection_string, **kwargs)
+    coll = client.get_database(
+        driver_workload.database).get_collection(
+        driver_workload.collection)
+    coll.drop()
+    coll.insert(driver_workload.testData)

@@ -34,7 +34,8 @@ from astrolabe.exceptions import AstrolabeTestCaseError
 from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
     assert_subset, encode_cdata, get_cluster_name,
-    get_test_name_from_spec_file, SingleTestXUnitLogger, Timer)
+    get_test_name_from_spec_file, load_test_data, SingleTestXUnitLogger,
+    Timer)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -157,12 +158,7 @@ class AtlasTestCase:
             LOGGER.info("Loading test data on cluster {!r}".format(
                 self.cluster_name))
             connection_string = self.get_connection_string()
-            client = MongoClient(connection_string, w="majority")
-            coll = client.get_database(
-                self.spec.driverWorkload.database).get_collection(
-                self.spec.driverWorkload.collection)
-            coll.drop()
-            coll.insert_many(test_data)
+            load_test_data(connection_string, self.spec.driverWorkload)
             LOGGER.info("Successfully loaded test data on cluster {!r}".format(
                 self.cluster_name))
 
