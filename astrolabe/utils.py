@@ -14,6 +14,10 @@
 
 import logging
 import os
+import signal
+import subprocess
+import sys
+from functools import partial
 from hashlib import sha256
 from time import monotonic
 
@@ -135,3 +139,41 @@ def load_test_data(connection_string, driver_workload):
         driver_workload.collection)
     coll.drop()
     coll.insert(driver_workload.testData)
+
+
+class DriverWorkloadSubprocessRunner:
+    """Convenience wrapper to run a workload executor in a subprocess."""
+    def __init__(self):
+        self.is_windows = False
+        if sys.platform in ("win32", "cygwin"):
+            self.is_windows = True
+        self.workload_subprocess = None
+
+    @property
+    def pid(self):
+        return self.workload_subprocess.pid
+
+    @property
+    def returncode(self):
+        return self.workload_subprocess.returncode
+
+    def spawn(self, *, workload_executor, connection_string, driver_workload):
+        if not self.is_windows:
+            self.workload_subprocess = subprocess.Popen([
+                workload_executor, connection_string, driver_workload],
+                preexec_fn=os.setsid, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+        else:
+            self.workload_subprocess = subprocess.Popen([
+                workload_executor, connection_string, driver_workload],
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return self.workload_subprocess
+
+    def terminate(self):
+        if not self.is_windows:
+            os.killpg(self.workload_subprocess.pid, signal.SIGINT)
+        else:
+            os.kill(self.workload_subprocess.pid, signal.CTRL_C_EVENT)
+        stdout, stderr = self.workload_subprocess.communicate(timeout=10)
+        return stdout, stderr
