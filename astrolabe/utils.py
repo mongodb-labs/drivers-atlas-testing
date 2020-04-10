@@ -14,6 +14,7 @@
 
 import logging
 import os
+from hashlib import sha256
 from time import monotonic
 
 import click
@@ -101,3 +102,17 @@ class SingleTestXUnitLogger:
         xml = junitparser.JUnitXml()
         xml.add_testsuite(suite)
         xml.write(xml_path)
+
+
+def get_test_name_from_spec_file(full_path):
+    """Generate test name from a spec test file."""
+    _, filename = os.path.split(full_path)
+    test_name = os.path.splitext(filename)[0].replace('-', '_')
+    return test_name
+
+
+def get_cluster_name(test_name, name_salt):
+    """Generate unique cluster name from test name and salt."""
+    name_hash = sha256(test_name.encode('utf-8'))
+    name_hash.update(name_salt.encode('utf-8'))
+    return name_hash.hexdigest()[:10]

@@ -20,7 +20,7 @@ import click
 
 import astrolabe.commands as cmd
 import astrolabe.docgen as docgen
-from atlasclient import AtlasClient
+from atlasclient import AtlasClient, AtlasApiBaseError
 from atlasclient.configuration import CONFIG_DEFAULTS as CL_DEFAULTS
 from astrolabe.docgen import (
     tabulate_astrolabe_configuration, tabulate_client_configuration)
@@ -30,7 +30,8 @@ from astrolabe.configuration import (
     CONFIG_DEFAULTS as DEFAULTS,
     CONFIG_ENVVARS as ENVVARS,
     TestCaseConfiguration)
-from astrolabe.utils import ClickLogHandler
+from astrolabe.utils import (
+    get_cluster_name, get_test_name_from_spec_file, ClickLogHandler)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -431,6 +432,35 @@ def run_single_test(ctx, spec_test_file, workload_executor,
         exit(1)
     else:
         exit(0)
+
+
+@spec_tests.command('delete-cluster')
+@click.argument("spec_test_file", type=click.Path(
+    exists=True, file_okay=True, dir_okay=False, resolve_path=True))
+@ATLASORGANIZATIONNAME_OPTION
+@ATLASGROUPNAME_OPTION
+@CLUSTERNAMESALT_OPTION
+@click.pass_context
+def delete_test_cluster(ctx, spec_test_file, org_name, group_name,
+                        cluster_name_salt):
+    """
+    Deletes the cluster used by the APM test in the SPEC_TEST_FILE.
+
+    This command does not error if no cluster by the give name is found.
+    """
+    # Step-1: determine the cluster name for the given test.
+    cluster_name = get_cluster_name(get_test_name_from_spec_file(
+        spec_test_file), cluster_name_salt)
+
+    # Step-2: delete the cluster.
+    organization = cmd.get_one_organization_by_name(
+        client=ctx.obj, organization_name=org_name)
+    group = cmd.ensure_project(
+        client=ctx.obj, group_name=group_name, organization_id=organization.id)
+    try:
+        ctx.obj.groups[group.id].clusters[cluster_name].delete()
+    except AtlasApiBaseError:
+        pass
 
 
 @spec_tests.command('run')

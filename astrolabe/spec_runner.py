@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from hashlib import sha256
 import json
 import logging
 import os
@@ -34,8 +33,8 @@ from astrolabe.commands import (
 from astrolabe.exceptions import AstrolabeTestCaseError
 from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
-    assert_subset, encode_cdata, SingleTestXUnitLogger,
-    Timer)
+    assert_subset, encode_cdata, get_cluster_name,
+    get_test_name_from_spec_file, SingleTestXUnitLogger, Timer)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -270,13 +269,10 @@ class SpecTestRunnerBase:
                     yaml.load(spec_file, Loader=yaml.FullLoader))
 
             # Step-2: generate test name.
-            _, filename = os.path.split(full_path)
-            test_name = os.path.splitext(filename)[0].replace('-', '_')
+            test_name = get_test_name_from_spec_file(full_path)
 
             # Step-3: generate unique cluster name.
-            name_hash = sha256(test_name.encode('utf-8'))
-            name_hash.update(self.config.name_salt.encode('utf-8'))
-            cluster_name = name_hash.hexdigest()[:10]
+            cluster_name = get_cluster_name(test_name, self.config.name_salt)
 
             self.cases.append(
                 AtlasTestCase(client=self.client,
