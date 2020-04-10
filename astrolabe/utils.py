@@ -14,11 +14,16 @@
 
 import logging
 import os
+import signal
+import subprocess
+import sys
 from hashlib import sha256
 from time import monotonic
 
 import click
 import junitparser
+
+from pymongo import MongoClient
 
 
 class ClickLogHandler(logging.Handler):
@@ -116,3 +121,58 @@ def get_cluster_name(test_name, name_salt):
     name_hash = sha256(test_name.encode('utf-8'))
     name_hash.update(name_salt.encode('utf-8'))
     return name_hash.hexdigest()[:10]
+
+
+def load_test_data(connection_string, driver_workload):
+    """Insert the test data into the cluster."""
+    kwargs = {'w': "majority"}
+
+    # TODO: remove this if...else block after BUILD-10841 is done.
+    if sys.platform == 'win32':
+        import certifi
+        client = MongoClient(connection_string, tlsCAFile=certifi.where())
+    else:
+        client = MongoClient(connection_string, **kwargs)
+
+    coll = client.get_database(
+        driver_workload.database).get_collection(
+        driver_workload.collection)
+    coll.drop()
+    coll.insert(driver_workload.testData)
+
+
+class DriverWorkloadSubprocessRunner:
+    """Convenience wrapper to run a workload executor in a subprocess."""
+    def __init__(self):
+        self.is_windows = False
+        if sys.platform in ("win32", "cygwin"):
+            self.is_windows = True
+        self.workload_subprocess = None
+
+    @property
+    def pid(self):
+        return self.workload_subprocess.pid
+
+    @property
+    def returncode(self):
+        return self.workload_subprocess.returncode
+
+    def spawn(self, *, workload_executor, connection_string, driver_workload):
+        args = workload_executor.split()
+        args.extend([connection_string, driver_workload])
+        if not self.is_windows:
+            self.workload_subprocess = subprocess.Popen(
+                args, preexec_fn=os.setsid, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+        else:
+            self.workload_subprocess = subprocess.Popen(
+                args, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return self.workload_subprocess
+
+    def terminate(self):
+        if not self.is_windows:
+            os.killpg(self.workload_subprocess.pid, signal.SIGINT)
+        else:
+            os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
+        return self.workload_subprocess.communicate(timeout=10)

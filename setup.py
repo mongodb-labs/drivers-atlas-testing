@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 
 from setuptools import setup
 
@@ -21,6 +22,16 @@ else:
     readme_content = ''
 
 
+# Dynamically generate requirements.
+install_requires = [
+    'click>=7,<8', 'requests>=2,<3',
+    'pymongo>=3.10,<4', 'dnspython>=1.16,<2',
+    'pyyaml>=5,<6', 'tabulate>=0.8,<0.9',
+    'junitparser>=1,<2']
+if sys.platform == 'win32':
+    install_requires.append('certifi')
+
+
 setup(
     name='astrolabe',
     version=version['__version__'],
@@ -34,14 +45,7 @@ setup(
     license="Apache License, Version 2.0",
     python_requires=">=3.5",
     packages=["atlasclient", "astrolabe"],
-    install_requires=[
-        'click>=7,<8',
-        'requests>=2,<3',
-        'pymongo>=3.10,<4',
-        'dnspython>=1.16,<2',
-        'pyyaml>=5,<6',
-        'tabulate>=0.8,<0.9',
-        'junitparser>=1,<2'],
+    install_requires=install_requires,
     entry_points={
         'console_scripts': ['astrolabe=astrolabe.cli:cli']},
     classifiers=[

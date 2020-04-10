@@ -15,13 +15,9 @@
 import json
 import logging
 import os
-import signal
-import subprocess
-import sys
 from time import sleep
 from urllib.parse import urlencode
 
-from pymongo import MongoClient
 from tabulate import tabulate
 import junitparser
 import yaml
@@ -34,7 +30,8 @@ from astrolabe.exceptions import AstrolabeTestCaseError
 from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
     assert_subset, encode_cdata, get_cluster_name,
-    get_test_name_from_spec_file, SingleTestXUnitLogger, Timer)
+    get_test_name_from_spec_file, load_test_data,
+    DriverWorkloadSubprocessRunner, SingleTestXUnitLogger, Timer)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -54,11 +51,8 @@ class AtlasTestCase:
         # Initialize attribute used for memoization of connection string.
         self.__connection_string = None
 
-        # Account for platform-specific interrupt signals.
-        if sys.platform != 'win32':
-            self.sigint = signal.SIGINT
-        else:
-            self.sigint = signal.CTRL_C_EVENT
+        # Initialize wrapper class for running workload executor.
+        self.workload_runner = DriverWorkloadSubprocessRunner()
 
         # Validate and store organization and group.
         self.organization = get_one_organization_by_name(
@@ -157,25 +151,18 @@ class AtlasTestCase:
             LOGGER.info("Loading test data on cluster {!r}".format(
                 self.cluster_name))
             connection_string = self.get_connection_string()
-            client = MongoClient(connection_string, w="majority")
-            coll = client.get_database(
-                self.spec.driverWorkload.database).get_collection(
-                self.spec.driverWorkload.collection)
-            coll.drop()
-            coll.insert_many(test_data)
+            load_test_data(connection_string, self.spec.driverWorkload)
             LOGGER.info("Successfully loaded test data on cluster {!r}".format(
                 self.cluster_name))
 
         # Step-2: run driver workload.
         LOGGER.info("Starting workload executor")
-        connection_string = self.get_connection_string()
-        driver_workload = json.dumps(self.spec.driverWorkload)
-        worker_subprocess = subprocess.Popen([
-            self.config.workload_executor, connection_string,
-            driver_workload], preexec_fn=os.setsid,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.workload_runner.spawn(
+            workload_executor=self.config.workload_executor,
+            connection_string=self.get_connection_string(),
+            driver_workload=json.dumps(self.spec.driverWorkload))
         LOGGER.info("Started workload executor [PID: {}]".format(
-            worker_subprocess.pid))
+            self.workload_runner.pid))
 
         # Step-3: begin maintenance routine.
         final_config = self.spec.maintenancePlan.final
@@ -208,11 +195,10 @@ class AtlasTestCase:
 
         # Step-5: interrupt driver workload and capture streams
         LOGGER.info("Stopping workload executor [PID: {}]".format(
-            worker_subprocess.pid))
-        os.killpg(worker_subprocess.pid, self.sigint)
-        stdout, stderr = worker_subprocess.communicate(timeout=10)
+            self.workload_runner.pid))
+        stdout, stderr = self.workload_runner.terminate()
         LOGGER.info("Stopped workload executor [exit code: {}]".format(
-            worker_subprocess.returncode))
+            self.workload_runner.returncode))
 
         # Stop the timer
         timer.stop()
@@ -227,7 +213,7 @@ class AtlasTestCase:
             err_info = {'numErrors': -1, 'numFailures': -1}
 
         if err_info['numErrors'] or err_info['numFailures'] \
-                or worker_subprocess.returncode != 0:
+                or self.workload_runner.returncode != 0:
             LOGGER.info("FAILED: {!r}".format(self.id))
             # Write xunit logs for failed tests.
             errmsg = ("Number of errors: {numErrors}\n"

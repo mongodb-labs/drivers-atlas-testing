@@ -44,13 +44,22 @@ functions:
         working_dir: astrolabe-src
         command: |
           git clone --recursive --branch ${DRIVER_REVISION} ${DRIVER_REPOSITORY}
-    # Install driver.
+    # Install driver on *nix platforms.
     - command: subprocess.exec
       params:
         working_dir: astrolabe-src
-        continue_on_err: true       # Because drivers are not required to provide this script.
+        continue_on_err: true       # Because script may not exist OR platform may not be *nix.
         add_expansions_to_env: true
-        binary: .evergreen/${DRIVER_DIRNAME}/install-driver.sh
+        command: |
+          .evergreen/${DRIVER_DIRNAME}/install-driver.sh
+    # Install driver on Windows.
+    - command: subprocess.exec
+      params:
+        working_dir: astrolabe-src
+        continue_on_err: true       # Because script may not exist OR platform may not be Windows.
+        add_expansions_to_env: true
+        command: |
+          C:/cygwin/bin/sh .evergreen/${DRIVER_DIRNAME}/install-driver.sh
 
   "run test":
     # Run the Atlas Planned Maintenance Test.
@@ -65,7 +74,7 @@ functions:
           ATLAS_API_PASSWORD: ${atlas_secret}
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml -e .evergreen/${DRIVER_DIRNAME}/workload-executor.sh
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml  -e .evergreen/${DRIVER_DIRNAME}/workload-executor.sh
 
   "delete test cluster":
     # Delete the cluster that was used to run the test.
