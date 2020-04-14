@@ -48,7 +48,6 @@ functions:
     - command: subprocess.exec
       params:
         working_dir: astrolabe-src
-        system_log: true
         continue_on_err: true       # Because script may not exist OR platform may not be *nix.
         add_expansions_to_env: true
         command: |
@@ -57,7 +56,6 @@ functions:
     - command: subprocess.exec
       params:
         working_dir: astrolabe-src
-        system_log: true
         continue_on_err: true       # Because script may not exist OR platform may not be Windows.
         add_expansions_to_env: true
         command: |
