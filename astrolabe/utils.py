@@ -165,6 +165,7 @@ class DriverWorkloadSubprocessRunner:
                 stderr=subprocess.PIPE)
         else:
             self.workload_subprocess = subprocess.Popen([
+                "C:/cygwin/bin/sh",
                 workload_executor, connection_string, driver_workload],
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
