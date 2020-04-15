@@ -29,7 +29,7 @@ def handler(signum, frame):
 
 
 if WIN32:
-    signal.signal(signal.CTRL_BREAK_EVENT, handler)
+    signal.signal(signal.SIGBREAK, handler)
 else:
     signal.signal(signal.SIGINT, handler)
 
