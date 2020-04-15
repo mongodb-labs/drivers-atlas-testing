@@ -17,7 +17,6 @@ import os
 import signal
 import subprocess
 import sys
-import tempfile
 from hashlib import sha256
 from time import monotonic
 
@@ -148,8 +147,6 @@ class DriverWorkloadSubprocessRunner:
         if sys.platform in ("win32", "cygwin"):
             self.is_windows = True
         self.workload_subprocess = None
-        self.stderr_file = tempfile.TemporaryFile()
-        self.stdout_file = tempfile.TemporaryFile()
 
     @property
     def pid(self):
@@ -164,23 +161,17 @@ class DriverWorkloadSubprocessRunner:
         args.extend([connection_string, driver_workload])
         if not self.is_windows:
             self.workload_subprocess = subprocess.Popen(
-                args, preexec_fn=os.setsid, stdout=self.stdout_file,
-                stderr=self.stderr_file)
+                args, preexec_fn=os.setsid, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
         else:
             self.workload_subprocess = subprocess.Popen(
                 args, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
-                stdout=self.stdout_file, stderr=self.stderr_file)
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return self.workload_subprocess
 
     def terminate(self):
         if not self.is_windows:
             os.killpg(self.workload_subprocess.pid, signal.SIGINT)
         else:
-            os.kill(self.workload_subprocess.pid, signal.CTRL_C_EVENT)
-        self.workload_subprocess.wait(timeout=10)
-        self.stdout_file.seek(0)
-        self.stderr_file.seek(0)
-        stdout, stderr = self.stdout_file.read(), self.stderr_file.read()
-        self.stdout_file.close()
-        self.stderr_file.close()
-        return stdout, stderr
+            os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
+        return self.workload_subprocess.communicate(timeout=10)
