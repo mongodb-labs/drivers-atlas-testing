@@ -74,7 +74,7 @@ functions:
           ATLAS_API_PASSWORD: ${atlas_secret}
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml -e .evergreen/${DRIVER_DIRNAME}/workload-executor.sh
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml
 
   "delete test cluster":
     # Delete the cluster that was used to run the test.
@@ -184,22 +184,27 @@ axes:
         display_name: CPython-2.7
         variables:
           PYTHON_BINARY: "/opt/python/2.7/bin/python"
+          WORKLOAD_EXECUTOR: "$PYMONGO_VIRTUALENV_NAME/$PYTHON_BIN_DIR/python .evergreen/$DRIVER_DIRNAME/workload-executor.py"
       - id: python36
         display_name: CPython-3.6
         variables:
           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+          WORKLOAD_EXECUTOR: "$PYMONGO_VIRTUALENV_NAME/$PYTHON_BIN_DIR/python .evergreen/$DRIVER_DIRNAME/workload-executor.py"
       - id: python37
         display_name: CPython-3.7
         variables:
           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+          WORKLOAD_EXECUTOR: "$PYMONGO_VIRTUALENV_NAME/$PYTHON_BIN_DIR/python .evergreen/$DRIVER_DIRNAME/workload-executor.py"
       - id: python38
         display_name: CPython-3.8
         variables:
           PYTHON_BINARY: "/opt/python/3.8/bin/python3"
+          WORKLOAD_EXECUTOR: "$PYMONGO_VIRTUALENV_NAME/$PYTHON_BIN_DIR/python .evergreen/$DRIVER_DIRNAME/workload-executor.py"
       - id: python37-windows
         display_name: CPython-3.7-Windows
         variables:
           PYTHON_BINARY: "C:/python/Python37/python.exe"
+          WORKLOAD_EXECUTOR: "$PYMONGO_VIRTUALENV_NAME/$PYTHON_BIN_DIR/python.exe .evergreen/$DRIVER_DIRNAME/workload-executor.py"
 
 buildvariants:
 - matrix_name: "tests-python"

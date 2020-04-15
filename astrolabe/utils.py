@@ -160,16 +160,15 @@ class DriverWorkloadSubprocessRunner:
         return self.workload_subprocess.returncode
 
     def spawn(self, *, workload_executor, connection_string, driver_workload):
+        args = workload_executor.split()
+        args.extend([connection_string, driver_workload])
         if not self.is_windows:
-            self.workload_subprocess = subprocess.Popen([
-                workload_executor, connection_string, driver_workload],
-                preexec_fn=os.setsid, stdout=self.stdout_file,
+            self.workload_subprocess = subprocess.Popen(
+                args, preexec_fn=os.setsid, stdout=self.stdout_file,
                 stderr=self.stderr_file)
         else:
-            self.workload_subprocess = subprocess.Popen([
-                "C:/cygwin/bin/sh",
-                workload_executor, connection_string, driver_workload],
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+            self.workload_subprocess = subprocess.Popen(
+                args, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
                 stdout=self.stdout_file, stderr=self.stderr_file)
         return self.workload_subprocess
 
