@@ -17,7 +17,7 @@ import os
 import signal
 import subprocess
 import sys
-from functools import partial
+import tempfile
 from hashlib import sha256
 from time import monotonic
 
@@ -148,6 +148,8 @@ class DriverWorkloadSubprocessRunner:
         if sys.platform in ("win32", "cygwin"):
             self.is_windows = True
         self.workload_subprocess = None
+        self.stderr_file = tempfile.TemporaryFile()
+        self.stdout_file = tempfile.TemporaryFile()
 
     @property
     def pid(self):
@@ -161,14 +163,14 @@ class DriverWorkloadSubprocessRunner:
         if not self.is_windows:
             self.workload_subprocess = subprocess.Popen([
                 workload_executor, connection_string, driver_workload],
-                preexec_fn=os.setsid, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
+                preexec_fn=os.setsid, stdout=self.stdout_file,
+                stderr=self.stderr_file)
         else:
             self.workload_subprocess = subprocess.Popen([
                 "C:/cygwin/bin/sh",
                 workload_executor, connection_string, driver_workload],
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout=self.stdout_file, stderr=self.stderr_file)
         return self.workload_subprocess
 
     def terminate(self):
@@ -176,5 +178,10 @@ class DriverWorkloadSubprocessRunner:
             os.killpg(self.workload_subprocess.pid, signal.SIGINT)
         else:
             os.kill(self.workload_subprocess.pid, signal.CTRL_C_EVENT)
-        stdout, stderr = self.workload_subprocess.communicate(timeout=10)
+        self.workload_subprocess.wait(timeout=10)
+        self.stdout_file.seek(0)
+        self.stderr_file.seek(0)
+        stdout, stderr = self.stdout_file.read(), self.stderr_file.read()
+        self.stdout_file.close()
+        self.stderr_file.close()
         return stdout, stderr
