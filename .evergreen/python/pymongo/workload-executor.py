@@ -3,6 +3,7 @@ from __future__ import print_function
 import copy
 import json
 import re
+import signal
 import sys
 import traceback
 
@@ -10,6 +11,28 @@ from pymongo import MongoClient
 from pymongo.cursor import Cursor
 from pymongo.command_cursor import CommandCursor
 from bson.py3compat import iteritems
+
+
+NUM_FAILURES = 0
+NUM_ERRORS = 0
+WIN32 = sys.platform == 'win32'
+
+
+def interrupt_handler(signum, frame):
+    global NUM_ERRORS, NUM_FAILURES
+    print("Caught KeyboardInterrupt. Exiting gracefully.")
+    print(
+        json.dumps(
+            {"numErrors": NUM_ERRORS, "numFailures": NUM_FAILURES}),
+        file=sys.stderr)
+    exit(0 or NUM_ERRORS or NUM_FAILURES)
+
+
+if WIN32:
+    # CTRL_BREAK_EVENT is mapped to SIGBREAK
+    signal.signal(signal.SIGBREAK, interrupt_handler)
+else:
+    signal.signal(signal.SIGINT, interrupt_handler)
 
 
 def camel_to_snake(camel):
@@ -47,9 +70,17 @@ def run_operation(objects, prepared_operation):
         assert result == expected_result
 
 
+def connect(connection_string):
+    if WIN32:
+        # TODO: remove this once BUILD-10841 is done.
+        import certifi
+        return MongoClient(connection_string, tlsCAFile=certifi.where())
+    return MongoClient(connection_string)
+
+
 def workload_runner(srv_address, workload_spec):
     # Do not modify connection string and do not add any extra options.
-    client = MongoClient(srv_address)
+    client = connect(srv_address)
 
     # Create test entities.
     database = client.get_database(workload_spec["database"])
@@ -58,27 +89,19 @@ def workload_runner(srv_address, workload_spec):
 
     # Run operations
     operations = workload_spec["operations"]
-    num_failures = 0
-    num_errors = 0
+    global NUM_FAILURES, NUM_ERRORS
 
     ops = [prepare_operation(op) for op in operations]
-    try:
-        while True:
-            try:
-                for op in ops:
-                    run_operation(objects, op)
-            except AssertionError:
-                traceback.print_exc(file=sys.stdout)
-                num_failures += 1
-            except Exception:  # Don't catch Keyboard Interrupt here or you can never exit
-                traceback.print_exc(file=sys.stdout)
-                num_errors += 1
-    except KeyboardInterrupt:
-        print("Caught KeyboardInterrupt. Exiting gracefully.")
-        print(
-            json.dumps(
-                {"numErrors": num_errors, "numFailures": num_failures}),
-            file=sys.stderr)
+    while True:
+        try:
+            for op in ops:
+                run_operation(objects, op)
+        except AssertionError:
+            traceback.print_exc(file=sys.stdout)
+            NUM_FAILURES += 1
+        except Exception:
+            traceback.print_exc(file=sys.stdout)
+            NUM_ERRORS += 1
 
 
 if __name__ == '__main__':
