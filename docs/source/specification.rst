@@ -182,11 +182,12 @@ User-Facing API
 
 The workload executor MUST be an executable that can be invoked as::
 
-  $ path/to/workload-executor connection-string workload-spec
+  $ path/to/interpreter path/to/workload-executor connection-string workload-spec
 
 where:
 
-* ``path/to/workload-executor`` is the Workload Executor executable,
+* ``path/to/interpreter`` is an optional path to an interpreter that will run the Workload Executor script,
+* ``path/to/workload-executor`` is the path to the Workload Executor script,
 * ``connection-string`` is the connection string (including username, password and authentication database)
   that is to be used by the driver connect to the Atlas cluster, and
 * ``workload-spec`` is a JSON blob containing the *Driver Workload* in the Test Scenario Format.
@@ -270,7 +271,7 @@ User-Facing API
 
 The Test Orchestrator MUST be an executable that supports the following invocation pattern::
 
-	./test-orchestrator spec-tests run-one path/to/workload-spec.yaml -e path/to/workload-executor
+	./test-orchestrator spec-tests run-one path/to/workload-spec.yaml -e "path/to/interpreter path/to/workload-executor"
 
 where:
 
@@ -312,7 +313,7 @@ Then, the Test Orchestrator can be implemented as follows::
     # The testOrchestrator function accepts the path to a scenario YAML file
     # and the path to the workload executor executable. This function will be invoked with arguments
     # parsed from the command-line invocation of the test orchestrator binary.
-    function testOrchestrator(scenarioFile: string, workloadExecutorPath: string): void {
+    function testOrchestrator(scenarioFile: string, workloadExecutorCommandString: string): void {
 
         # Initialize Atlas controller.
         const atlasController = AtlasController();
@@ -325,12 +326,9 @@ Then, the Test Orchestrator can be implemented as follows::
         atlasController.waitUntilClusterIdle();
 
         # Initiate the driver workload in a subprocess.
-        workloadSubprocess = spawnProcess(workloadExecutorPath, [connectionString, driverWorkload]);
-
-        # The test orchestrator SHOULD output one test result file per scenario file in the standard
-        # XUnit XML Format. This will enable the elegant test status console on Evergreen.
-        # The XUnit output MAY use the workload statistics returned by the executor to make this output more informative.
-        writeJUnitEntry(workloadSubprocess.stderr.pipe(process.stderr));
+        workloadExecutorCmdArgs = workloadExecutorCommandString.split(" ")
+        workloadExecutorCmdArgs.push(connectionString, driverWorkload)
+        workloadSubprocess = spawnProcess(workloadExecutorCmdArgs);
 
         # Implement maintenance plan and wait for completion.
         atlasController.triggerMaintenance(maintenanceScenario);
@@ -339,10 +337,18 @@ Then, the Test Orchestrator can be implemented as follows::
         # Send a SIGINT to the workload executor to terminate workloads that run indefinitely.
         workloadSubprocess.send(SIGINT);
 
+        # Write the contents of the workload executor's standard streams (stdout and stderr) to file for debugging use.
+        writeWorkloadExecutorLogs(workloadSubprocess)
+
         # Fetch Atlas logs and write them to disk.
         atlasController.writeServerLogs();
 
-        # The workload executor sets a non-zero exit-code to indicate that the test run failed.
+        # The test orchestrator SHOULD output one test result file per scenario file in the standard
+        # XUnit XML Format. This will enable the elegant test status console on Evergreen.
+        # The XUnit output MAY use the workload statistics returned by the executor to make this output more informative.
+        writeJUnitEntry(workloadSubprocess);
+
+        # The test orchestrator sets the same exit-code as the workload executor to indicate test success/failure.
         process.exit(workloadSubprocess.exitCode);
     }
 

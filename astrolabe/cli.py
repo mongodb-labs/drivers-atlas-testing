@@ -70,9 +70,9 @@ POLLINGFREQUENCY_OPTION = click.option(
     help='Frequency (in Hz) at which to poll API endpoints.')
 
 WORKLOADEXECUTOR_OPTION = click.option(
-    '-e', '--workload-executor', required=True, type=click.Path(
-        exists=True, file_okay=True, dir_okay=False, resolve_path=True),
-    help='Absolute or relative path to the workload-executor')
+    '-e', '--workload-executor', required=True,
+    envvar=ENVVARS.WORKLOAD_EXECUTOR_INVOCATION, type=click.STRING,
+    help='Full command to use for invoking the workload-executor.')
 
 CLUSTERNAMESALT_OPTION = click.option(
     OPTNAMES.CLUSTER_NAME_SALT, type=click.STRING, required=True,

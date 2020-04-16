@@ -44,7 +44,7 @@ Setting up
 Implementing a Workload Executor Script
 ---------------------------------------
 
-Drivers must implement this standalone script in accordance with the specification, see
+Drivers must implement this script in accordance with the specification, see
 :ref:`workload-executor-specification`. In addition to exposing the user-facing API described in the specification,
 the workload executor script:
 
@@ -62,9 +62,7 @@ the workload executor script:
 * MUST NOT override any of the URI options specified in the incoming connectionString.
 * MUST NOT augment the incoming connectionString with any additional URI options.
 
-Finally, the workload executor MUST be saved in the ``DRIVER_DIRNAME`` directory under the name
-``workload-executor.sh``. The executable permission bit MUST be set for the workload executor file before it is
-committed to git.
+Finally, drivers SHOULD save their workload executor scripts in the ``DRIVER_DIRNAME`` directory.
 
 .. note::
 
@@ -76,36 +74,45 @@ committed to git.
 
 .. note::
 
-   The workload executor script will be executed with the working directory set to the ``astrolabe`` project root.
-
-
-Wrapping native workload executors with a shell script
-------------------------------------------------------
-
-It might be difficult for some driver languages to create a single executable file for the workload executor as
-required by ``astrolabe``. In such cases, drivers may choose to wrap the actual call to a natively implemented
-workload executor in a shell script such that exposes the API desired by the
-:ref:`workload-executor-specification` specification.
+   Users MUST ensure that the ``WORKLOAD_EXECUTOR`` evergreen expansion is set in all buildvariants. ``astrolabe``
+   uses the value of this expansion to invoke the workload executor.
+   See :ref:`integration-note-workload-executor-invocation` for details.
 
 .. note::
 
-   PyMongo's ``astrolabe`` integration uses this pattern to implement its
-   `workload executor <https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/.evergreen/python/pymongo/workload-executor.sh>`_.
-   Check it out for a practical example of what this looks like.
+   The workload executor be invoked with the working directory set to the ``astrolabe`` project root.
 
-Certain special considerations apply to drivers that choose to implement their workload executors in this manner:
 
-* The shell script used to wrap the native workload executor implementation MUST ensure that it traps the
-  ``INT`` signal and sets a zero exit-code to prevent the Test Orchestrator from misconstruing all interruptions
-  of the native workload executor as failures (shell scripts will set always set a non-zero exit-code when they
-  terminate after encountering the ``INT`` signal). To do this, add the following snippet to your script *before*
-  the call to your native workload executor::
+.. _integration-note-workload-executor-invocation:
 
-    trap "exit 0" INT
+Specifying the Workload Executor Invocation
+-------------------------------------------
 
-* The shell script MUST NOT call the native workload executor as a background process (i.e. using ``&`` control
-  operator). Doing so will cause the native workload executor to run in the background in a subshell and make it
-  impossible for the Test Orchestrator to capture the STDOUT and STDERR streams of the workload executor.
+Different languages will have different kinds of workload executors. Compiled languages, for example, might have
+as their workload executor a standalone binary whereas interpreted languages would likely use a script that
+would need to be executed using the appropriate interpreter. Furthermore, drivers may need to employ different
+workload executor scripts on different platforms. To support these various usage scenarios, users can
+specify the full command string needed to execute the workload executor. This is done by setting the
+``WORKLOAD_EXECUTOR`` evergreen expansion to the appropriate value.
+
+For example, in the case of PyMongo on *nix systems we set::
+
+  WORKLOAD_EXECUTOR: "/opt/python/3.7/bin/python3 .evergreen/python/pymongo/workload-executor.py"
+
+Whereas on Windows systems, the same definition would look something like this::
+
+  WORKLOAD_EXECUTOR: "C:/python/Python37/python.exe .evergreen/python/pymongo/workload-executor.py"
+
+.. note::
+
+   Paths appearing in the ``WORKLOAD_EXECUTOR`` definition must either be absolute OR be relative to the
+   ``astrolabe`` project root directory.
+
+.. note::
+
+   Drivers MUST ensure that the ``WORKLOAD_EXECUTOR`` variable is defined for each buildvariant. Failure to define
+   this variable will result in system failures on Evergreen. See :ref:`evg-defining-environment-variables`
+   for details.
 
 
 .. _integration-step-driver-installer:
@@ -193,7 +200,8 @@ For interpreted languages, for example, the ``runtime`` axis can be used to run 
 versions (see the Python driver's integration for an example). For compiled languages, the ``runtime`` axis may be
 used to test with different compiler versions. Here is an example of a ``runtime`` axis entry that defines the
 ``PYTHON_BINARY`` variable which is used by the Python driver's scripts to determine which version of the Python
-runtime to use for running the tests::
+runtime to use for running the tests, and also defines the ``WORKLOAD_EXECUTOR`` variable which is used by
+``astrolabe`` to determine how to invoke PyMongo's workload executor script::
 
   - id: runtime
     display_name: runtime
@@ -202,6 +210,7 @@ runtime to use for running the tests::
         display_name: CPython-2.7
         variables:
           PYTHON_BINARY: "/opt/python/2.7/bin/python"
+          WORKLOAD_EXECUTOR: "${PYMONGO_VIRTUALENV_NAME}/${PYTHON_BIN_DIR}/python.exe .evergreen/${DRIVER_DIRNAME}/workload-executor.py"
 
 Runtime entries are not expected to be shared across driver projects so drivers are encourage to add their own,
 new entries rather than augmenting existing entries used by other drivers.
@@ -226,15 +235,20 @@ you intend to test. Each entry has the following fields:
   driver-specific scripts live.
 * ``variables.DRIVER_REPOSITORY`` (required): HTTPS URL that can be used to clone the source repository of the
   driver to be tested.
-* ``variables.DRIVER_REVISION`` (required): git revision-id corresponding to the driver version that is to be tested. This can
-  be a branch name (e.g. ``"master"``) or a tag (e.g. ``"1.0.0"``).
+* ``variables.DRIVER_REVISION`` (required): git revision-id corresponding to the driver version that is to be tested.
+  This can be a branch name (e.g. ``"master"``) or a tag (e.g. ``"1.0.0"``).
+* ``variables.WORKLOAD_EXECUTOR`` (conditional): full command string to be used for invoking
+  the driver's workload executor. See :ref:`integration-note-workload-executor-invocation` for details on how to
+  specify this value. Users may omit this variable if it is defined under a different axis of the build matrix.
 
 All additional expansions that are relied upon by the driver's install and/or workload executor scripts
 should also be declared in the ``variables`` section of the driver definition. Finally, an entry can be added to
 the ``buildvariants`` to run the tests on the desired ``driver``, ``platform``, and ``runtime`` combinations.
 It is recommended that drivers use the ``all`` task tag to to enable all tests on their driver.
 
-Here is an example of the ``driver``-axis entry for the Python driver::
+Here is an example of the ``driver``-axis entry for the Python driver (note that in this particular example, the
+required variable ``WORKLOAD_EXECUTOR`` is defined under the ``runtime`` axis and therefore omitted from the
+``driver`` axis definition::
 
   - id: driver
     display_name: driver
@@ -276,6 +290,11 @@ in the Evergreen configuration file:
   will be available to the driver installer and workload executor scripts as environment variables at runtime, provided
   the buildvariant uses the ``runtime`` axis (use of this axis is optional). This is the ideal place to define
   variables that vary across buildvariants for a particular driver. See :ref:`evg-adding-a-runtime` for details.
+
+.. note::
+
+  The ``WORKLOAD_EXECUTOR`` variable is **required** by ``astrolabe``. It is upto the implementer to decide whether
+  to specify it under the ``driver``-axis entry or the ``runtime``-axis entries.
 
 .. note::
 
