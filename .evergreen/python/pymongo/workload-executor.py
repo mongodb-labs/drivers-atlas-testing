@@ -13,19 +13,19 @@ from pymongo.command_cursor import CommandCursor
 from bson.py3compat import iteritems
 
 
-NUM_FAILURES = 0
-NUM_ERRORS = 0
-WIN32 = sys.platform == 'win32'
+IS_INTERRUPTED = False
+WIN32 = sys.platform in ("win32", "cygwin")
 
 
 def interrupt_handler(signum, frame):
-    global NUM_ERRORS, NUM_FAILURES
-    print("Caught KeyboardInterrupt. Exiting gracefully.")
-    print(
-        json.dumps(
-            {"numErrors": NUM_ERRORS, "numFailures": NUM_FAILURES}),
-        file=sys.stderr)
-    exit(0 or NUM_ERRORS or NUM_FAILURES)
+    global IS_INTERRUPTED
+    # Set the IS_INTERRUPTED flag here and perform the necessary cleanup
+    # before actually exiting in workload_runner. This is because signals
+    # are handled asynchronously which can cause the interrupt handlers to
+    # fire more than once. Consequently, the handler itself should be
+    # re-entrant (invokable multiple times without needing to wait for prior
+    # invocations to return/complete) which is made possible by this pattern.
+    IS_INTERRUPTED = True
 
 
 if WIN32:
@@ -88,20 +88,35 @@ def workload_runner(srv_address, workload_spec):
     objects = {"database": database, "collection": collection}
 
     # Run operations
-    operations = workload_spec["operations"]
-    global NUM_FAILURES, NUM_ERRORS
+    num_failures = 0
+    num_errors = 0
+    num_operations = 0
+    global IS_INTERRUPTED
 
+    operations = workload_spec["operations"]
     ops = [prepare_operation(op) for op in operations]
+
     while True:
+        if IS_INTERRUPTED:
+            break
         try:
             for op in ops:
                 run_operation(objects, op)
         except AssertionError:
             traceback.print_exc(file=sys.stdout)
-            NUM_FAILURES += 1
+            num_failures += 1
         except Exception:
             traceback.print_exc(file=sys.stdout)
-            NUM_ERRORS += 1
+            num_errors += 1
+        else:
+            num_operations += 1
+
+    if IS_INTERRUPTED:
+        print("Handling SIGINT and exiting gracefully.", file=sys.stdout)
+        print(json.dumps({
+            "numErrors": num_errors, "numFailures": num_failures,
+            "numSuccessfulOperations": num_operations}), file=sys.stderr)
+        exit(0 or num_errors or num_failures)
 
 
 if __name__ == '__main__':

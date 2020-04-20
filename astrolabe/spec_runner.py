@@ -212,9 +212,9 @@ class AtlasTestCase:
         except json.JSONDecodeError:
             err_info = {'numErrors': -1, 'numFailures': -1}
 
-        if err_info['numErrors'] or err_info['numFailures'] \
-                or self.workload_runner.returncode != 0:
+        if err_info['numErrors'] or err_info['numFailures']:
             LOGGER.info("FAILED: {!r}".format(self.id))
+            self.failed = True
             # Write xunit logs for failed tests.
             errmsg = ("Number of errors: {numErrors}\n"
                       "Number of failures: {numFailures}").format(**err_info)

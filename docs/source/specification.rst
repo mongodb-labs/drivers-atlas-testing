@@ -182,12 +182,11 @@ User-Facing API
 
 The workload executor MUST be an executable that can be invoked as::
 
-  $ path/to/interpreter path/to/workload-executor connection-string workload-spec
+  $ path/to/workload-executor connection-string workload-spec
 
 where:
 
-* ``path/to/interpreter`` is an optional path to an interpreter that will run the Workload Executor script,
-* ``path/to/workload-executor`` is the path to the Workload Executor script,
+* ``path/to/workload-executor`` is the path to the Workload Executor executable script,
 * ``connection-string`` is the connection string (including username, password and authentication database)
   that is to be used by the driver connect to the Atlas cluster, and
 * ``workload-spec`` is a JSON blob containing the *Driver Workload* in the Test Scenario Format.
@@ -271,7 +270,7 @@ User-Facing API
 
 The Test Orchestrator MUST be an executable that supports the following invocation pattern::
 
-	./test-orchestrator spec-tests run-one path/to/workload-spec.yaml -e "path/to/interpreter path/to/workload-executor"
+	./test-orchestrator spec-tests run-one path/to/workload-spec.yaml -e path/to/workload-executor
 
 where:
 
@@ -313,7 +312,7 @@ Then, the Test Orchestrator can be implemented as follows::
     # The testOrchestrator function accepts the path to a scenario YAML file
     # and the path to the workload executor executable. This function will be invoked with arguments
     # parsed from the command-line invocation of the test orchestrator binary.
-    function testOrchestrator(scenarioFile: string, workloadExecutorCommandString: string): void {
+    function testOrchestrator(scenarioFile: string, workloadExecutorPath: string): void {
 
         # Initialize Atlas controller.
         const atlasController = AtlasController();
@@ -326,9 +325,7 @@ Then, the Test Orchestrator can be implemented as follows::
         atlasController.waitUntilClusterIdle();
 
         # Initiate the driver workload in a subprocess.
-        workloadExecutorCmdArgs = workloadExecutorCommandString.split(" ")
-        workloadExecutorCmdArgs.push(connectionString, driverWorkload)
-        workloadSubprocess = spawnProcess(workloadExecutorCmdArgs);
+        workloadSubprocess = spawnProcess([workloadExecutorPath, connectionString, driverWorkload]);
 
         # Implement maintenance plan and wait for completion.
         atlasController.triggerMaintenance(maintenanceScenario);

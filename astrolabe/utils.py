@@ -128,7 +128,7 @@ def load_test_data(connection_string, driver_workload):
     kwargs = {'w': "majority"}
 
     # TODO: remove this if...else block after BUILD-10841 is done.
-    if sys.platform == 'win32':
+    if sys.platform in ("win32", "cygwin"):
         import certifi
         client = MongoClient(connection_string, tlsCAFile=certifi.where())
     else:
@@ -158,15 +158,16 @@ class DriverWorkloadSubprocessRunner:
         return self.workload_subprocess.returncode
 
     def spawn(self, *, workload_executor, connection_string, driver_workload):
-        args = workload_executor.split()
-        args.extend([connection_string, driver_workload])
+        args = [workload_executor, connection_string, driver_workload]
         if not self.is_windows:
             self.workload_subprocess = subprocess.Popen(
                 args, preexec_fn=os.setsid, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
         else:
+            wargs = ['C:/cygwin/bin/bash']
+            wargs.extend(args)
             self.workload_subprocess = subprocess.Popen(
-                args, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                wargs, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return self.workload_subprocess
 
