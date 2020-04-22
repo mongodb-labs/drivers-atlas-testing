@@ -11,7 +11,8 @@ operations and running Atlas Planned Maintenance tests.
    :caption: Contents:
 
    integration-guide
-   specification
+   spec-test-format
+   technical-design
 
 
 

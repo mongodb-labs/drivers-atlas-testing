@@ -1,6 +1,11 @@
 Technical Design: Testing Drivers Against Atlas Planned Maintenance
 ===================================================================
 
+.. attention:: This document is **not** updated regularly. It's only purpose is to provide the reader with information
+   about design choices and decisions made during the conception and initial implementation of the ``astrolabe``
+   framework. For up-to-date information on how to use ``astrolabe``, please see the :ref:`integration-guide`.
+
+
 :Title: Testing Drivers against Atlas Planned Maintenance
 :Author: Prashant Mital
 :Lead: Matt Broadstone
@@ -37,6 +42,8 @@ META
 
 The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and
 “OPTIONAL” in this document are to be interpreted as described in `RFC 2119 <https://www.ietf.org/rfc/rfc2119.txt>`_.
+
+.. _terms-technical-design:
 
 Terms
 -----
@@ -122,48 +129,7 @@ The subsequent sections describe each of these components in greater detail and 
 Test Scenario Format
 --------------------
 
-The test scenario format is used for defining platform-independent *Atlas Planned Maintenance Tests* in YAML-formatted
-*Test Scenario Files*. Each Test Scenario File describes exactly one Atlas Planned Maintenance Test. A Test Scenario
-File has the following keys:
-
-* maintenancePlan (document): a *Planned Maintenance Scenario* object. Each object has the following keys:
-
-  * initialConfiguration (document): Description of *Cluster Configuration Options* to be used for initializing the
-    test cluster. This document MUST contain the following keys:
-
-    * clusterConfiguration (document): Document containing initial *Basic Configuration Options* values.
-      This document MUST, at a minimum, have all fields **required** by the Create One Cluster [#f2]_ endpoint.
-    * processArgs (document): Document containing initial *Advanced Configuration Option* values. This MAY be an empty
-      document if the maintenance plan does not require modifying the Advanced Configuration Options.
-
-  * finalConfiguration (document): Description of **new** *Cluster Configuration Options* to be applied to the
-    test cluster. This document MUST contain the following keys (note that at least one of these fields MUST be
-    a non-empty document):
-
-    * clusterConfiguration (document): Document containing final *Basic Configuration Option* values.
-      This MAY be an empty document if no changes to the Basic Configuration Options are needed by the maintenance plan.
-      If non-empty, this document MUST, at a minimum, have all fields **required** by the Modify One Cluster [#f3]_ endpoint.
-    * processArgs (document): Document containing final *Advanced Configuration Option* values.
-      This MAY be an empty document if the maintenance plan does not require modifying the Advanced Configuration Options.
-
-  * uriOptions (document): Document containing ``key: value`` pairs of URI options that must be included in the
-    connection string passed to the workload executor by the *Test Orchestrator*.
-
-* driverWorkload (document): Object describing a *Driver Workload*. Has the following keys:
-
-  * collection (string): Name of the collection to use for running test operations.
-  * database (string): Name of the database to use for running test operations.
-  * testData (array, optional): Array of documents to be inserted into the ``database.collection`` namespace before
-    starting the test run. Test data insertion is performed by the *Test Orchestrator* and this field MUST be ignored
-    by the *Workload Executor*.
-  * operations (array): Array of Operation objects, each describing an operation to be executed. The operations are run
-    sequentially and repeatedly until the maintenance completes. Each object has the following keys:
-
-    * object (string): The entity on which to perform the operation. Can be "database" or "collection".
-    * name (string): name of the operation.
-    * arguments (document): the names and values of arguments to be passed to the operation.
-    * result (optional, multiple types): The result of executing the operation. This will correspond to the operation's
-      return value.
+.. attention:: This section has been moved to :ref:`test-scenario-format-specification`.
 
 
 .. _workload-executor-specification:
