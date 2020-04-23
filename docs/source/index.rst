@@ -3,11 +3,14 @@ Welcome to astrolabe's documentation!
 
 Overview
 --------
-**astrolabe** is a distribution containing tools for automating Atlas
-operations and running Atlas Planned Maintenance tests.
+**astrolabe** is a distribution containing tools for automating Atlas operations and running Atlas Planned Maintenance
+Tests.
+
+:doc:`installing-running-locally`
+  Instructions for installing ``astrolabe`` and running Atlas Planned Maintenance Tests from your local machine.
 
 :doc:`integration-guide`
-  Instructions on how to use ``astrolabe`` to test your driver against MongoDB Atlas clusters.
+  Instructions on how to use ``astrolabe`` to test your driver against MongoDB Atlas clusters in Evergreen.
 
 :doc:`spec-test-format`
   Information about the file format used to define Atlas Planned Maintenance Tests.
@@ -27,5 +30,6 @@ Indices and tables
    :hidden:
 
    integration-guide
+   installing-running-locally
    spec-test-format
    technical-design

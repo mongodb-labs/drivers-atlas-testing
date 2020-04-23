@@ -48,8 +48,8 @@ DBPASSWORD_OPTION = click.option(
 
 ATLASORGANIZATIONNAME_OPTION = click.option(
     OPTNAMES.ORGANIZATION_NAME, type=click.STRING,
-    default=DEFAULTS.ORGANIZATION_NAME, show_default=True,
-    help='Name of the Atlas Organization.')
+    envvar=ENVVARS.ORGANIZATION_NAME, default=DEFAULTS.ORGANIZATION_NAME,
+    show_default=True, help='Name of the Atlas Organization.')
 
 ATLASCLUSTERNAME_OPTION = click.option(
     '--cluster-name', required=True, type=click.STRING,
@@ -81,6 +81,7 @@ CLUSTERNAMESALT_OPTION = click.option(
 
 XUNITOUTPUT_OPTION = click.option(
     '--xunit-output', type=click.STRING, default="xunit-output",
+    show_default=True,
     help='Name of the folder in which to write the XUnit XML files.')
 
 NODELETE_FLAG = click.option(
@@ -403,7 +404,8 @@ def run_single_test(ctx, spec_test_file, workload_executor,
                     cluster_name_salt, polling_timeout, polling_frequency,
                     xunit_output, no_delete):
     """
-    Run one APM test.
+    Runs one APM test.
+    This is the main entry point for running APM tests in headless environments.
     This command runs the test found in the SPEC_TEST_FILE.
     """
     # Step-0: construct test configuration object and log configuration.
@@ -444,9 +446,9 @@ def run_single_test(ctx, spec_test_file, workload_executor,
 def delete_test_cluster(ctx, spec_test_file, org_name, group_name,
                         cluster_name_salt):
     """
-    Deletes the cluster used by the APM test in the SPEC_TEST_FILE.
-
-    This command does not error if no cluster by the give name is found.
+    Deletes the cluster used by the APM test.
+    Deletes the cluster corresponding to the test found in the SPEC_TEST_FILE.
+    This command does not error if a cluster bearing the expected name is not found.
     """
     # Step-1: determine the cluster name for the given test.
     cluster_name = get_cluster_name(get_test_name_from_spec_file(
@@ -481,9 +483,9 @@ def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
                  db_password, org_name, group_name, cluster_name_salt,
                  polling_timeout, polling_frequency, xunit_output, no_delete):
     """
-    Main entry point for running APM tests in headless environments.
-    This command runs all tests found in the SPEC_TESTS_DIRECTORY
-    sequentially on an Atlas cluster.
+    Run multiple APM tests in serial.
+    This command runs all tests found in the SPEC_TESTS_DIRECTORY sequentially
+    on an Atlas cluster.
     """
     # Step-0: construct test configuration object and log configuration.
     config = TestCaseConfiguration(
