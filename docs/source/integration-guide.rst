@@ -46,50 +46,23 @@ Setting up
 Implementing a Workload Executor Script
 ---------------------------------------
 
-Drivers must implement this script in accordance with the specification, see
-:ref:`workload-executor-specification`. In addition to exposing the user-facing API described in the specification,
-the workload executor script:
-
-* MUST log workload statistics as a JSON object dumped to STDERR at the end of the run. Workload statistics MUST
-  contain the following fields (drivers MAY report additional statistics using field names of their choice):
-
-  * numErrors: the number of operation errors that were encountered during the test.
-  * numFailures: the number of operation failures that were encountered during the test.
-
-  .. note::
-
-     The values of ``numErrors`` and ``numFailures`` are used by ``astrolabe`` to determine the overall success or
-     failure of a driver workload execution. A non-zero value for either of these fields is construed as a sign that
-     something went wrong while executing the workload and the test is marked as a failure. The workload executor's
-     exit code is **not** used for determining success/failure and is ignored.
-
-  .. note::
-
-     If ``astrolabe`` encounters an error in parsing the workload statistics dumped to STDERR (caused, for example, by
-     malformed JSON, or the workload executor terminating unexpectedly before outputting the statistics), both
-     ``numErrors`` and ``numFailures`` will be set to ``-1`` and the test run will be assumed to have failed.
-
-* MUST log all output from the driver during the test run, including any tracebacks, and informational messages to
-  STDOUT.
-* MUST NOT override any of the URI options specified in the incoming connectionString.
-* MUST NOT augment the incoming connectionString with any additional URI options.
-
-Finally, the workload executor MUST be saved in the ``DRIVER_DIRNAME`` directory under the name
-``workload-executor``. The executable permission bit MUST be set for the workload executor file *before* it is
-committed to git.
+Drivers must implement this script in accordance with the specification - see :ref:`workload-executor-specification`.
+The workload executor MUST be saved in the ``DRIVER_DIRNAME`` directory under the name ``workload-executor``.
+The executable permission bit MUST be set for the workload executor file *before* it is committed to git.
 
 .. note::
 
    All `Evergreen expansions <https://github.com/evergreen-ci/evergreen/wiki/Project-Files#expansions>`_
    for a given build variant are available to the workload executor script at runtime as environment variables.
-   The script can make use of any of these environment variables but must ensure that they are written in a way that
-   prevents accidentally leaking Atlas API credentials and MongoDB user credentials. See
-   :ref:`evg-defining-environment-variables` for details.
+   The script can make use of any of these environment variables but should ensure that it does not accidentally
+   leak the Atlas API credentials and MongoDB user credentials. See :ref:`evg-defining-environment-variables` for
+   details.
 
 .. note::
 
    The workload executor be invoked with the working directory set to the ``astrolabe`` project root.
 
+.. _wrapping-workload-executor-shell-script:
 
 Wrapping native workload executors with a shell script
 ------------------------------------------------------
@@ -105,16 +78,6 @@ API desired by the :ref:`workload-executor-specification` specification.
 
    For example, PyMongo's ``astrolabe`` integration uses this pattern to implement its
    `workload executor <https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/.evergreen/python/pymongo/workload-executor>`_.
-
-
-Certain special considerations may apply when drivers choose to implement their workload executors in this manner:
-
-* The shell script used to wrap the native workload executor implementation MUST ensure that it traps the
-  ``INT`` signal and sets a zero exit-code to prevent the Test Orchestrator from misconstruing all interruptions
-  of the native workload executor as failures (shell scripts will usually set a non-zero exit-code when they
-  terminate after encountering the ``INT`` signal). This can be done using the
-  `trap <http://man7.org/linux/man-pages/man1/trap.1p.html>`_ command.
-* TODO
 
 .. _integration-step-driver-installer:
 

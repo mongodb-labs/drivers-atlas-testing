@@ -12,11 +12,14 @@ Tests.
 :doc:`integration-guide`
   Instructions on how to use ``astrolabe`` to test your driver against MongoDB Atlas clusters in Evergreen.
 
+:doc:`spec-workload-executor`
+  Information about the workload executor script that drivers must implement in order to use ``astrolabe``.
+
 :doc:`spec-test-format`
   Information about the file format used to define Atlas Planned Maintenance Tests.
 
 :doc:`technical-design`
-  Background reading about the architecture of ``astrolabe``.
+  Background reading about this testing framework's architecture and design methodology.
 
 
 Indices and tables
@@ -29,7 +32,8 @@ Indices and tables
 .. toctree::
    :hidden:
 
-   integration-guide
    installing-running-locally
+   integration-guide
+   spec-workload-executor
    spec-test-format
    technical-design

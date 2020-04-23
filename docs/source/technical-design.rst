@@ -112,8 +112,8 @@ comprised of the following components:
 #. Workload Executor: a user-implemented, driver-specific script with a standard command-line API that translates driver
    workloads described in the test scenario format into driver operations that are run against the test cluster.
 #. Test Orchestrator: a command-line utility that accepts Workload Executor and test specification in the
-   Test Scenario Format and runs an Atlas Planned Maintenance Test. The Atlas Controller is responsible for
-   leveraging the Atlas API to provision, configure, and monitor the Atlas cluster.
+   Test Scenario Format and runs an Atlas Planned Maintenance Test. The Test Orchestrator is also responsible for
+   leveraging the Atlas API to provision, configure, and monitor Atlas clusters.
 
 
 .. figure:: static/specification-schematic.png
@@ -122,8 +122,9 @@ comprised of the following components:
    Schematic representation of the test framework architecture.
 
 
-The subsequent sections describe each of these components in greater detail and are intended as a reference for implementation of the testing framework described in this specification. Drivers MUST integrate this testing framework into their continuous integration workflow - see the Integration Guide for instructions.
-
+The subsequent sections describe each of these components in greater detail and are intended as a reference for
+implementation of the testing framework described in this specification. Drivers MUST integrate this testing framework
+into their continuous integration workflow - see the :ref:`integration-guide` for instructions.
 
 --------------------
 Test Scenario Format
@@ -131,86 +132,20 @@ Test Scenario Format
 
 .. attention:: This section has been moved to :ref:`test-scenario-format-specification`.
 
-
-.. _workload-executor-specification:
-
 -----------------
 Workload Executor
 -----------------
 
-The *Workload Executor* is a script that must be implemented by each driver to facilitate incorporation of
-*Atlas Planned Maintenance Tests* into the CI workflow of that driver. The script provides a layer of abstraction
-between the *Test Orchestrator* and the code responsible for translating the *Driver Workload* (specified in the
-Test Scenario Format) into actual driver operations.
-
-User-Facing API
----------------
-
-The workload executor MUST be an executable that can be invoked as::
-
-  $ path/to/workload-executor connection-string workload-spec
-
-where:
-
-* ``path/to/workload-executor`` is the path to the Workload Executor executable script,
-* ``connection-string`` is the connection string (including username, password and authentication database)
-  that is to be used by the driver connect to the Atlas cluster, and
-* ``workload-spec`` is a JSON blob containing the *Driver Workload* in the Test Scenario Format.
-
-
-Pseudocode Implementation
--------------------------
-The pseudocode implementation in this section is provided for illustrative purposes only. The actual implementation
-of workload executors is dependent upon the implementation details of the Test Orchestrator and is described in the
-Integration Guide.::
-
-    # targetDriver is the driver to be tested.
-    import { MongoClient } from "targetDriver"
-
-    # The workloadRunner function accepts a connection string and a stringified JSON blob describing the driver workload.
-    # This function will be invoked with arguments parsed from the command-line invocation of the workload executor script.
-    function workloadRunner(connectionString: string, workloadSpec: object): void {
-
-        # Use the MongoClient of the driver to be tested to connect to the Atlas Cluster.
-        const client = MongoClient(connectionString);
-
-        # Create objects which will be used to run operations.
-        const db = client.db(workloadSpec.database_name);
-        const collection = db.collection(workloadSpec.collection_name);
-
-        # Initialize error counter.
-        var error_count = 0;
-
-        # Run the workload.
-        try {
-            while (True) {
-                for (let operation in workloadSpec.operations) {
-
-                    # For this example, in the event of an error, runOperation returns false.
-                    # Tracebacks are caught and logged to STDOUT as is any non-error related output from the driver.
-                    if (!runOperation(db, collection, operation)) {
-
-                        # Keep track of the number of errors.
-                        error_count += 1;
-                    }
-                }
-            }
-        # The workloadExecutor MUST handle SIGINT gracefully.
-        # SIGINT will be used by the Test Orchestrator to terminate operations running ad infinitum.
-        } catch (SIGINT) {
-            # The workload statistics must be logged to STDERR.
-            process.error(JSON.stringify({‘numErrors’: error_count}));
-
-            # The workload executor MUST set a non-zero exit-code if there was a failure.
-            if (error_count) { process.exit(1); }
-            else { process.exit(0); }
-        }
-    }
-
+.. attention:: This section has been moved to :ref:`workload-executor-specification`.
 
 -----------------
 Test Orchestrator
 -----------------
+
+.. attention:: ``astrolabe`` is the reference implementation of the Test Orchestrator design described in this section.
+   As ``astrolabe`` evolves to better serve the testing objectives of MongoDB Drivers and MongoDB Atlas, this section
+   is likely to become outdated. Instead, readers are encouraged to study ``astrolabe``'s documentation and source
+   code to gain an up-to-date understanding of the Test Orchestrator's implementation.
 
 The Test Orchestrator is a command-line utility that ingests a Atlas Planned Maintenance Test specified in the
 Test Scenario Format and leverages the Atlas API and a user-supplied Workload Executor to run the test on a live
@@ -314,15 +249,6 @@ Then, the Test Orchestrator can be implemented as follows::
         # The test orchestrator sets the same exit-code as the workload executor to indicate test success/failure.
         process.exit(workloadSubprocess.exitCode);
     }
-
-
-------------------------
-Reference Implementation
-------------------------
-
-The ``astrolabe`` distribution serves as the reference implementation of the Test Orchestrator described by this
-specification. Please see PyMongo's integration for an example of a Workload Executor implementation.
-
 
 
 .. rubric:: Footnotes
