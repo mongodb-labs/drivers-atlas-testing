@@ -55,7 +55,7 @@ ATLASCLUSTERNAME_OPTION = click.option(
     '--cluster-name', required=True, type=click.STRING,
     help='Name of the Atlas Cluster.')
 
-ATLASGROUPNAME_OPTION = click.option(
+ATLASPROJECTNAME_OPTION = click.option(
     OPTNAMES.PROJECT_NAME, required=True, type=click.STRING,
     envvar=ENVVARS.PROJECT_NAME, help='Name of the Atlas Project.')
 
@@ -179,14 +179,14 @@ def atlas_projects():
 
 @atlas_projects.command('ensure')
 @ATLASORGANIZATIONNAME_OPTION
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @click.pass_context
-def create_project_if_necessary(ctx, org_name, group_name,):
+def create_project_if_necessary(ctx, org_name, project_name, ):
     """Ensure that the given Atlas Project exists."""
     org = cmd.get_one_organization_by_name(
         client=ctx.obj, organization_name=org_name)
     pprint(cmd.ensure_project(
-        client=ctx.obj, group_name=group_name, organization_id=org.id))
+        client=ctx.obj, project_name=project_name, organization_id=org.id))
 
 
 @atlas_projects.command('list')
@@ -197,20 +197,20 @@ def list_projects(ctx):
 
 
 @atlas_projects.command('get-one')
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @click.pass_context
-def get_one_project_by_name(ctx, group_name):
+def get_one_project_by_name(ctx, project_name):
     """Get one Atlas Project."""
-    pprint(ctx.obj.groups.byName[group_name].get().data)
+    pprint(ctx.obj.groups.byName[project_name].get().data)
 
 
 @atlas_projects.command('enable-anywhere-access')
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @click.pass_context
-def enable_project_access_from_anywhere(ctx, group_name):
+def enable_project_access_from_anywhere(ctx, project_name):
     """Add 0.0.0.0/0 to the IP whitelist of the Atlas Project."""
-    group = ctx.obj.groups.byName[group_name].get().data
-    cmd.ensure_connect_from_anywhere(client=ctx.obj, group_id=group.id)
+    project = ctx.obj.groups.byName[project_name].get().data
+    cmd.ensure_connect_from_anywhere(client=ctx.obj, project_id=project.id)
 
 
 @cli.group('users')
@@ -222,24 +222,24 @@ def atlas_users():
 @atlas_users.command('create-admin-user')
 @DBUSERNAME_OPTION
 @DBPASSWORD_OPTION
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @click.pass_context
-def create_user(ctx, db_username, db_password, group_name):
+def create_user(ctx, db_username, db_password, project_name):
     """Create an Atlas User with admin privileges. Modifies user
     permissions, if the user already exists."""
-    group = ctx.obj.groups.byName[group_name].get().data
+    project = ctx.obj.groups.byName[project_name].get().data
     user = cmd.ensure_admin_user(
-        client=ctx.obj, group_id=group.id, username=db_username,
+        client=ctx.obj, project_id=project.id, username=db_username,
         password=db_password)
     pprint(user)
 
 
 @atlas_users.command('list')
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @click.pass_context
-def list_users(ctx, group_name):
+def list_users(ctx, project_name):
     """List all Atlas Users."""
-    project = ctx.obj.groups.byName[group_name].get().data
+    project = ctx.obj.groups.byName[project_name].get().data
     pprint(ctx.obj.groups[project.id].databaseUsers.get().data)
 
 
@@ -250,15 +250,15 @@ def atlas_clusters():
 
 
 @atlas_clusters.command('create-dedicated')
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @ATLASCLUSTERNAME_OPTION
 @click.option('-s', '--instance-size-name', required=True,
               type=click.Choice(["M10", "M20"]),
               help="Name of AWS Cluster Tier to provision.")
 @click.pass_context
-def create_cluster(ctx, group_name, cluster_name, instance_size_name):
+def create_cluster(ctx, project_name, cluster_name, instance_size_name):
     """Create a new dedicated-tier Atlas Cluster."""
-    project = ctx.obj.groups.byName[group_name].get().data
+    project = ctx.obj.groups.byName[project_name].get().data
 
     cluster_config = {
         'name': cluster_name,
@@ -274,25 +274,25 @@ def create_cluster(ctx, group_name, cluster_name, instance_size_name):
 
 @atlas_clusters.command('get-one')
 @ATLASCLUSTERNAME_OPTION
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @click.pass_context
-def get_one_cluster_by_name(ctx, cluster_name, group_name):
+def get_one_cluster_by_name(ctx, cluster_name, project_name):
     """Get one Atlas Cluster."""
-    project = ctx.obj.groups.byName[group_name].get().data
+    project = ctx.obj.groups.byName[project_name].get().data
     cluster = ctx.obj.groups[project.id].clusters[cluster_name].get()
     pprint(cluster.data)
 
 
 @atlas_clusters.command('resize-dedicated')
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @ATLASCLUSTERNAME_OPTION
 @click.option('-s', '--instance-size-name', required=True,
               type=click.Choice(["M10", "M20"]),
               help="Target AWS Cluster Tier.")
 @click.pass_context
-def resize_cluster(ctx, group_name, cluster_name, instance_size_name):
+def resize_cluster(ctx, project_name, cluster_name, instance_size_name):
     """Resize an existing dedicated-tier Atlas Cluster."""
-    project = ctx.obj.groups.byName[group_name].get().data
+    project = ctx.obj.groups.byName[project_name].get().data
 
     new_cluster_config = {
         'clusterType': 'REPLICASET',
@@ -307,12 +307,12 @@ def resize_cluster(ctx, group_name, cluster_name, instance_size_name):
 
 
 @atlas_clusters.command('toggle-js')
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @ATLASCLUSTERNAME_OPTION
 @click.pass_context
-def toggle_cluster_javascript(ctx, group_name, cluster_name):
+def toggle_cluster_javascript(ctx, project_name, cluster_name):
     """Enable/disable server-side javascript for an existing Atlas Cluster."""
-    project = ctx.obj.groups.byName[group_name].get().data
+    project = ctx.obj.groups.byName[project_name].get().data
 
     # Alias to reduce verbosity.
     pargs = ctx.obj.groups[project.id].clusters[cluster_name].processArgs
@@ -325,22 +325,22 @@ def toggle_cluster_javascript(ctx, group_name, cluster_name):
 
 
 @atlas_clusters.command('list')
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @click.pass_context
-def list_clusters(ctx, group_name):
+def list_clusters(ctx, project_name):
     """List all Atlas Clusters."""
-    project = ctx.obj.groups.byName[group_name].get().data
+    project = ctx.obj.groups.byName[project_name].get().data
     clusters = ctx.obj.groups[project.id].clusters.get()
     pprint(clusters.data)
 
 
 @atlas_clusters.command('isready')
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @ATLASCLUSTERNAME_OPTION
 @click.pass_context
-def isready_cluster(ctx, group_name, cluster_name):
+def isready_cluster(ctx, project_name, cluster_name):
     """Check if the Atlas Cluster is 'IDLE'."""
-    project = ctx.obj.groups.byName[group_name].get().data
+    project = ctx.obj.groups.byName[project_name].get().data
     state = ctx.obj.groups[project.id].clusters[cluster_name].get().data.stateName
 
     if state == "IDLE":
@@ -351,12 +351,12 @@ def isready_cluster(ctx, group_name, cluster_name):
 
 
 @atlas_clusters.command('delete')
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @ATLASCLUSTERNAME_OPTION
 @click.pass_context
-def delete_cluster(ctx, group_name, cluster_name):
+def delete_cluster(ctx, project_name, cluster_name):
     """Delete the Atlas Cluster."""
-    project = ctx.obj.groups.byName[group_name].get().data
+    project = ctx.obj.groups.byName[project_name].get().data
     ctx.obj.groups[project.id].clusters[cluster_name].delete().data
     click.echo("DONE!")
 
@@ -392,7 +392,7 @@ def spec_tests():
 @DBUSERNAME_OPTION
 @DBPASSWORD_OPTION
 @ATLASORGANIZATIONNAME_OPTION
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @CLUSTERNAMESALT_OPTION
 @POLLINGTIMEOUT_OPTION
 @POLLINGFREQUENCY_OPTION
@@ -400,7 +400,7 @@ def spec_tests():
 @NODELETE_FLAG
 @click.pass_context
 def run_single_test(ctx, spec_test_file, workload_executor,
-                    db_username, db_password, org_name, group_name,
+                    db_username, db_password, org_name, project_name,
                     cluster_name_salt, polling_timeout, polling_frequency,
                     xunit_output, no_delete):
     """
@@ -411,7 +411,7 @@ def run_single_test(ctx, spec_test_file, workload_executor,
     # Step-0: construct test configuration object and log configuration.
     config = TestCaseConfiguration(
         organization_name=org_name,
-        group_name=group_name,
+        project_name=project_name,
         name_salt=cluster_name_salt,
         polling_timeout=polling_timeout,
         polling_frequency=polling_frequency,
@@ -440,10 +440,10 @@ def run_single_test(ctx, spec_test_file, workload_executor,
 @click.argument("spec_test_file", type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
 @ATLASORGANIZATIONNAME_OPTION
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @CLUSTERNAMESALT_OPTION
 @click.pass_context
-def delete_test_cluster(ctx, spec_test_file, org_name, group_name,
+def delete_test_cluster(ctx, spec_test_file, org_name, project_name,
                         cluster_name_salt):
     """
     Deletes the cluster used by the APM test.
@@ -457,10 +457,10 @@ def delete_test_cluster(ctx, spec_test_file, org_name, group_name,
     # Step-2: delete the cluster.
     organization = cmd.get_one_organization_by_name(
         client=ctx.obj, organization_name=org_name)
-    group = cmd.ensure_project(
-        client=ctx.obj, group_name=group_name, organization_id=organization.id)
+    project = cmd.ensure_project(
+        client=ctx.obj, project_name=project_name, organization_id=organization.id)
     try:
-        ctx.obj.groups[group.id].clusters[cluster_name].delete()
+        ctx.obj.groups[project.id].clusters[cluster_name].delete()
     except AtlasApiBaseError:
         pass
 
@@ -472,7 +472,7 @@ def delete_test_cluster(ctx, spec_test_file, org_name, group_name,
 @DBUSERNAME_OPTION
 @DBPASSWORD_OPTION
 @ATLASORGANIZATIONNAME_OPTION
-@ATLASGROUPNAME_OPTION
+@ATLASPROJECTNAME_OPTION
 @CLUSTERNAMESALT_OPTION
 @POLLINGTIMEOUT_OPTION
 @POLLINGFREQUENCY_OPTION
@@ -480,7 +480,7 @@ def delete_test_cluster(ctx, spec_test_file, org_name, group_name,
 @NODELETE_FLAG
 @click.pass_context
 def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
-                 db_password, org_name, group_name, cluster_name_salt,
+                 db_password, org_name, project_name, cluster_name_salt,
                  polling_timeout, polling_frequency, xunit_output, no_delete):
     """
     Run multiple APM tests in serial.
@@ -490,7 +490,7 @@ def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
     # Step-0: construct test configuration object and log configuration.
     config = TestCaseConfiguration(
         organization_name=org_name,
-        group_name=group_name,
+        project_name=project_name,
         name_salt=cluster_name_salt,
         polling_timeout=polling_timeout,
         polling_frequency=polling_frequency,

@@ -41,7 +41,7 @@ CONFIG_ENVVARS = JSONObject.from_dict({
 
 
 CLI_OPTION_NAMES = JSONObject.from_dict({
-    "PROJECT_NAME": "--group-name",
+    "PROJECT_NAME": "--project-name",
     "CLUSTER_NAME_SALT": "--cluster-name-salt",
     "POLLING_TIMEOUT": "--polling-timeout",
     "POLLING_FREQUENCY": "--polling-frequency",
@@ -59,6 +59,6 @@ CLI_OPTION_NAMES = JSONObject.from_dict({
 # Convenience class for storing settings related to polling.
 TestCaseConfiguration = namedtuple(
     "AtlasPlannedMaintenanceTestConfiguration",
-    ["organization_name", "group_name", "name_salt", "polling_timeout",
+    ["organization_name", "project_name", "name_salt", "polling_timeout",
      "polling_frequency", "database_username", "database_password",
      "workload_executor"])

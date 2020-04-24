@@ -54,7 +54,7 @@ def generate_default_value_help():
 
 def tabulate_astrolabe_configuration(config):
     table_data = [["Atlas organization name", config.organization_name],
-                  ["Atlas group/project name", config.group_name],
+                  ["Atlas project name", config.project_name],
                   ["Salt for cluster names", config.name_salt],
                   ["Polling frequency (Hz)", config.polling_frequency],
                   ["Polling timeout (s)", config.polling_timeout]]

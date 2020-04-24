@@ -54,17 +54,17 @@ class AtlasTestCase:
         # Initialize wrapper class for running workload executor.
         self.workload_runner = DriverWorkloadSubprocessRunner()
 
-        # Validate and store organization and group.
+        # Validate and store organization and project.
         self.organization = get_one_organization_by_name(
             client=self.client,
             organization_name=self.config.organization_name)
-        self.group = ensure_project(
-            client=self.client, group_name=self.config.group_name,
+        self.project = ensure_project(
+            client=self.client, project_name=self.config.project_name,
             organization_id=self.organization.id)
 
     @property
     def cluster_url(self):
-        return self.client.groups[self.group.id].clusters[
+        return self.client.groups[self.project.id].clusters[
             self.cluster_name]
 
     def get_connection_string(self):
@@ -118,20 +118,20 @@ class AtlasTestCase:
             clusterConfiguration.copy()
         cluster_config["name"] = self.cluster_name
         try:
-            self.client.groups[self.group.id].clusters.post(
+            self.client.groups[self.project.id].clusters.post(
                 **cluster_config)
         except AtlasApiError as exc:
             if exc.error_code == 'DUPLICATE_CLUSTER_NAME':
                 # Cluster already exists. Simply re-configure it.
                 # Cannot send cluster name when updating existing cluster.
                 cluster_config.pop("name")
-                self.client.groups[self.group.id].\
+                self.client.groups[self.project.id].\
                     clusters[self.cluster_name].patch(**cluster_config)
 
         # Apply processArgs if provided.
         process_args = self.spec.maintenancePlan.initial.processArgs
         if process_args:
-            self.client.groups[self.group.id].\
+            self.client.groups[self.project.id].\
                 clusters[self.cluster_name].processArgs.patch(**process_args)
 
     def run(self, persist_cluster=False):
@@ -277,10 +277,10 @@ class SpecTestRunnerBase:
         LOGGER.info("Successfully verified organization {!r}".format(org_name))
 
         # Step-2: check that the project exists or else create it.
-        pro_name = self.config.group_name
+        pro_name = self.config.project_name
         LOGGER.info("Verifying project {!r}".format(pro_name))
-        group = ensure_project(
-            client=self.client, group_name=pro_name, organization_id=org.id)
+        project = ensure_project(
+            client=self.client, project_name=pro_name, organization_id=org.id)
         LOGGER.info("Successfully verified project {!r}".format(pro_name))
 
         # Step-3: create a user under the project.
@@ -288,14 +288,14 @@ class SpecTestRunnerBase:
         uname = self.config.database_username
         LOGGER.info("Verifying user {!r}".format(uname))
         ensure_admin_user(
-            client=self.client, group_id=group.id,
+            client=self.client, project_id=project.id,
             username=uname, password=self.config.database_password)
         LOGGER.info("Successfully verified user {!r}".format(uname))
 
         # Step-4: populate project IP whitelist to allow access from anywhere.
         LOGGER.info("Enabling access from anywhere on project "
                     "{!r}".format(pro_name))
-        ensure_connect_from_anywhere(client=self.client, group_id=group.id)
+        ensure_connect_from_anywhere(client=self.client, project_id=project.id)
         LOGGER.info("Successfully enabled access from anywhere on project "
                     "{!r}".format(pro_name))
 
