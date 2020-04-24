@@ -128,9 +128,16 @@ class AtlasTestCase:
                 self.client.groups[self.group.id].\
                     clusters[self.cluster_name].patch(**cluster_config)
 
-        # Apply processArgs if provided.
+        # Apply processArgs if provided. Wait until cluster has been created
+        # to avoid running into drivers-atlas-testing#45.
         process_args = self.spec.maintenancePlan.initial.processArgs
         if process_args:
+            selector = BooleanCallablePoller(
+                frequency=self.config.polling_frequency,
+                timeout=self.config.polling_timeout)
+            LOGGER.info("Waiting for cluster creation to complete")
+            selector.poll([self], attribute="is_cluster_state", args=("IDLE",),
+                          kwargs={})
             self.client.groups[self.group.id].\
                 clusters[self.cluster_name].processArgs.patch(**process_args)
 
