@@ -59,15 +59,15 @@ After accepting the inputs, the workload executor:
    * MUST keep count of the number of operation errors (``numErrors``) that are encountered while running
      operations. An operation error is when running an operation unexpectedly raises an error. Workload executors
      implementations should try to be as resilient as possible to these kinds of operation errors.
-   * MUST redirect all output emitted by the driver during the test run, including any tracebacks, to STDOUT.
 
 #. MUST set a signal handler for handling the termination signal that is sent by ``astrolabe``. The termination signal
    is used by ``astrolabe`` to communicate to the workload executor that it should stop running operations. Upon
    receiving the termination signal, the workload executor:
 
    * MUST stop running driver operations and exit soon.
-   * MUST dump collected workload statistics as a JSON blob to STDERR. Workload statistics MUST contain the following
-     fields (drivers MAY report additional statistics using field names of their choice):
+   * MUST dump collected workload statistics as a JSON file named ``results.json`` in the current working directory
+     (i.e. the directory from where the workload executor is being executed). Workload statistics MUST contain the
+     following fields (drivers MAY report additional statistics using field names of their choice):
 
      * ``numErrors``: the number of operation errors that were encountered during the test.
      * ``numFailures``: the number of operation failures that were encountered during the test.
@@ -77,13 +77,14 @@ After accepting the inputs, the workload executor:
       as a sign that something went wrong while executing the workload and the test is marked as a failure.
       The workload executor's exit code is **not** used for determining success/failure and is ignored.
 
-   .. note:: If ``astrolabe`` encounters an error in parsing the workload statistics dumped to STDERR
-      (caused, for example, by malformed JSON, or an unhandled operation error that ends up printing a traceback to
-      STDERR), both ``numErrors`` and ``numFailures`` will be set to ``-1`` and the test run will be assumed to have
-      failed.
+   .. note:: If ``astrolabe`` encounters an error in parsing the workload statistics dumped to ``results.json``
+      (caused, for example, by malformed JSON), both ``numErrors`` and ``numFailures`` will be set to ``-1`` and the
+      test run will be assumed to have failed.
 
    .. note:: The choice of termination signal used by ``astrolabe`` varies by platform. ``SIGINT`` [#f1]_ is used as
       the termination signal on Linux and OSX, while ``CTRL_BREAK_EVENT`` [#f2]_ is used on Windows.
+
+   .. note:: On Windows systems, the workload executor is invoked via Cygwin Bash.
 
 
 Pseudocode Implementation
@@ -126,11 +127,11 @@ Pseudocode Implementation
                     }
                 }
             }
-        # The workloadExecutor MUST handle the termination signal gracefully.
-        # The termination signal will be used by astrolabe to terminate drivers operations that otherwise run ad infinitum.
         } catch (terminationSignal) {
-            # The workload statistics must be logged to STDERR.
-            process.error(JSON.stringify({‘numErrors’: num_errors, 'numFailures': num_failures}));
+            # The workloadExecutor MUST handle the termination signal gracefully.
+            # The termination signal will be used by astrolabe to terminate drivers operations that otherwise run ad infinitum.
+            # The workload statistics must be written to a file named results.json in the current working directory.
+            fs.writeFile('results.json', JSON.stringify({‘numErrors’: num_errors, 'numFailures': num_failures}));
         }
     }
 

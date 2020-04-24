@@ -70,21 +70,21 @@ def run_operation(objects, prepared_operation):
         assert result == expected_result
 
 
-def connect(connection_string):
+def connect(mongodb_uri):
     if WIN32:
         # TODO: remove this once BUILD-10841 is done.
         import certifi
-        return MongoClient(connection_string, tlsCAFile=certifi.where())
-    return MongoClient(connection_string)
+        return MongoClient(mongodb_uri, tlsCAFile=certifi.where())
+    return MongoClient(mongodb_uri)
 
 
-def workload_runner(srv_address, workload_spec):
+def workload_runner(mongodb_uri, test_workload):
     # Do not modify connection string and do not add any extra options.
-    client = connect(srv_address)
+    client = connect(mongodb_uri)
 
     # Create test entities.
-    database = client.get_database(workload_spec["database"])
-    collection = database.get_collection(workload_spec["collection"])
+    database = client.get_database(test_workload["database"])
+    collection = database.get_collection(test_workload["collection"])
     objects = {"database": database, "collection": collection}
 
     # Run operations
@@ -93,43 +93,43 @@ def workload_runner(srv_address, workload_spec):
     num_operations = 0
     global IS_INTERRUPTED
 
-    operations = workload_spec["operations"]
+    operations = test_workload["operations"]
     ops = [prepare_operation(op) for op in operations]
 
     while True:
         if IS_INTERRUPTED:
             break
-        try:
-            for op in ops:
+        for op in ops:
+            try:
                 run_operation(objects, op)
-        except AssertionError:
-            traceback.print_exc(file=sys.stdout)
-            num_failures += 1
-        except Exception:
-            traceback.print_exc(file=sys.stdout)
-            num_errors += 1
-        else:
-            num_operations += 1
+            except AssertionError:
+                traceback.print_exc()
+                num_failures += 1
+            except Exception:
+                traceback.print_exc()
+                num_errors += 1
+            else:
+                num_operations += 1
 
-    if IS_INTERRUPTED:
-        print("Handling SIGINT and exiting gracefully.", file=sys.stdout)
-        print(json.dumps({
-            "numErrors": num_errors, "numFailures": num_failures,
-            "numSuccessfulOperations": num_operations}), file=sys.stderr)
-        exit(0 or num_errors or num_failures)
+    # We reach here once IS_INTERRUPTED has been set to True.
+    print("Handling SIGINT and exiting gracefully.")
+    with open('results.json', 'w') as fr:
+        json.dump({"numErrors": num_errors, "numFailures": num_failures,
+                   "numSuccessfulOperations": num_operations}, fr)
+    exit(0 or num_errors or num_failures)
 
 
 if __name__ == '__main__':
-    srv_address, workload_ptr = sys.argv[1], sys.argv[2]
+    connection_string, driver_workload = sys.argv[1], sys.argv[2]
     try:
-        workload_spec = json.loads(workload_ptr)
+        workload_spec = json.loads(driver_workload)
     except json.decoder.JSONDecodeError:
         # We also support passing in a raw test YAML file to this
         # script to make it easy to run the script in debug mode.
         # PyYAML is imported locally to avoid ImportErrors on EVG.
         import yaml
-        with open(workload_ptr, 'r') as fp:
+        with open(driver_workload, 'r') as fp:
             testspec = yaml.load(fp, Loader=yaml.FullLoader)
             workload_spec = testspec['driverWorkload']
 
-    workload_runner(srv_address, workload_spec)
+    workload_runner(connection_string, workload_spec)

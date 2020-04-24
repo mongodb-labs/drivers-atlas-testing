@@ -29,9 +29,9 @@ from astrolabe.commands import (
 from astrolabe.exceptions import AstrolabeTestCaseError
 from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
-    assert_subset, encode_cdata, get_cluster_name,
-    get_test_name_from_spec_file, load_test_data,
-    DriverWorkloadSubprocessRunner, SingleTestXUnitLogger, Timer)
+    assert_subset, get_cluster_name, get_test_name_from_spec_file,
+    load_test_data, DriverWorkloadSubprocessRunner, SingleTestXUnitLogger,
+    Timer)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -196,7 +196,7 @@ class AtlasTestCase:
         # Step-5: interrupt driver workload and capture streams
         LOGGER.info("Stopping workload executor [PID: {}]".format(
             self.workload_runner.pid))
-        stdout, stderr = self.workload_runner.terminate()
+        stdout, stderr, stats = self.workload_runner.terminate()
         LOGGER.info("Stopped workload executor [exit code: {}]".format(
             self.workload_runner.returncode))
 
@@ -207,26 +207,21 @@ class AtlasTestCase:
         junit_test = junitparser.TestCase(self.id)
         junit_test.time = timer.elapsed
 
-        try:
-            err_info = json.loads(stderr)
-        except json.JSONDecodeError:
-            err_info = {'numErrors': -1, 'numFailures': -1}
-
-        if err_info['numErrors'] or err_info['numFailures']:
+        if stats['numErrors'] or stats['numFailures']:
             LOGGER.info("FAILED: {!r}".format(self.id))
             self.failed = True
             # Write xunit logs for failed tests.
-            errmsg = ("Number of errors: {numErrors}\n"
-                      "Number of failures: {numFailures}").format(**err_info)
-            junit_test.result = junitparser.Failure(errmsg)
-            junit_test.system_err = encode_cdata(stderr.decode('utf-8'))
-            junit_test.system_out = encode_cdata(stdout.decode('utf-8'))
+            junit_test.result = junitparser.Failure(str(stats))
+            junit_test.system_err = stderr.decode('utf-8')
+            junit_test.system_out = stdout.decode('utf-8')
         else:
             LOGGER.info("SUCCEEDED: {!r}".format(self.id))
             # Directly log output of successful tests as xunit output
             # is only visible for failed tests.
+
         LOGGER.info("STDOUT: {}".format(stdout.decode('utf-8')))
         LOGGER.info("STDERR: {}".format(stderr.decode('utf-8')))
+        LOGGER.info("Workload Statistics: {}".format(stats))
 
         # Step 7: download logs asynchronously and delete cluster.
         # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4

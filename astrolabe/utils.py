@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 import signal
@@ -72,11 +73,6 @@ class Timer:
         if self._end is None:
             return monotonic() - self._start
         return self._end - self._start
-
-
-def encode_cdata(data):
-    """Encode `data` to XML-recognized CDATA."""
-    return "<![CDATA[{data}]]>".format(data=data)
 
 
 class SingleTestXUnitLogger:
@@ -176,4 +172,12 @@ class DriverWorkloadSubprocessRunner:
             os.killpg(self.workload_subprocess.pid, signal.SIGINT)
         else:
             os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
-        return self.workload_subprocess.communicate(timeout=10)
+        outs, errs = self.workload_subprocess.communicate(timeout=10)
+
+        try:
+            with open('results.json', 'r') as fp:
+                stats = json.load(fp)
+        except (FileNotFoundError, json.JSONDecodeError):
+            stats = {'numErrors': -1, 'numFailures': -1}
+
+        return outs, errs, stats
