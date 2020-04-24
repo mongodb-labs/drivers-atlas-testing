@@ -14,6 +14,8 @@
 
 """Python client for the MongoDB Atlas API."""
 
+import logging
+
 import requests
 
 from atlasclient.configuration import (
@@ -22,6 +24,9 @@ from atlasclient.exceptions import (
     AtlasAuthenticationError, AtlasClientError, AtlasApiError,
     AtlasRateLimitError)
 from atlasclient.utils import JSONObject
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 _EMPTY_PATH_ERR_MSG_TEMPLATE = ('Calling {} on an empty API path is not '
@@ -202,6 +207,8 @@ class AtlasClient:
             'json': params,
             'timeout': self.config.timeout}
 
+        LOGGER.debug("Request ({} {} {})".format(method, url, request_kwargs))
+
         try:
             response = requests.request(method, url, **request_kwargs)
         except requests.RequestException as e:
@@ -225,6 +232,8 @@ class AtlasClient:
             data = response.json(object_hook=JSONObject)
         except ValueError:
             data = None
+
+        LOGGER.debug("Response ({} {})".format(method, data))
 
         if response.status_code in (200, 201, 202):
             return _ApiResponse(response, method, data)

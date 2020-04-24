@@ -115,3 +115,19 @@ supports a ``--no-delete`` flag that prevents the deletion of the cluster at the
 Using this flag with a given test file and static ``--cluster-name-salt`` value helps significantly reduce waiting
 times between successive test runs (you will still need to wait for the cluster to be reconfigured to the initial
 configuration).
+
+Debugging
+---------
+
+Astrolabe comes with built-in logging functionality that can be customized using the ``--log-level`` option.
+Supported logging levels, in decreasing order of verbosity are:
+
+* ``DEBUG``
+* ``INFO`` (the default)
+* ``WARNING``
+* ``ERROR``
+* ``CRITICAL``
+
+For example, to use the ``DEBUG`` logging level, do::
+
+  $ astrolabe --log-level DEBUG <command> [COMMAND OPTIONS]

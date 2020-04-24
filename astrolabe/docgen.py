@@ -29,8 +29,7 @@ def generate_environment_variables_help():
     Many of Astrolabe's configuration options can be set at runtime using
     environment variables. The following table lists configurable options
     and the corresponding environment variables that can used to set them:
-    {}\n
-    """)
+    {}""")
     tabledata = []
     for internal_id, envvar_name in ENVVARS.items():
         tabledata.append([internal_id, OPTNAMES[internal_id], envvar_name])
@@ -41,10 +40,7 @@ def generate_environment_variables_help():
 
 
 def generate_default_value_help():
-    text = dedent("""\
-    Default values of Astrolabe's configuration options are:
-    {}\n
-    """)
+    text = "Default values of Astrolabe's configuration options are:\n{}"
     tabledata = []
     for internal_id, default_value in chain(
             CL_DEFAULTS.items(), DEFAULTS.items()):
@@ -62,7 +58,7 @@ def tabulate_astrolabe_configuration(config):
                   ["Salt for cluster names", config.name_salt],
                   ["Polling frequency (Hz)", config.polling_frequency],
                   ["Polling timeout (s)", config.polling_timeout]]
-    table_txt = "Astrolabe Configuration\n{}\n"
+    table_txt = "Astrolabe Configuration:\n{}"
     return table_txt.format(tabulate(
         table_data, headers=["Configuration option", "Value"], tablefmt="rst"))
 
@@ -70,6 +66,6 @@ def tabulate_astrolabe_configuration(config):
 def tabulate_client_configuration(base_url, http_timeout):
     table_data = [["Atlas API base URL", base_url],
                   ["HTTP timeout (s)", http_timeout]]
-    table_txt = "AtlasClient Configuration\n{}\n"
+    table_txt = "Atlas Client Configuration:\n{}"
     return table_txt.format(tabulate(
         table_data, headers=["Configuration option", "Value"], tablefmt="rst"))
