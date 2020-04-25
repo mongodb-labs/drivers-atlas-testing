@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+require 'shellwords'
+
+puts ([$0] + ARGV.map { |arg| Shellwords.shellescape(arg) }).join(' ')
+
+$: << File.dirname(__FILE__)
+$: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver')
+
+require 'executor'
+
+uri, spec = ARGV
+
+if spec.nil?
+  raise "Usage: executor.rb URI SPEC"
+end
+
+spec = JSON.load(spec)
+
+executor = Executor.new(uri, spec)
+executor.run
