@@ -51,7 +51,7 @@ functions:
         continue_on_err: true       # Because script may not exist OR platform may not be *nix.
         add_expansions_to_env: true
         command: |
-          .evergreen/${DRIVER_DIRNAME}/install-driver.sh
+          integrations/${DRIVER_DIRNAME}/install-driver.sh
     # Install driver on Windows.
     - command: subprocess.exec
       params:
@@ -59,7 +59,7 @@ functions:
         continue_on_err: true       # Because script may not exist OR platform may not be Windows.
         add_expansions_to_env: true
         command: |
-          C:/cygwin/bin/sh .evergreen/${DRIVER_DIRNAME}/install-driver.sh
+          C:/cygwin/bin/sh integrations/${DRIVER_DIRNAME}/install-driver.sh
 
   "run test":
     # Run the Atlas Planned Maintenance Test.
@@ -74,7 +74,7 @@ functions:
           ATLAS_API_PASSWORD: ${atlas_secret}
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml -e .evergreen/${DRIVER_DIRNAME}/workload-executor
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml -e integrations/${DRIVER_DIRNAME}/workload-executor
 
   "delete test cluster":
     # Delete the cluster that was used to run the test.

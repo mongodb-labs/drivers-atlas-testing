@@ -28,12 +28,12 @@ Setting up
      $ git clone git@github.com:<your-github-username>/drivers-atlas-testing.git
      $ cd drivers-atlas-testing && git checkout -b add-driver-integration
 
-#. Create a new directory for your driver under the ``drivers-atlas-testing/.evergreen`` directory.
+#. Create a new directory for your driver under the ``drivers-atlas-testing/integrations`` directory.
    It is recommended that drivers use the name of their language to name their folder.
    Languages that have multiple drivers should use subdirectories named after the driver (e.g. for Python,
-   we should create ``.evergreen/python/pymongo`` and ``.evergreen/python/motor``)::
+   we could create ``integrations/python/pymongo`` and ``integrations/python/motor``)::
 
-   $ mkdir -p .evergreen/driver-language/project-name
+   $ mkdir -p integrations/<driver-language>/<project-name>
 
 .. note::
 
@@ -77,7 +77,7 @@ API desired by the :ref:`workload-executor-specification` specification.
 .. note::
 
    For example, PyMongo's ``astrolabe`` integration uses this pattern to implement its
-   `workload executor <https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/.evergreen/python/pymongo/workload-executor>`_.
+   `workload executor <https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/integrations/python/pymongo/workload-executor>`_.
 
 .. _integration-step-driver-installer:
 
@@ -193,7 +193,7 @@ you intend to test. Each entry has the following fields:
 
 * ``id`` (required): unique identifier for this ``driver`` axis entry.
 * ``display_name`` (optional): plaintext name for this driver version that will be used to display test runs.
-* ``variables.DRIVER_DIRNAME`` (required): path, relative to the ``astrolable/.evergreen`` directory where the
+* ``variables.DRIVER_DIRNAME`` (required): path, relative to the ``astrolable/integrations`` directory where the
   driver-specific scripts live.
 * ``variables.DRIVER_REPOSITORY`` (required): HTTPS URL that can be used to clone the source repository of the
   driver to be tested.

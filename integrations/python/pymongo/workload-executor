@@ -7,7 +7,7 @@
 trap 'wait $PID; exit $?' INT
 
 # Invoke the workload executor as a background process and store its process ID as $PID
-"$PYMONGO_VIRTUALENV_NAME/$PYTHON_BIN_DIR/python" ".evergreen/$DRIVER_DIRNAME/workload-executor.py" "$1" "$2" &
+"$PYMONGO_VIRTUALENV_NAME/$PYTHON_BIN_DIR/python" "integrations/$DRIVER_DIRNAME/workload-executor.py" "$1" "$2" &
 PID=$!
 
 # Wait for a state change in $PID (without this the foreground process would return)
