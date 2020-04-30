@@ -146,14 +146,6 @@ axes:
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-python-driver"
           DRIVER_REVISION: "master"
           PYMONGO_VIRTUALENV_NAME: "pymongotestvenv"
-      - id: pymongo-3.10.x
-        display_name: "PyMongo (3.10.x)"
-        variables:
-          DRIVER_DIRNAME: "python/pymongo"
-          DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-python-driver"
-          DRIVER_REVISION: "3.10.1"
-          PYMONGO_VIRTUALENV_NAME: "pymongotestvenv"
-
 
   # The 'platform' axis specifies the evergreen host distro to use.
   # Platforms MUST specify the PYTHON3_BINARY variable as this is required to install astrolabe.
@@ -184,14 +176,6 @@ axes:
         display_name: CPython-2.7
         variables:
           PYTHON_BINARY: "/opt/python/2.7/bin/python"
-      - id: python36
-        display_name: CPython-3.6
-        variables:
-          PYTHON_BINARY: "/opt/python/3.6/bin/python3"
-      - id: python37
-        display_name: CPython-3.7
-        variables:
-          PYTHON_BINARY: "/opt/python/3.7/bin/python3"
       - id: python38
         display_name: CPython-3.8
         variables:
@@ -204,17 +188,17 @@ axes:
 buildvariants:
 - matrix_name: "tests-python"
   matrix_spec:
-    driver: ["pymongo-master", "pymongo-3.10.x"]
+    driver: ["pymongo-master"]
     platform: ["ubuntu-16.04"]
-    runtime: ["python27", "python36", "python37", "python38"]
+    runtime: ["python27", "python38"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
 - matrix_name: "tests-python-windows"
   matrix_spec:
-    driver: ["pymongo-master", "pymongo-3.10.x"]
+    driver: ["pymongo-master"]
     platform: ["windows-64"]
-    runtime: ["python37-windows",]
+    runtime: ["python37-windows"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
