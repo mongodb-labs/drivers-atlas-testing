@@ -144,6 +144,8 @@ class DriverWorkloadSubprocessRunner:
         if sys.platform in ("win32", "cygwin"):
             self.is_windows = True
         self.workload_subprocess = None
+        self.sentinel = os.path.join(
+            os.path.abspath(os.curdir), 'results.json')
 
     @property
     def pid(self):
@@ -154,6 +156,11 @@ class DriverWorkloadSubprocessRunner:
         return self.workload_subprocess.returncode
 
     def spawn(self, *, workload_executor, connection_string, driver_workload):
+        try:
+            os.remove(self.sentinel)
+        except FileNotFoundError:
+            pass
+
         args = [workload_executor, connection_string, driver_workload]
         if not self.is_windows:
             self.workload_subprocess = subprocess.Popen(
@@ -175,7 +182,7 @@ class DriverWorkloadSubprocessRunner:
         outs, errs = self.workload_subprocess.communicate(timeout=10)
 
         try:
-            with open('results.json', 'r') as fp:
+            with open(self.sentinel, 'r') as fp:
                 stats = json.load(fp)
         except (FileNotFoundError, json.JSONDecodeError):
             stats = {'numErrors': -1, 'numFailures': -1}
