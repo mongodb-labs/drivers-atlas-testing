@@ -1,2 +1,5 @@
 **/__pycache__
 .idea/
+astrolabe.egg-info/
+results.json
+xunit-output/
