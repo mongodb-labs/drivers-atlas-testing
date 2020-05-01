@@ -14,7 +14,7 @@
 
 import logging
 
-from atlasclient import AtlasApiError
+from atlasclient import AtlasApiError, JSONObject
 
 
 LOGGER = logging.getLogger(__name__)
@@ -33,6 +33,19 @@ def get_one_organization_by_name(*, client, organization_name):
         organization_name))
 
 
+def get_project_id_from_project_name(*, client, project_name):
+    """Get the project ID of the project named `project_name.
+    This is primarily needed to workaround CLOUDP-61574."""
+    try:
+        project_id = client.groups.byName[project_name].get().data.id
+    except AtlasApiError as exc:
+        if exc.error_code == 'NOT_ATLAS_GROUP' and exc.status_code == 404:
+            project_id = exc.raw_response.json(object_hook=JSONObject).parameters[0]
+        else:
+            raise
+    return project_id
+
+
 def ensure_project(*, client, project_name, organization_id):
     """Ensure a project named `project_name` exists and return it. Does not
     raise an exception if a project by that name already exists."""
@@ -42,11 +55,16 @@ def ensure_project(*, client, project_name, organization_id):
     except AtlasApiError as exc:
         if exc.error_code == 'GROUP_ALREADY_EXISTS':
             LOGGER.debug("Project {!r} already exists".format(project_name))
-            project = client.groups.byName[project_name].get().data
+            project_id = get_project_id_from_project_name(
+                client=client, project_name=project_name)
+            project = client.groups[project_id].get().data
         else:
             raise
     else:
         LOGGER.debug("Project {!r} successfully created".format(project.name))
+
+    # Populate the project whitelist to workaround CLOUDP-61574.
+    ensure_connect_from_anywhere(client=client, project_id=project.id)
 
     LOGGER.debug("Project details: {}".format(project))
     return project

@@ -56,6 +56,9 @@ class AtlasApiError(AtlasApiBaseError):
 
         super().__init__(msg, **kwargs)
 
+        # Store complete response (or None).
+        self.raw_response = response
+
 
 class AtlasRateLimitError(AtlasApiError):
     pass

@@ -201,7 +201,10 @@ def list_projects(ctx):
 @click.pass_context
 def get_one_project_by_name(ctx, project_name):
     """Get one Atlas Project."""
-    pprint(ctx.obj.groups.byName[project_name].get().data)
+    project_id = cmd.get_project_id_from_project_name(
+        client=ctx.obj, project_name=project_name)
+    project = ctx.obj.groups[project_id].get().data
+    pprint(project)
 
 
 @atlas_projects.command('enable-anywhere-access')
@@ -209,8 +212,20 @@ def get_one_project_by_name(ctx, project_name):
 @click.pass_context
 def enable_project_access_from_anywhere(ctx, project_name):
     """Add 0.0.0.0/0 to the IP whitelist of the Atlas Project."""
-    project = ctx.obj.groups.byName[project_name].get().data
-    cmd.ensure_connect_from_anywhere(client=ctx.obj, project_id=project.id)
+    project_id = cmd.get_project_id_from_project_name(
+        client=ctx.obj, project_name=project_name)
+    cmd.ensure_connect_from_anywhere(client=ctx.obj, project_id=project_id)
+
+
+@atlas_projects.command('delete')
+@ATLASPROJECTNAME_OPTION
+@click.pass_context
+def delete_one_project_by_name(ctx, project_name):
+    """Delete the Atlas Project. Fails if the specified project has active
+    clusters."""
+    project_id = cmd.get_project_id_from_project_name(
+        client=ctx.obj, project_name=project_name)
+    pprint(ctx.obj.groups[project_id].delete().data)
 
 
 @cli.group('users')
@@ -328,10 +343,13 @@ def toggle_cluster_javascript(ctx, project_name, cluster_name):
 @ATLASPROJECTNAME_OPTION
 @click.pass_context
 def list_clusters(ctx, project_name):
-    """List all Atlas Clusters."""
+    """List names of all Atlas Clusters."""
     project = ctx.obj.groups.byName[project_name].get().data
     clusters = ctx.obj.groups[project.id].clusters.get()
-    pprint(clusters.data)
+    clist = []
+    for c in clusters.data.results:
+        clist.append(c.name)
+    pprint(clist)
 
 
 @atlas_clusters.command('isready')
