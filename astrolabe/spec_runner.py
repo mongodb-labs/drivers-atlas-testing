@@ -196,7 +196,7 @@ class AtlasTestCase:
         # Step-5: interrupt driver workload and capture streams
         LOGGER.info("Stopping workload executor [PID: {}]".format(
             self.workload_runner.pid))
-        stdout, stderr, stats = self.workload_runner.terminate()
+        stats = self.workload_runner.terminate()
         LOGGER.info("Stopped workload executor [exit code: {}]".format(
             self.workload_runner.returncode))
 
@@ -212,15 +212,11 @@ class AtlasTestCase:
             self.failed = True
             # Write xunit logs for failed tests.
             junit_test.result = junitparser.Failure(str(stats))
-            junit_test.system_err = stderr.decode('utf-8')
-            junit_test.system_out = stdout.decode('utf-8')
         else:
             LOGGER.info("SUCCEEDED: {!r}".format(self.id))
             # Directly log output of successful tests as xunit output
             # is only visible for failed tests.
 
-        LOGGER.info("STDOUT: {}".format(stdout.decode('utf-8')))
-        LOGGER.info("STDERR: {}".format(stderr.decode('utf-8')))
         LOGGER.info("Workload Statistics: {}".format(stats))
 
         # Step 7: download logs asynchronously and delete cluster.

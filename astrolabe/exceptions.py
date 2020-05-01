@@ -22,3 +22,7 @@ class AstrolabeTestCaseError(AstrolabeBaseError):
 
 class PollingTimeoutError(AstrolabeBaseError):
     pass
+
+
+class WorkloadExecutorError(AstrolabeBaseError):
+    pass

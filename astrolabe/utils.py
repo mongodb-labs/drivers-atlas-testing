@@ -26,6 +26,8 @@ import junitparser
 
 from pymongo import MongoClient
 
+from astrolabe.exceptions import WorkloadExecutorError
+
 
 class ClickLogHandler(logging.Handler):
     """Handler for print log statements via Click's echo functionality."""
@@ -164,14 +166,12 @@ class DriverWorkloadSubprocessRunner:
         args = [workload_executor, connection_string, driver_workload]
         if not self.is_windows:
             self.workload_subprocess = subprocess.Popen(
-                args, preexec_fn=os.setsid, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
+                args, preexec_fn=os.setsid)
         else:
             wargs = ['C:/cygwin/bin/bash']
             wargs.extend(args)
             self.workload_subprocess = subprocess.Popen(
-                wargs, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                wargs, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         return self.workload_subprocess
 
     def terminate(self):
@@ -179,7 +179,14 @@ class DriverWorkloadSubprocessRunner:
             os.killpg(self.workload_subprocess.pid, signal.SIGINT)
         else:
             os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
-        outs, errs = self.workload_subprocess.communicate(timeout=10)
+
+        t_wait = 10
+        try:
+            self.workload_subprocess.wait(timeout=t_wait)
+        except subprocess.TimeoutExpired:
+            raise WorkloadExecutorError(
+                "The workload executor did not terminate {} seconds "
+                "after sending the termination signal".format(t_wait))
 
         try:
             with open(self.sentinel, 'r') as fp:
@@ -187,4 +194,4 @@ class DriverWorkloadSubprocessRunner:
         except (FileNotFoundError, json.JSONDecodeError):
             stats = {'numErrors': -1, 'numFailures': -1}
 
-        return outs, errs, stats
+        return stats
