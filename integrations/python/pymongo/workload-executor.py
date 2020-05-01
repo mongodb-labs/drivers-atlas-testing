@@ -112,10 +112,11 @@ def workload_runner(mongodb_uri, test_workload):
                 num_operations += 1
 
     # We reach here once IS_INTERRUPTED has been set to True.
-    print("Handling SIGINT and exiting gracefully.")
+    stats = {"numErrors": num_errors, "numFailures": num_failures,
+             "numSuccesses": num_operations}
+    print("Workload statistics: {!r}".format(stats))
     with open('results.json', 'w') as fr:
-        json.dump({"numErrors": num_errors, "numFailures": num_failures,
-                   "numSuccessfulOperations": num_operations}, fr)
+        json.dump(stats, fr)
     exit(0 or num_errors or num_failures)
 
 

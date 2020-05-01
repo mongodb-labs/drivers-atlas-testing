@@ -59,6 +59,7 @@ After accepting the inputs, the workload executor:
    * MUST keep count of the number of operation errors (``numErrors``) that are encountered while running
      operations. An operation error is when running an operation unexpectedly raises an error. Workload executors
      implementations should try to be as resilient as possible to these kinds of operation errors.
+   * MUST keep count of the number of operations that are run successfully (``numSuccesses``).
 
 #. MUST set a signal handler for handling the termination signal that is sent by ``astrolabe``. The termination signal
    is used by ``astrolabe`` to communicate to the workload executor that it should stop running operations. Upon
@@ -71,6 +72,7 @@ After accepting the inputs, the workload executor:
 
      * ``numErrors``: the number of operation errors that were encountered during the test.
      * ``numFailures``: the number of operation failures that were encountered during the test.
+     * ``numSuccesses``: the number of operations executed successfully during the test.
 
    .. note:: The values of ``numErrors`` and ``numFailures`` are used by ``astrolabe`` to determine the overall
       success or failure of a driver workload execution. A non-zero value for either of these fields is construed
@@ -78,8 +80,8 @@ After accepting the inputs, the workload executor:
       The workload executor's exit code is **not** used for determining success/failure and is ignored.
 
    .. note:: If ``astrolabe`` encounters an error in parsing the workload statistics dumped to ``results.json``
-      (caused, for example, by malformed JSON), both ``numErrors`` and ``numFailures`` will be set to ``-1`` and the
-      test run will be assumed to have failed.
+      (caused, for example, by malformed JSON), ``numErrors``, ``numFailures``, and ``numSuccesses``
+      will be set to ``-1`` and the test run will be assumed to have failed.
 
    .. note:: The choice of termination signal used by ``astrolabe`` varies by platform. ``SIGINT`` [#f1]_ is used as
       the termination signal on Linux and OSX, while ``CTRL_BREAK_EVENT`` [#f2]_ is used on Windows.
@@ -109,6 +111,7 @@ Pseudocode Implementation
         # Initialize counters.
         var num_errors = 0;
         var num_failures = 0;
+        var num_successes = 0;
 
         # Run the workload - operations are run sequentially, repeatedly until the termination signal is received.
         try {
@@ -118,7 +121,9 @@ Pseudocode Implementation
                         # The runOperation method runs operations as per the test format.
                         # The method return False if the actual return value of the operation does match the expected.
                         var was_succesful = runOperation(db, collection, operation);
-                        if (!was_successful) {
+                        if (was_successful) {
+                            num_successes += 1;
+                        } else {
                             num_errors += 1;
                         }
                     } catch (operationError) {
@@ -131,7 +136,7 @@ Pseudocode Implementation
             # The workloadExecutor MUST handle the termination signal gracefully.
             # The termination signal will be used by astrolabe to terminate drivers operations that otherwise run ad infinitum.
             # The workload statistics must be written to a file named results.json in the current working directory.
-            fs.writeFile('results.json', JSON.stringify({‘numErrors’: num_errors, 'numFailures': num_failures}));
+            fs.writeFile('results.json', JSON.stringify({‘numErrors’: num_errors, 'numFailures': num_failures, 'numSuccesses': num_successes}));
         }
     }
 

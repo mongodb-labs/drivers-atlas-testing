@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
 import os
 from time import sleep
@@ -156,13 +155,10 @@ class AtlasTestCase:
                 self.cluster_name))
 
         # Step-2: run driver workload.
-        LOGGER.info("Starting workload executor")
         self.workload_runner.spawn(
             workload_executor=self.config.workload_executor,
             connection_string=self.get_connection_string(),
-            driver_workload=json.dumps(self.spec.driverWorkload))
-        LOGGER.info("Started workload executor [PID: {}]".format(
-            self.workload_runner.pid))
+            driver_workload=self.spec.driverWorkload)
 
         # Step-3: begin maintenance routine.
         final_config = self.spec.maintenancePlan.final
@@ -207,7 +203,8 @@ class AtlasTestCase:
         junit_test = junitparser.TestCase(self.id)
         junit_test.time = timer.elapsed
 
-        if stats['numErrors'] or stats['numFailures']:
+        if (stats['numErrors'] != 0 or stats['numFailures'] != 0 or
+                stats['numSuccesses'] == 0):
             LOGGER.info("FAILED: {!r}".format(self.id))
             self.failed = True
             # Write xunit logs for failed tests.

@@ -29,6 +29,9 @@ from pymongo import MongoClient
 from astrolabe.exceptions import WorkloadExecutorError
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 class ClickLogHandler(logging.Handler):
     """Handler for print log statements via Click's echo functionality."""
     def emit(self, record):
@@ -128,19 +131,21 @@ def load_test_data(connection_string, driver_workload):
     # TODO: remove this if...else block after BUILD-10841 is done.
     if sys.platform in ("win32", "cygwin"):
         import certifi
-        client = MongoClient(connection_string, tlsCAFile=certifi.where())
-    else:
-        client = MongoClient(connection_string, **kwargs)
+        kwargs['tlsCAFile'] = certifi.where()
+    client = MongoClient(connection_string, **kwargs)
 
     coll = client.get_database(
         driver_workload.database).get_collection(
         driver_workload.collection)
     coll.drop()
-    coll.insert(driver_workload.testData)
+    coll.insert_many(driver_workload.testData)
 
 
 class DriverWorkloadSubprocessRunner:
     """Convenience wrapper to run a workload executor in a subprocess."""
+    _PLACEHOLDER_EXECUTION_STATISTICS = {
+        'numErrors': -1, 'numFailures': -1, 'numSuccesses': -1}
+
     def __init__(self):
         self.is_windows = False
         if sys.platform in ("win32", "cygwin"):
@@ -158,23 +163,42 @@ class DriverWorkloadSubprocessRunner:
         return self.workload_subprocess.returncode
 
     def spawn(self, *, workload_executor, connection_string, driver_workload):
+        LOGGER.info("Starting workload executor subprocess")
+
         try:
             os.remove(self.sentinel)
+            LOGGER.debug("Cleaned up sentinel file at {}".format(
+                self.sentinel))
         except FileNotFoundError:
             pass
 
-        args = [workload_executor, connection_string, driver_workload]
+        _args = [workload_executor, connection_string, json.dumps(driver_workload)]
         if not self.is_windows:
+            args = _args
             self.workload_subprocess = subprocess.Popen(
                 args, preexec_fn=os.setsid)
         else:
-            wargs = ['C:/cygwin/bin/bash']
-            wargs.extend(args)
+            args = ['C:/cygwin/bin/bash']
+            args.extend(_args)
             self.workload_subprocess = subprocess.Popen(
-                wargs, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+                args, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+
+        LOGGER.debug("Subprocess argument list: {}".format(args))
+        LOGGER.info("Started workload executor [PID: {}]".format(self.pid))
+
+        # Check if something caused the workload executor to exit immediately.
+        try:
+            self.workload_subprocess.wait(timeout=1)
+            raise WorkloadExecutorError(
+                "Workload executor quit without receiving termination signal")
+        except subprocess.TimeoutExpired:
+            pass
+
         return self.workload_subprocess
 
     def terminate(self):
+        LOGGER.info("Stopping workload executor [PID: {}]".format(self.pid))
+
         if not self.is_windows:
             os.killpg(self.workload_subprocess.pid, signal.SIGINT)
         else:
@@ -189,9 +213,14 @@ class DriverWorkloadSubprocessRunner:
                 "after sending the termination signal".format(t_wait))
 
         try:
+            LOGGER.info("Reading sentinel file {!r}".format(self.sentinel))
             with open(self.sentinel, 'r') as fp:
                 stats = json.load(fp)
-        except (FileNotFoundError, json.JSONDecodeError):
-            stats = {'numErrors': -1, 'numFailures': -1}
+        except FileNotFoundError:
+            LOGGER.error("Sentinel file not found")
+            stats = self._PLACEHOLDER_EXECUTION_STATISTICS
+        except json.JSONDecodeError:
+            LOGGER.error("Sentinel file contains malformed JSON")
+            stats = self._PLACEHOLDER_EXECUTION_STATISTICS
 
         return stats

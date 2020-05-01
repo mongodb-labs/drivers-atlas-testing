@@ -14,6 +14,7 @@
 
 import logging
 from pprint import pprint
+import unittest
 from urllib.parse import unquote_plus
 
 import click
@@ -32,6 +33,7 @@ from astrolabe.configuration import (
     TestCaseConfiguration)
 from astrolabe.utils import (
     get_cluster_name, get_test_name_from_spec_file, ClickLogHandler)
+from astrolabe.workload_executor_validator import validator_factory
 
 
 LOGGER = logging.getLogger(__name__)
@@ -514,6 +516,25 @@ def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
         exit(1)
     else:
         exit(0)
+
+
+@spec_tests.command('validate-workload-executor')
+@WORKLOADEXECUTOR_OPTION
+@click.option('--connection-string', required=True, type=click.STRING,
+              help='Connection string for the test MongoDB instance.',
+              prompt=True)
+@click.option('--startup-time', default=3, type=click.FLOAT, show_default=True,
+              help='Amount of time to wait for the executor to start.')
+def validate_workload_executor(workload_executor, connection_string,
+                               startup_time):
+    """
+    Runs a series of tests to validate a workload executor.
+    Relies upon a user-provisioned instance of MongoDB to run operations against.
+    """
+    test_case_class = validator_factory(
+        workload_executor, connection_string, startup_time)
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(test_case_class)
+    unittest.TextTestRunner(descriptions=True, verbosity=2).run(suite)
 
 
 if __name__ == '__main__':
