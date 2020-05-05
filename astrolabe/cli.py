@@ -25,7 +25,7 @@ from atlasclient import AtlasClient, AtlasApiBaseError
 from atlasclient.configuration import CONFIG_DEFAULTS as CL_DEFAULTS
 from astrolabe.docgen import (
     tabulate_astrolabe_configuration, tabulate_client_configuration)
-from astrolabe.spec_runner import MultiTestRunner, SingleTestRunner
+from astrolabe.runner import MultiTestRunner, SingleTestRunner
 from astrolabe.configuration import (
     CLI_OPTION_NAMES as OPTNAMES,
     CONFIG_DEFAULTS as DEFAULTS,
@@ -33,7 +33,7 @@ from astrolabe.configuration import (
     TestCaseConfiguration)
 from astrolabe.utils import (
     get_cluster_name, get_test_name_from_spec_file, ClickLogHandler)
-from astrolabe.workload_executor_validator import validator_factory
+from astrolabe.validator import validator_factory
 
 
 LOGGER = logging.getLogger(__name__)

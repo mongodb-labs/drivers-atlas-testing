@@ -15,7 +15,7 @@
 from copy import deepcopy
 from subprocess import TimeoutExpired
 from time import sleep
-from unittest import TestCase, main
+from unittest import TestCase
 
 from pymongo import MongoClient
 
