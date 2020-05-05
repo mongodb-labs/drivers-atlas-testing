@@ -24,6 +24,12 @@ functions:
     - command: git.get_project
       params:
         directory: astrolabe-src
+    # Make sure virtualenv is installed.
+    - command: subprocess.exec
+      params:
+        working_dir: astrolabe-src
+        command: |
+          ${PYTHON3_BINARY} -m pip install virtualenv
     # Create virtualenv using a CPython 3.5+ binary.
     - command: subprocess.exec
       params:
@@ -152,13 +158,16 @@ axes:
   - id: platform
     display_name: OS
     values:
-      - id: ubuntu-16.04
-        display_name: "Ubuntu 16.04"
-        run_on: ubuntu1604-test
+      - id: ubuntu-18.04
+        display_name: "Ubuntu 18.04"
+        run_on: ubuntu1804-drivers-atlas-testing
         batchtime: 10080  # 7 days
         variables:
-          PYTHON3_BINARY: "/opt/python/3.7/bin/python3"
+          PYTHON3_BINARY: "python3"
           PYTHON_BIN_DIR: "bin"
+          # Set locale to unicode - needed for astrolabe to function correctly.
+          LC_ALL: "C.UTF-8"
+          LANG: "C.UTF-8"
       - id: windows-64
         display_name: "Windows 64"
         run_on: windows-64-vsMulti-small
@@ -173,13 +182,13 @@ axes:
     display_name: runtime
     values:
       - id: python27
-        display_name: CPython-2.7
+        display_name: CPython-2
         variables:
-          PYTHON_BINARY: "/opt/python/2.7/bin/python"
+          PYTHON_BINARY: "python"
       - id: python38
-        display_name: CPython-3.8
+        display_name: CPython-3
         variables:
-          PYTHON_BINARY: "/opt/python/3.8/bin/python3"
+          PYTHON_BINARY: "python3"
       - id: python37-windows
         display_name: CPython-3.7-Windows
         variables:
@@ -189,7 +198,7 @@ buildvariants:
 - matrix_name: "tests-python"
   matrix_spec:
     driver: ["pymongo-master"]
-    platform: ["ubuntu-16.04"]
+    platform: ["ubuntu-18.04"]
     runtime: ["python27", "python38"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:

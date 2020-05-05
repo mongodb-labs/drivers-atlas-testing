@@ -126,6 +126,11 @@ are in place.
 Adding a Platform
 -----------------
 
+.. attention:: Drivers wanting to run the Atlas Planned Maintenance test-suite on Linux systems
+   are **strongly advised** to use the custom
+   `ubuntu1804-drivers-atlas-testing <https://evergreen.mongodb.com/distros#%23ubuntu1804-drivers-atlas-testing>`_
+   distro for running their tests. See :ref:`faq-why-custom-distro` for details.
+
 The Atlas Planned Maintenance tests can be run on all platforms which have a Python 3.5+ binary installed.
 Each entry to the ``platform`` axis has the following fields:
 
