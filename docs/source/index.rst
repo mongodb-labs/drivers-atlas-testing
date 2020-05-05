@@ -21,6 +21,9 @@ Tests.
 :doc:`technical-design`
   Background reading about this testing framework's architecture and design methodology.
 
+:doc:`faq`
+  Answers to questions and issues that come up often.
+
 
 Indices and tables
 ==================
@@ -37,3 +40,4 @@ Indices and tables
    spec-workload-executor
    spec-test-format
    technical-design
+   faq

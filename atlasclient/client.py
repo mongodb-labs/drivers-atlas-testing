@@ -138,12 +138,12 @@ class AtlasClient:
           user-specified JSON input via the ``json`` keyword argument.
 
         :Parameters:
-          - `username` (string): username to use for authenticating with the
-            MongoDB Atlas API. This is the Public Key part of the programmatic
-            API key generated via the Atlas Web UI.
-          - `password` (string): password to use for authenticating with the
-            MongoDB Atlas API. This is the Private Key part of the programmatic
-            API key generated via the Atlas Web UI.
+          - `username` (string or None): username to use for authenticating
+            with the MongoDB Atlas API. This is the Public Key part of the
+            programmatic API key generated via the Atlas Web UI.
+          - `password` (string or None): password to use for authenticating
+            with the MongoDB Atlas API. This is the Private Key part of the
+            programmatic API key generated via the Atlas Web UI.
           - `base_url` (string, optional): base URL to use for
             communicating with the MongoDB Atlas API.
             Default: https://cloud.mongodb.com/api/atlas.
@@ -152,9 +152,6 @@ class AtlasClient:
           - `timeout` (float, optional): time, in seconds, after which an
             HTTP request to the Atlas API should timeout. Default: 10.0.
         """
-        if not username or not password:
-            raise ValueError("Username and/or password cannot be empty.")
-
         self.config = ClientConfiguration(
             base_url=base_url, api_version=api_version,
             timeout=timeout, auth=requests.auth.HTTPDigestAuth(

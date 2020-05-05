@@ -95,10 +95,10 @@ NODELETE_FLAG = click.option(
 @click.option(OPTNAMES.BASE_URL, envvar=ENVVARS.BASE_URL,
               default=CL_DEFAULTS.BASE_URL, show_default=True,
               type=click.STRING, help='Base URL of the Atlas API.')
-@click.option('-u', '--atlas-api-username', required=True,
+@click.option('-u', '--atlas-api-username', default=None,
               envvar=ENVVARS.API_USERNAME, type=click.STRING,
               help='HTTP-Digest username (Atlas API public-key).')
-@click.option('-p', '--atlas-api-password', required=True,
+@click.option('-p', '--atlas-api-password', default=None,
               envvar=ENVVARS.API_PASSWORD, type=click.STRING,
               help='HTTP-Digest password (Atlas API private-key).')
 @click.option(OPTNAMES.HTTP_TIMEOUT, envvar=ENVVARS.HTTP_TIMEOUT,
@@ -119,6 +119,7 @@ def cli(ctx, atlas_base_url, atlas_api_username,
     Astrolabe is a command-line application for running automated driver
     tests against a MongoDB Atlas cluster undergoing maintenance.
     """
+    # Create an atlasclient and attach it to the context.
     client = AtlasClient(
         base_url=atlas_base_url,
         username=atlas_api_username,
