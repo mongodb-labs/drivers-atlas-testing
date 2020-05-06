@@ -82,6 +82,22 @@ functions:
         command: |
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml -e integrations/${DRIVER_DIRNAME}/workload-executor
 
+  "validate executor":
+    # Run a MongoDB instance locally.
+    - command: shell.exec
+      params:
+        working_dir: astrolabe-src
+        script: |
+          sh .evergreen/run-mongodb.sh
+    # Validate the workload executor against the local MongoDB instance.
+    - command: subprocess.exec
+      type: test
+      params:
+        working_dir: astrolabe-src
+        add_expansions_to_env: true
+        command: |
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests validate-workload-executor -e integrations/${DRIVER_DIRNAME}/workload-executor --connection-string "mongodb://localhost:27017/"
+
   "delete test cluster":
     # Delete the cluster that was used to run the test.
     - command: subprocess.exec
@@ -113,31 +129,37 @@ post:
   - func: "upload test results"
 
 tasks:
-    # One test-case per task.
-    - name: retryReads-resizeCluster
-      tags: ["all", "retryReads", "resizeCluster"]
-      commands:
-        - func: "run test"
-          vars:
-            TEST_NAME: retryReads-resizeCluster
-    - name: retryReads-toggleServerSideJS
-      tags: ["all", "retryReads", "toggleServerSideJS"]
-      commands:
-        - func: "run test"
-          vars:
-            TEST_NAME: retryReads-toggleServerSideJS
-    - name: retryWrites-resizeCluster
-      tags: ["all", "retryWrites", "resizeCluster"]
-      commands:
-        - func: "run test"
-          vars:
-            TEST_NAME: retryWrites-resizeCluster
-    - name: retryWrites-toggleServerSideJS
-      tags: ["all", "retryWrites", "toggleServerSideJS"]
-      commands:
-        - func: "run test"
-          vars:
-            TEST_NAME: retryWrites-toggleServerSideJS
+  # Workload executor validation task (patch-only).
+  - name: validate-workload-executor
+    patch_only: true
+    tags: ["all"]
+    commands:
+      - func: "validate executor"
+  # One test-case per task.
+  - name: retryReads-resizeCluster
+    tags: ["all", "retryReads", "resizeCluster"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-resizeCluster
+  - name: retryReads-toggleServerSideJS
+    tags: ["all", "retryReads", "toggleServerSideJS"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-toggleServerSideJS
+  - name: retryWrites-resizeCluster
+    tags: ["all", "retryWrites", "resizeCluster"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryWrites-resizeCluster
+  - name: retryWrites-toggleServerSideJS
+    tags: ["all", "retryWrites", "toggleServerSideJS"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryWrites-toggleServerSideJS
 
 axes:
   # The 'driver' axis specifies the driver to be tested (including driver version).

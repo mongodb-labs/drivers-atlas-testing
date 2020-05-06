@@ -69,7 +69,7 @@ Wrapping native workload executors with a shell script
 
 Different languages will have different kinds of workload executors. Compiled languages, for example, might have
 as their workload executor a standalone binary whereas interpreted languages would likely use a script that
-would need to be executed using the appropriate interpreter. Furthermore, drivers may need to employ different
+needs to be invoked using an interpreter. Furthermore, drivers may need to employ different
 workload executor scripts on different platforms. To support these various usage scenarios, users can
 wrap the actual call to a natively implemented workload executor in a shell script such that exposes the
 API desired by the :ref:`workload-executor-specification` specification.
@@ -78,6 +78,30 @@ API desired by the :ref:`workload-executor-specification` specification.
 
    For example, PyMongo's ``astrolabe`` integration uses this pattern to implement its
    `workload executor <https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/integrations/python/pymongo/workload-executor>`_.
+
+Testing/validating a workload executor script
+---------------------------------------------
+
+Workload executor scripts are cumbersome to test due to the amount of setup required before they can be
+invoked. In order to test a workload executor, at a minimum, you need:
+
+* an ``astrolabe`` installation,
+* an installation of the driver whose workload executor is to be tested,
+* a connection string to the MongoDB instance against which the workload executor will run operations, and
+* a test YAML file containing a driver workload that can be used to run the test.
+
+While you can always run a patch build with the workload executor (having first updated the evergreen configuration
+as outlined in :ref:`integration-step-evergreen-configuration` of course), your builds will take a while
+to complete (provisioning Atlas clusters takes time) resulting in a large wait before you can check whether
+the workload executor behaved as expected.
+
+To streamline the process of testing your workload executor implementation, the ``drivers-atlas-testing`` Evergreen
+project offers a special task called ``validate-workload-executor``. This task spins up a MongoDB cluster on the
+Evergreen test instance and runs a series of checks against the workload executor that has been provided. It may
+be used during the implementation of workload executors as a convenient way to test script functionality.
+
+.. note:: The ``validate-workload-executor`` task only appears on patch builds.
+
 
 .. _integration-step-driver-installer:
 

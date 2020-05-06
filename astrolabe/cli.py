@@ -523,7 +523,7 @@ def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
 @click.option('--connection-string', required=True, type=click.STRING,
               help='Connection string for the test MongoDB instance.',
               prompt=True)
-@click.option('--startup-time', default=3, type=click.FLOAT, show_default=True,
+@click.option('--startup-time', default=1, type=click.FLOAT, show_default=True,
               help='Amount of time to wait for the executor to start.')
 def validate_workload_executor(workload_executor, connection_string,
                                startup_time):
@@ -534,7 +534,9 @@ def validate_workload_executor(workload_executor, connection_string,
     test_case_class = validator_factory(
         workload_executor, connection_string, startup_time)
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(test_case_class)
-    unittest.TextTestRunner(descriptions=True, verbosity=2).run(suite)
+    result = unittest.TextTestRunner(descriptions=True, verbosity=2).run(suite)
+    if any([result.errors, result.failures]):
+        exit(1)
 
 
 if __name__ == '__main__':
