@@ -49,9 +49,8 @@ class ValidateWorkloadExecutor(TestCase):
         try:
             subprocess.spawn(workload_executor=self.WORKLOAD_EXECUTOR,
                              connection_string=self.CONNECTION_STRING,
-                             driver_workload=driver_workload)
-            # Wait for the executor to start.
-            sleep(self.STARTUP_TIME)
+                             driver_workload=driver_workload,
+                             startup_time=self.STARTUP_TIME)
         except WorkloadExecutorError:
             outs, errs = subprocess.workload_subprocess.communicate(timeout=2)
             self.fail("The workload executor terminated prematurely before "

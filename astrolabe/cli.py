@@ -76,6 +76,11 @@ WORKLOADEXECUTOR_OPTION = click.option(
         exists=True, file_okay=True, dir_okay=False, resolve_path=True),
     help='Absolute or relative path to the workload-executor.')
 
+EXECUTORSTARTUPTIME_OPTION = click.option(
+    OPTNAMES.EXECUTOR_STARTUP_TIME, default=1, type=click.FLOAT,
+    show_default=True, envvar=ENVVARS.EXECUTOR_STARTUP_TIME,
+    help='Time (in s) to wait for the executor to start running.')
+
 CLUSTERNAMESALT_OPTION = click.option(
     OPTNAMES.CLUSTER_NAME_SALT, type=click.STRING, required=True,
     envvar=ENVVARS.CLUSTER_NAME_SALT,
@@ -401,11 +406,12 @@ def spec_tests():
 @POLLINGFREQUENCY_OPTION
 @XUNITOUTPUT_OPTION
 @NODELETE_FLAG
+@EXECUTORSTARTUPTIME_OPTION
 @click.pass_context
 def run_single_test(ctx, spec_test_file, workload_executor,
                     db_username, db_password, org_name, project_name,
                     cluster_name_salt, polling_timeout, polling_frequency,
-                    xunit_output, no_delete):
+                    xunit_output, no_delete, startup_time):
     """
     Runs one APM test.
     This is the main entry point for running APM tests in headless environments.
@@ -428,7 +434,8 @@ def run_single_test(ctx, spec_test_file, workload_executor,
                               test_locator_token=spec_test_file,
                               configuration=config,
                               xunit_output=xunit_output,
-                              persist_clusters=no_delete)
+                              persist_clusters=no_delete,
+                              workload_startup_time=startup_time)
 
     # Step-2: run the tests.
     failed = runner.run()
@@ -481,10 +488,12 @@ def delete_test_cluster(ctx, spec_test_file, org_name, project_name,
 @POLLINGFREQUENCY_OPTION
 @XUNITOUTPUT_OPTION
 @NODELETE_FLAG
+@EXECUTORSTARTUPTIME_OPTION
 @click.pass_context
 def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
                  db_password, org_name, project_name, cluster_name_salt,
-                 polling_timeout, polling_frequency, xunit_output, no_delete):
+                 polling_timeout, polling_frequency, xunit_output, no_delete,
+                 startup_time):
     """
     Run multiple APM tests in serial.
     This command runs all tests found in the SPEC_TESTS_DIRECTORY sequentially
@@ -507,7 +516,8 @@ def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
                              test_locator_token=spec_tests_directory,
                              configuration=config,
                              xunit_output=xunit_output,
-                             persist_clusters=no_delete)
+                             persist_clusters=no_delete,
+                             workload_startup_time=startup_time)
 
     # Step-2: run the tests.
     failed = runner.run()
@@ -520,13 +530,12 @@ def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
 
 @spec_tests.command('validate-workload-executor')
 @WORKLOADEXECUTOR_OPTION
+@EXECUTORSTARTUPTIME_OPTION
 @click.option('--connection-string', required=True, type=click.STRING,
               help='Connection string for the test MongoDB instance.',
               prompt=True)
-@click.option('--startup-time', default=1, type=click.FLOAT, show_default=True,
-              help='Amount of time to wait for the executor to start.')
-def validate_workload_executor(workload_executor, connection_string,
-                               startup_time):
+def validate_workload_executor(workload_executor, startup_time,
+                               connection_string):
     """
     Runs a series of tests to validate a workload executor.
     Relies upon a user-provisioned instance of MongoDB to run operations against.

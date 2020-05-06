@@ -35,9 +35,7 @@ Setting up
 
    $ mkdir -p integrations/<driver-language>/<project-name>
 
-.. note::
-
-   The path to the newly created folder(s) will henceforth be referred to in this guide as ``DRIVER_DIRNAME``.
+.. note:: The path to the newly created folder(s) will henceforth be referred to in this guide as ``DRIVER_DIRNAME``.
 
 
 .. _integration-step-workload-executor:
@@ -50,17 +48,13 @@ Drivers must implement this script in accordance with the specification - see :r
 The workload executor MUST be saved in the ``DRIVER_DIRNAME`` directory under the name ``workload-executor``.
 The executable permission bit MUST be set for the workload executor file *before* it is committed to git.
 
-.. note::
-
-   All `Evergreen expansions <https://github.com/evergreen-ci/evergreen/wiki/Project-Files#expansions>`_
+.. note:: All `Evergreen expansions <https://github.com/evergreen-ci/evergreen/wiki/Project-Files#expansions>`_
    for a given build variant are available to the workload executor script at runtime as environment variables.
    The script can make use of any of these environment variables but should ensure that it does not accidentally
    leak the Atlas API credentials and MongoDB user credentials. See :ref:`evg-defining-environment-variables` for
    details.
 
-.. note::
-
-   The workload executor be invoked with the working directory set to the ``astrolabe`` project root.
+.. note:: The workload executor be invoked with the working directory set to the ``astrolabe`` project root.
 
 .. _wrapping-workload-executor-shell-script:
 
@@ -74,9 +68,7 @@ workload executor scripts on different platforms. To support these various usage
 wrap the actual call to a natively implemented workload executor in a shell script such that exposes the
 API desired by the :ref:`workload-executor-specification` specification.
 
-.. note::
-
-   For example, PyMongo's ``astrolabe`` integration uses this pattern to implement its
+.. note:: For example, PyMongo's ``astrolabe`` integration uses this pattern to implement its
    `workload executor <https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/integrations/python/pymongo/workload-executor>`_.
 
 Testing/validating a workload executor script
@@ -102,6 +94,10 @@ be used during the implementation of workload executors as a convenient way to t
 
 .. note:: The ``validate-workload-executor`` task only appears on patch builds.
 
+.. note:: If your workload executor takes a while to start, validation may fail due to ``astrolabe`` terminating
+   the workload executor before any driver operations have been run (see :ref:`faq-why-startup-time` for details).
+   You can workaround this issue by declaring the ``ASTROLABE_EXECUTOR_STARTUP_TIME`` environment variable (see
+   :ref:`evg-adding-a-driver`).
 
 .. _integration-step-driver-installer:
 
@@ -117,21 +113,15 @@ This script can be used to perform any number of arbitrary tasks related to sett
 the workload executor to be executed within. It MUST NOT however, clone the driver source repository as this
 is done by one of the shared Evergreen tasks.
 
-.. note::
-
-   All `Evergreen expansions <https://github.com/evergreen-ci/evergreen/wiki/Project-Files#expansions>`_
+.. note:: All `Evergreen expansions <https://github.com/evergreen-ci/evergreen/wiki/Project-Files#expansions>`_
    for a given build variant are available to the driver installer script at runtime as environment variables.
    The script can make use of any of these environment variables but must ensure that they are written in a way that
    prevents accidentally leaking Atlas API credentials and MongoDB user credentials. See
    :ref:`evg-defining-environment-variables` for details.
 
-.. note::
+.. note:: The driver installer script will be executed with the working directory set to the ``astrolabe`` project root.
 
-   The driver installer script will be executed with the working directory set to the ``astrolabe`` project root.
-
-.. note::
-
-   Driver source code which downloaded by the shared Evergreen configuration will reside in a folder matching
+.. note:: Driver source code which downloaded by the shared Evergreen configuration will reside in a folder matching
    the driver source repository name (e.g. ``mongo-java-driver`` for Java) within the ``astrolabe`` project root.
 
 
@@ -178,10 +168,8 @@ Here is an example of a ``platform`` axis entry for the ``Ubuntu-16.04`` platfor
           PYTHON3_BINARY: "/opt/python/3.7/bin/python3"
           PYTHON_BIN_DIR: "bin"
 
-.. note::
-
-  To encourage re-use of ``platform`` entries across driver projects, it is recommended that no driver-specific
-  expansions be added to the ``variables`` section of the platform definition.
+.. note:: To encourage re-use of ``platform`` entries across driver projects, it is recommended that no
+   driver-specific expansions be added to the ``variables`` section of the platform definition.
 
 .. _evg-adding-a-runtime:
 
@@ -206,9 +194,7 @@ runtime to use for running the tests::
 Runtime entries are not expected to be shared across driver projects so drivers are encourage to add their own,
 new entries rather than augmenting existing entries used by other drivers.
 
-.. note::
-
-   Use of the ``runtime`` axis is optional. You may simply omit this axis from your driver's buildvariant
+.. note:: Use of the ``runtime`` axis is optional. You may simply omit this axis from your driver's buildvariant
    definitions should you not require it.
 
 .. _evg-adding-a-driver:
@@ -228,6 +214,10 @@ you intend to test. Each entry has the following fields:
   driver to be tested.
 * ``variables.DRIVER_REVISION`` (required): git revision-id corresponding to the driver version that is to be tested.
   This can be a branch name (e.g. ``"master"``) or a tag (e.g. ``"1.0.0"``).
+* ``variables.ASTROLABE_EXECUTOR_STARTUP_TIME`` (optional): the amount of time ``astrolabe`` should wait after
+  invoking the workload executor, but before applying the maintenance plan. It is recommended that this value be
+  explicitly set by all drivers whose workload executor implementations take >1 second to start. Failing to do so
+  can result in hard-to-debug failures. See :ref:`faq-why-startup-time` for details.
 
 All additional expansions that are relied upon by the driver's install and/or workload executor scripts
 should also be declared in the ``variables`` section of the driver definition. Finally, an entry can be added to
@@ -277,13 +267,9 @@ in the Evergreen configuration file:
   the buildvariant uses the ``runtime`` axis (use of this axis is optional). This is the ideal place to define
   variables that vary across buildvariants for a particular driver. See :ref:`evg-adding-a-runtime` for details.
 
-.. note::
+.. note:: To encourage re-use of ``platform`` entries across driver projects, it is recommended that no
+   driver-specific expansions be added to the ``variables`` section of the platform definition.
 
-  To encourage re-use of ``platform`` entries across driver projects, it is recommended that no driver-specific
-  expansions be added to the ``variables`` section of the platform definition.
-
-.. note::
-
-  Users are asked to be extra cautious while dealing with environment variables that contain sensitive secrets.
-  Using these variables in a script that sets ``-xtrace`` can, for instance, result in leaking these secrets
-  into Evergreen's log output.
+.. note:: Users are asked to be extra cautious while dealing with environment variables that contain sensitive secrets.
+   Using these variables in a script that sets ``-xtrace`` can, for instance, result in leaking these secrets
+   into Evergreen's log output.

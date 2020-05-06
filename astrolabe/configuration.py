@@ -36,7 +36,8 @@ CONFIG_ENVVARS = JSONObject.from_dict({
     "API_USERNAME": "ATLAS_API_USERNAME",
     "API_PASSWORD": "ATLAS_API_PASSWORD",
     "HTTP_TIMEOUT": "ATLAS_HTTP_TIMEOUT",
-    "LOG_VERBOSITY": "ASTROLABE_LOGLEVEL"
+    "LOG_VERBOSITY": "ASTROLABE_LOGLEVEL",
+    "EXECUTOR_STARTUP_TIME": "ASTROLABE_EXECUTOR_STARTUP_TIME"
 })
 
 
@@ -47,12 +48,13 @@ CLI_OPTION_NAMES = JSONObject.from_dict({
     "POLLING_FREQUENCY": "--polling-frequency",
     "API_USERNAME": "--atlas-api-username",
     "API_PASSWORD": "--atlas-api-password",
-    "DB_USERNAME" : "--db-username",
-    "DB_PASSWORD" : "--db-password",
+    "DB_USERNAME": "--db-username",
+    "DB_PASSWORD": "--db-password",
     "ORGANIZATION_NAME": "--org-name",
     "BASE_URL": "--atlas-base-url",
     "HTTP_TIMEOUT": "--http-timeout",
-    "LOG_VERBOSITY": "--log-level"
+    "LOG_VERBOSITY": "--log-level",
+    "EXECUTOR_STARTUP_TIME": "--startup-time"
 })
 
 

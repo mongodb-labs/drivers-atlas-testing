@@ -41,3 +41,23 @@ we need to limit the number of concurrent builds in the
 than 25. Evergreen does not currently have a way to enforce such a limit, so instead we have created this
 custom distro which is limited to 25 hosts. While not foolproof, this workaround helps avoid the aforementioned
 failures in most usage scenarios.
+
+.. _faq-why-startup-time:
+
+What is the purpose of the ``ASTROLABE_EXECUTOR_STARTUP_TIME`` environment variable?
+------------------------------------------------------------------------------------
+
+This test framework's architecture (see :ref:`astrolabe-architecture`) delegates the responsibilities of
+invoking the workload executor as well as starting the Atlas planned maintenance to ``astrolabe``. Since
+the workload executor is run in a subprocess, there is no straightforward way for ``astrolabe`` to ascertain
+whether a workload executor is in the process of initialization or if it is, in fact, already running operations
+against the test cluster. This limitation, when combined with a workload executor that runs particularly slowly
+can result in failures, e.g.:
+
+* The maintenance completes and ``astrolabe`` terminates the workload executor before it can run any operations.
+* The workload executor only starts running operations when cluster maintenance is already underway.
+
+To avoid this situation, users can set the ``ASTROLABE_EXECUTOR_STARTUP_TIME`` environment variable to a value
+greater than the number of seconds it takes their workload executor to start. When this value is set, ``astrolabe``
+will wait for ``ASTROLABE_EXECUTOR_STARTUP_TIME`` seconds before implementing the maintenance plan thereby avoiding
+the aforementioned issues.

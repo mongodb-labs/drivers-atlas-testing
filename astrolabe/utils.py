@@ -163,7 +163,8 @@ class DriverWorkloadSubprocessRunner:
     def returncode(self):
         return self.workload_subprocess.returncode
 
-    def spawn(self, *, workload_executor, connection_string, driver_workload):
+    def spawn(self, *, workload_executor, connection_string, driver_workload,
+              startup_time=1):
         LOGGER.info("Starting workload executor subprocess")
 
         try:
@@ -187,13 +188,18 @@ class DriverWorkloadSubprocessRunner:
         LOGGER.debug("Subprocess argument list: {}".format(args))
         LOGGER.info("Started workload executor [PID: {}]".format(self.pid))
 
-        # Check if something caused the workload executor to exit immediately.
         try:
-            self.workload_subprocess.wait(timeout=1)
-            raise WorkloadExecutorError(
-                "Workload executor quit without receiving termination signal")
+            # Wait for the workload executor to start.
+            LOGGER.info("Waiting {} seconds for the workload executor "
+                        "subprocess to start".format(startup_time))
+            self.workload_subprocess.wait(timeout=startup_time)
         except subprocess.TimeoutExpired:
             pass
+        else:
+            # We end up here if TimeoutExpired was not raised. This means that
+            # the workload executor has already quit which is incorrect.
+            raise WorkloadExecutorError(
+                "Workload executor quit without receiving termination signal")
 
         return self.workload_subprocess
 

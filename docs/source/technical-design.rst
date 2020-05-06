@@ -100,6 +100,7 @@ Test Orchestrator
 Atlas API
   `REST API <https://docs.atlas.mongodb.com/api/>`_ that provides programmatic access to MongoDB Atlas.
 
+.. _astrolabe-architecture:
 
 ---------------------
 Architecture Overview

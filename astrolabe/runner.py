@@ -133,7 +133,7 @@ class AtlasTestCase:
             self.client.groups[self.project.id].\
                 clusters[self.cluster_name].processArgs.patch(**process_args)
 
-    def run(self, persist_cluster=False):
+    def run(self, persist_cluster=False, startup_time=1):
         LOGGER.info("Running test {!r} on cluster {!r}".format(
             self.id, self.cluster_name))
 
@@ -158,7 +158,8 @@ class AtlasTestCase:
         self.workload_runner.spawn(
             workload_executor=self.config.workload_executor,
             connection_string=self.get_connection_string(),
-            driver_workload=self.spec.driverWorkload)
+            driver_workload=self.spec.driverWorkload,
+            startup_time=startup_time)
 
         # Step-3: begin maintenance routine.
         final_config = self.spec.maintenancePlan.final
@@ -176,7 +177,7 @@ class AtlasTestCase:
             LOGGER.info("Pushing process arguments update")
             self.cluster_url.processArgs.patch(**process_args)
 
-        # Sleep before polling to avoid "missing" cluster.stateName change.
+        # Sleep before polling to give Atlas time to update cluster.stateName.
         sleep(3)
 
         # Step-4: wait until maintenance completes (cluster is IDLE).
@@ -225,12 +226,13 @@ class AtlasTestCase:
 class SpecTestRunnerBase:
     """Base class for spec test runners."""
     def __init__(self, *, client, test_locator_token, configuration, xunit_output,
-                 persist_clusters):
+                 persist_clusters, workload_startup_time):
         self.cases = []
         self.client = client
         self.config = configuration
         self.xunit_logger = SingleTestXUnitLogger(output_directory=xunit_output)
         self.persist_clusters = persist_clusters
+        self.workload_startup_time = workload_startup_time
 
         for full_path in self.find_spec_tests(test_locator_token):
             # Step-1: load test specification.
@@ -323,7 +325,8 @@ class SpecTestRunnerBase:
                 active_case.cluster_name))
 
             # Run the case.
-            xunit_test = active_case.run(persist_cluster=self.persist_clusters)
+            xunit_test = active_case.run(persist_cluster=self.persist_clusters,
+                                         startup_time=self.workload_startup_time)
             # Write xunit entry for case.
             self.xunit_logger.write_xml(
                 test_case=xunit_test,
