@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import copy
 import json
+import os
 import re
 import signal
 import sys
@@ -71,7 +72,7 @@ def run_operation(objects, prepared_operation):
 
 
 def connect(mongodb_uri):
-    if WIN32:
+    if WIN32 and mongodb_uri.startswith("mongodb+srv://"):
         # TODO: remove this once BUILD-10841 is done.
         import certifi
         return MongoClient(mongodb_uri, tlsCAFile=certifi.where())
@@ -115,6 +116,9 @@ def workload_runner(mongodb_uri, test_workload):
     stats = {"numErrors": num_errors, "numFailures": num_failures,
              "numSuccesses": num_operations}
     print("Workload statistics: {!r}".format(stats))
+
+    sentinel = os.path.join(os.path.abspath(os.curdir), 'results.json')
+    print("Writing statistics to sentinel file {!r}".format(sentinel))
     with open('results.json', 'w') as fr:
         json.dump(stats, fr)
     exit(0 or num_errors or num_failures)

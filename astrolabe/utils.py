@@ -19,7 +19,7 @@ import signal
 import subprocess
 import sys
 from hashlib import sha256
-from time import monotonic
+from time import monotonic, sleep
 
 import click
 import junitparser
@@ -129,7 +129,8 @@ def load_test_data(connection_string, driver_workload):
     kwargs = {'w': "majority"}
 
     # TODO: remove this if...else block after BUILD-10841 is done.
-    if sys.platform in ("win32", "cygwin"):
+    if (sys.platform in ("win32", "cygwin") and
+            connection_string.startswith("mongodb+srv://")):
         import certifi
         kwargs['tlsCAFile'] = certifi.where()
     client = MongoClient(connection_string, **kwargs)
@@ -207,10 +208,16 @@ class DriverWorkloadSubprocessRunner:
         t_wait = 10
         try:
             self.workload_subprocess.wait(timeout=t_wait)
+            LOGGER.info("Stopped workload executor [PID: {}]".format(self.pid))
         except subprocess.TimeoutExpired:
             raise WorkloadExecutorError(
                 "The workload executor did not terminate {} seconds "
                 "after sending the termination signal".format(t_wait))
+
+        # Workload executors wrapped in shell scripts can report that they've
+        # terminated earlier than they actually terminate on Windows.
+        if self.is_windows:
+            sleep(2)
 
         try:
             LOGGER.info("Reading sentinel file {!r}".format(self.sentinel))

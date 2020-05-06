@@ -190,11 +190,7 @@ class AtlasTestCase:
         LOGGER.info("Cluster maintenance complete")
 
         # Step-5: interrupt driver workload and capture streams
-        LOGGER.info("Stopping workload executor [PID: {}]".format(
-            self.workload_runner.pid))
         stats = self.workload_runner.terminate()
-        LOGGER.info("Stopped workload executor [exit code: {}]".format(
-            self.workload_runner.returncode))
 
         # Stop the timer
         timer.stop()
