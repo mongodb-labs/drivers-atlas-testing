@@ -1,8 +1,6 @@
 Frequently Asked Questions
 ==========================
 
-.. contents::
-
 Why do I keep seeing ``AtlasAuthenticationError: 401: Unauthorized.`` errors while trying to use ``astrolabe``?
 ---------------------------------------------------------------------------------------------------------------
 

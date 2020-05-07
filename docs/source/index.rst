@@ -1,10 +1,11 @@
 Welcome to astrolabe's documentation!
 =====================================
 
-Overview
---------
 **astrolabe** is a distribution containing tools for automating Atlas operations and running Atlas Planned Maintenance
 Tests.
+
+Documentation Overview
+----------------------
 
 :doc:`installing-running-locally`
   Instructions for installing ``astrolabe`` and running Atlas Planned Maintenance Tests from your local machine.
@@ -24,16 +25,11 @@ Tests.
 :doc:`faq`
   Answers to questions and issues that come up often.
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+Table of Contents
+-----------------
 
 .. toctree::
-   :hidden:
+   :maxdepth: 2
 
    installing-running-locally
    integration-guide
@@ -41,3 +37,10 @@ Indices and tables
    spec-test-format
    technical-design
    faq
+
+Indices and tables
+------------------
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

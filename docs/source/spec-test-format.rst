@@ -3,11 +3,8 @@
 Atlas Planned Maintenance Test Scenario Format
 ==============================================
 
-.. note::
-
-   Detailed information about terms that are italicized in this document can be found in the
+.. note:: Detailed information about terms that are italicized in this document can be found in the
    :ref:`terms-technical-design` section.
-
 
 The YAML file format described herein is used to define platform-independent *Atlas Planned Maintenance Tests* in
 YAML-formatted *Test Scenario Files*. Each Test Scenario File describes exactly one Atlas Planned Maintenance Test.

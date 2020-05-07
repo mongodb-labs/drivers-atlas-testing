@@ -15,11 +15,6 @@ Technical Design: Testing Drivers Against Atlas Planned Maintenance
 :Minimum Server Version: N/A
 :Last Modified: January 28, 2020
 
-
-.. contents::
-
---------
-
 --------
 Abstract
 --------
@@ -31,7 +26,6 @@ This specification outlines a testing framework that streamlines the process of 
 undergoing maintenance thereby ensuring expeditious incorporation of this additional testing into all driver projects.
 The improved test coverage will result in a superior user experience as workload disruption during planned maintenance
 due to undiscovered bugs in the drivers, server or Atlas will become less likely.
-
 
 -----------
 Definitions
@@ -116,12 +110,10 @@ comprised of the following components:
    Test Scenario Format and runs an Atlas Planned Maintenance Test. The Test Orchestrator is also responsible for
    leveraging the Atlas API to provision, configure, and monitor Atlas clusters.
 
-
 .. figure:: static/specification-schematic.png
    :figwidth: 100%
 
    Schematic representation of the test framework architecture.
-
 
 The subsequent sections describe each of these components in greater detail and are intended as a reference for
 implementation of the testing framework described in this specification. Drivers MUST integrate this testing framework

@@ -3,11 +3,8 @@
 Workload Executor Specification
 ===============================
 
-.. note::
-
-   Detailed information about terms that are italicized in this document can be found in the
+.. note:: Detailed information about terms that are italicized in this document can be found in the
    :ref:`terms-technical-design` section.
-
 
 The *Workload Executor* is a script that translates a *Driver Workload* specified in a *Test Scenario File* into
 driver operations that are run against a test cluster. This script MUST be implemented by every driver.

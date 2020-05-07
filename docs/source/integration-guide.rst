@@ -5,7 +5,6 @@ Integration Guide
 
 This guide explains how to use ``astrolabe`` to add Atlas Planned Maintenance testing to your driver.
 
-
 --------
 Overview
 --------
