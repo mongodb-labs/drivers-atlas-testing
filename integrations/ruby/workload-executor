@@ -5,7 +5,7 @@ require 'shellwords'
 puts ([$0] + ARGV.map { |arg| Shellwords.shellescape(arg) }).join(' ')
 
 $: << File.dirname(__FILE__)
-$: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver')
+$: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver/lib')
 
 require 'executor'
 
