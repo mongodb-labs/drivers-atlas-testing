@@ -17,7 +17,9 @@ class Executor
 
   def run
     set_signal_handler
-    load_data
+    # Normally, the orchestrator loads test data.
+    # If the executor is run by itself, uncomment the next line.
+    #load_data
     while true
       break if @stop
       perform_operations
