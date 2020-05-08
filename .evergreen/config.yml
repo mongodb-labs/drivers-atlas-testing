@@ -175,6 +175,12 @@ axes:
           DRIVER_REVISION: "master"
           PYMONGO_VIRTUALENV_NAME: "pymongotestvenv"
           ASTROLABE_EXECUTOR_STARTUP_TIME: 5
+      - id: ruby-master
+        display_name: "Ruby (master)"
+        variables:
+          DRIVER_DIRNAME: "ruby"
+          DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-ruby-driver"
+          DRIVER_REVISION: "master"
 
   # The 'platform' axis specifies the evergreen host distro to use.
   # Platforms MUST specify the PYTHON3_BINARY variable as this is required to install astrolabe.
@@ -231,6 +237,14 @@ buildvariants:
     driver: ["pymongo-master"]
     platform: ["windows-64"]
     runtime: ["python37-windows"]
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - ".all"
+- matrix_name: "tests-ruby"
+  matrix_spec:
+    driver: ["ruby-master"]
+    platform: ubuntu-18.04
+    runtime: python38
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
