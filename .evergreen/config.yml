@@ -181,6 +181,12 @@ axes:
           DRIVER_DIRNAME: "ruby"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-ruby-driver"
           DRIVER_REVISION: "master"
+      - id: node-master
+        display_name: "Node (master)"
+        variables:
+          DRIVER_DIRNAME: "node"
+          DRIVER_REPOSITORY: "https://github.com/mongodb/node-mongodb-native"
+          DRIVER_REVISION: "master"
 
   # The 'platform' axis specifies the evergreen host distro to use.
   # Platforms MUST specify the PYTHON3_BINARY variable as this is required to install astrolabe.
@@ -222,6 +228,10 @@ axes:
         display_name: CPython-3.7-Windows
         variables:
           PYTHON_BINARY: "C:/python/Python37/python.exe"
+      - id: node-carbon
+        display_name: Node Carbon
+        variables:
+          NODE_LTS_NAME: "carbon"
 
 buildvariants:
 - matrix_name: "tests-python"
@@ -245,6 +255,14 @@ buildvariants:
     driver: ["ruby-master"]
     platform: ubuntu-18.04
     runtime: python38
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - ".all"
+- matrix_name: "tests-node"
+  matrix_spec:
+    driver: ["node-master"]
+    platform: ubuntu-18.04
+    runtime: node-carbon
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
