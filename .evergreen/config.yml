@@ -229,9 +229,17 @@ axes:
         variables:
           PYTHON_BINARY: "C:/python/Python37/python.exe"
       - id: node-carbon
-        display_name: Node Carbon
+        display_name: Node v8 Carbon
         variables:
           NODE_LTS_NAME: "carbon"
+      - id: node-dubnium
+        display_name: Node v10 Dubnium
+        variables:
+          NODE_LTS_NAME: "dubnium"
+      - id: node-erbium
+        display_name: Node v12 Erbium
+        variables:
+          NODE_LTS_NAME: "erbium"
 
 buildvariants:
 - matrix_name: "tests-python"
@@ -258,11 +266,16 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
-- matrix_name: "tests-node"
+- matrix_name: tests-node
   matrix_spec:
-    driver: ["node-master"]
-    platform: ubuntu-18.04
-    runtime: node-carbon
+    driver:
+      - node-master
+    platform:
+      - ubuntu-18.04
+    runtime:
+      - node-carbon
+      - node-dubnium
+      - node-erbium
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - ".all"
+    - .all
