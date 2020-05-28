@@ -41,14 +41,16 @@ Configuration
 
 Before you can start using ``astrolabe``, you must configure it to give it access to the MongoDB Atlas API.
 
-Begin by creating a `MongoDB Atlas Organization <https://docs.atlas.mongodb.com/organizations-projects>`_. This can
-only be done via the Atlas UI. Make a note of the organization name - you will need it later. Then, create a
-`Programmatic API Key <https://docs.atlas.mongodb.com/configure-api-access/>` for Atlas. Once you have the organization name,
-public key and private key, declare the following variables to configure ``astrolabe``::
+If you haven't done so already, create a
+`MongoDB Atlas Organization <https://docs.atlas.mongodb.com/organizations-projects>`_ (this can
+only be done via the Atlas UI). Make a note of the name of the Atlas organization. You will also need
+a `Programmatic API Key <https://docs.atlas.mongodb.com/configure-api-access/>` for this Atlas Organization with
+"Organization Owner" permissions. The API key will consist of 2 parts - a public key and a private key.
+Finally, declare the following variables to configure ``astrolabe``::
 
-  $ export ATLAS_ORGANIZATION_NAME=<orgName>
-  $ export ATLAS_API_USERNAME=<publicKey>
-  $ export ATLAS_API_PASSWORD=<privateKey>
+  $ export ATLAS_ORGANIZATION_NAME=<Atlas Organization Name>
+  $ export ATLAS_API_USERNAME=<API Public Key>
+  $ export ATLAS_API_PASSWORD=<API Private Key>
 
 Finally, use the ``check-connection`` command to confirm that ``astrolabe`` is able to connect to and authenticate
 with the Atlas API::
