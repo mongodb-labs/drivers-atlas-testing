@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+set -o xtrace   # Write all commands first to stderr
+set -o errexit  # Exit the script with error if any of the commands fail
+
+# Environment variables used as input:
+#   FRAMEWORK                       Set to specify .NET framework to test against. Values: "net452", "netcoreapp1.1",
+#                                   "netcoreapp2.1"
+#   ASYNC                           Whether or not to use async operations (which may be run synchronously). Values: true, false
+# Environment variables produced as output:
+#   RESULTS_DIR                     Where to output results.json
+#   ASYNC                           Whether or not to use async operations (which may be run synchronously). Values: true, false
+
+FRAMEWORK=${FRAMEWORK:-netcoreapp2.1}
+MAGIC_FILE_NAME=${MAGIC_FILE_NAME:-nox}
+ASYNC=${ASYNC:-true}
+############################################
+#            Functions                     #
+############################################
+
+
+############################################
+#            Main Program                  #
+############################################
+CONNECTION_STRING=$1
+WORKLOAD_SPEC=$2
+
+echo workload-executor pid: $BASHPID
+
+if [[ "$OS" =~ Windows|windows ]]; then
+  RESULTS_DIR=$(cygpath -w "$(pwd)")
+else
+  RESULTS_DIR="$(pwd)"
+fi
+
+# Set a trap for the INT
+# - wait for a state change in child process bearing ID $NATIVE_WORKLOAD_EXECUTOR_PID
+# - exit with the same status/code as the exit code of the call to wait (which returns the exit code of $NATIVE_WORKLOAD_EXECUTOR_PID)
+# Note that calls to wait return immediately if the child has already changed state
+
+trap 'echo You have activated my trap card; wait $NATIVE_WORKLOAD_EXECUTOR_PID; exit $?' INT
+
+export RESULTS_DIR
+export ASYNC
+
+PLATFORM="" # partial workaround for https://github.com/dotnet/sdk/issues/12159
+export PLATFORM
+
+# Invoke the workload executor as a background process and store its process ID as NATIVE_WORKLOAD_EXECUTOR_PID
+#     We don't need to build or restore because install-driver.sh handles that
+#     We can't use dotnet run --no-build --no-restore due to https://github.com/dotnet/runtime/issues/38274
+#     Addditionally, we must use the published version to bypass a dependency resolution issue with .NET Core 1.1
+if [[ "$FRAMEWORK" == "net452" ]]; then
+    ./mongo-csharp-driver/tests/AstrolabeWorkloadExecutor/bin/Debug/"${FRAMEWORK}"/publish/workload-executor.exe \
+        "${CONNECTION_STRING}" "${WORKLOAD_SPEC}" &
+else
+    dotnet mongo-csharp-driver/tests/AstrolabeWorkloadExecutor/bin/Debug/"${FRAMEWORK}"/publish/workload-executor.dll \
+        "${CONNECTION_STRING}" "${WORKLOAD_SPEC}" &
+fi
+export NATIVE_WORKLOAD_EXECUTOR_PID=$!
+
+# Wait for a state change in $NATIVE_WORKLOAD_EXECUTOR_PID (without this the foreground process would return)
+wait $NATIVE_WORKLOAD_EXECUTOR_PID
