@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const MongoClient = require('../../node-mongodb-native').MongoClient;
+const MongoClient = require(process.env.PROJECT_DIRECTORY).MongoClient;
 const fs = require('fs');
 const assert = require('assert');
 const omit = require('lodash.omit');
