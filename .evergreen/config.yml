@@ -207,6 +207,12 @@ axes:
           NUGET_PACKAGES: "Z:/"
           NUGET_HTTP_CACHE_PATH: "Z:/"
           APPDATA: "Z:/"
+      - id: go-master
+        display_name: "Go (master)"
+        variables:
+          DRIVER_DIRNAME: "go"
+          DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-go-driver"
+          DRIVER_REVISION: "master"
 
   # The 'platform' axis specifies the evergreen host distro to use.
   # Platforms MUST specify the PYTHON3_BINARY variable as this is required to install astrolabe.
@@ -294,6 +300,10 @@ axes:
         variables:
           ASYNC: "false"
           FRAMEWORK: "net452"
+      - id: go-13
+        display_name: Go v1.13
+        variables:
+          GOROOT: /opt/golang/go1.13
 
 buildvariants:
 - matrix_name: "tests-python"
@@ -354,3 +364,12 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
+- matrix_name: "tests-go"
+  matrix_spec:
+    driver: ["go-master"]
+    platform: ubuntu-18.04
+    runtime: go-13
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - ".all"
+  
