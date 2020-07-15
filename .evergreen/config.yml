@@ -304,6 +304,7 @@ axes:
         display_name: Go v1.13
         variables:
           GOROOT: /opt/golang/go1.13
+          GOPATH: /home/ubuntu/go
 
 buildvariants:
 - matrix_name: "tests-python"
