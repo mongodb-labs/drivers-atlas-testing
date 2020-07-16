@@ -46,8 +46,3 @@ npm install yargs lodash.omit
 # install node dependencies
 cd ${PROJECT_DIRECTORY}
 npm install
-
-# compile typescript if necessary
-if [ $DRIVER_REVISION == "master" ]; then
-    npm run build:ts
-fi

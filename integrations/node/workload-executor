@@ -9,11 +9,6 @@ PATH=$(echo "$PATH" | sed -e 's/:\/opt\/node\/bin$//')
 PROJECT_DIRECTORY="$(pwd)/node-mongodb-native"
 NODE_ARTIFACTS_PATH="${PROJECT_DIRECTORY}/node-artifacts"
 
-# master now uses typescript, point to compiled js in lib/
-if [ $DRIVER_REVISION == "master" ]; then
-    PROJECT_DIRECTORY="${PROJECT_DIRECTORY}/lib"
-fi
-
 export PROJECT_DIRECTORY
 
 export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"
