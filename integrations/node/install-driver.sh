@@ -46,4 +46,3 @@ npm install yargs lodash.omit
 # install node dependencies
 cd ${PROJECT_DIRECTORY}
 npm install
-

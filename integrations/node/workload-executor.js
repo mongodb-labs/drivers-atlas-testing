@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const MongoClient = require('../../node-mongodb-native').MongoClient;
+const MongoClient = require(process.env.PROJECT_DIRECTORY).MongoClient;
 const fs = require('fs');
 const assert = require('assert');
 const omit = require('lodash.omit');
@@ -17,7 +17,7 @@ operations.set(
 );
 operations.set(
   'insertOne',
-  (collection, args) => collection.insertOne(args.document /*, { forceServerObjectId: true }*/)
+  (collection, args) => collection.insertOne(args.document)
 );
 operations.set(
   'updateOne',
@@ -37,13 +37,14 @@ async function main(uri, spec) {
       try {
         await runOperations(client, results);
       } catch (err) {
+        console.dir(err);
         ++results.numErrors;
       }
     }
 
     fs.writeFileSync('results.json', JSON.stringify(results));
   } catch (error) {
-    console.error(error);
+    console.dir(error);
   } finally {
     await client.close();
   }
@@ -72,7 +73,10 @@ function makeRunOperations(spec) {
             ++results.numFailures;
           }
         })
-        .catch(() => (++results.numErrors)),
+        .catch(err => {
+          console.dir(err);
+          ++results.numErrors;
+        }),
       Promise.resolve()
     );
   };
@@ -87,7 +91,14 @@ function runOperation(op) {
     throw new Error(`Unsupported operation: ${op.name}`);
   }
   const operation = operations.get(op.name);
-  return operation(object, op.arguments);
+  let args;
+  try {
+    args = JSON.parse(JSON.stringify(op.arguments));
+  } catch (err) {
+    console.dir(err);
+    throw new Error(`Unable to serialize/deserialize operation arguments as JSON: ${err.message}`);
+  }
+  return operation(object, args);
 }
 
 

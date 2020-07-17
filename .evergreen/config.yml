@@ -273,7 +273,6 @@ buildvariants:
     platform:
       - ubuntu-18.04
     runtime:
-      - node-carbon
       - node-dubnium
       - node-erbium
   display_name: "${driver} ${platform} ${runtime}"
