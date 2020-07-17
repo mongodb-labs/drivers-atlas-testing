@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
-	"log"
 	"math"
 	"os"
 	"os/signal"
-	"runtime"
+	"reflect"
 	"syscall"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,7 +22,7 @@ var emptyDoc = []byte{5, 0, 0, 0, 0}
 type driverWorkload struct {
 	Collection string
 	Database   string
-	TestData   []bson.Raw 	`bson:"testData"`
+	TestData   []interface{} `bson:"testData"`
 	Operations []*operation
 }
 
@@ -30,8 +30,11 @@ type operation struct {
 	Object    string
 	Name      string
 	Arguments bson.Raw
-	Result 	  interface{}
+	Result    interface{}
 }
+
+var specTestRegistry = bson.NewRegistryBuilder().
+	RegisterTypeMapEntry(bson.TypeEmbeddedDocument, reflect.TypeOf(bson.Raw{})).Build()
 
 func executeInsertOne(coll *mongo.Collection, args bson.Raw) (*mongo.InsertOneResult, error) {
 	doc := emptyDoc
@@ -46,7 +49,7 @@ func executeInsertOne(coll *mongo.Collection, args bson.Raw) (*mongo.InsertOneRe
 		case "document":
 			doc = val.Document()
 		default:
-			panic("unrecognized insertOne option")
+			return nil, errors.New("unrecognized insertOne option: " + key)
 		}
 	}
 
@@ -65,8 +68,10 @@ func executeFind(coll *mongo.Collection, args bson.Raw) (*mongo.Cursor, error) {
 		switch key {
 		case "filter":
 			filter = val.Document()
+		case "sort":
+			opts = opts.SetSort(val.Document())
 		default:
-			panic("unrecognized find option")
+			return nil, errors.New("unrecognized find option: " + key)
 		}
 	}
 
@@ -74,10 +79,10 @@ func executeFind(coll *mongo.Collection, args bson.Raw) (*mongo.Cursor, error) {
 }
 
 // create an update document or pipeline from a bson.RawValue
-func createUpdate(updateVal bson.RawValue) interface{} {
+func createUpdate(updateVal bson.RawValue) (interface{}, error) {
 	switch updateVal.Type {
 	case bson.TypeEmbeddedDocument:
-		return updateVal.Document()
+		return updateVal.Document(), nil
 	case bson.TypeArray:
 		var updateDocs []bson.Raw
 		docs, _ := updateVal.Array().Values()
@@ -85,17 +90,18 @@ func createUpdate(updateVal bson.RawValue) interface{} {
 			updateDocs = append(updateDocs, doc.Document())
 		}
 
-		return updateDocs
+		return updateDocs, nil
 	default:
-		panic("unrecognized update type")
+		return nil, errors.New("unrecognized update type: " + updateVal.Type.String())
 	}
 
-	return nil
+	return nil, nil
 }
 
 func executeUpdateOne(coll *mongo.Collection, args bson.Raw) (*mongo.UpdateResult, error) {
 	filter := emptyDoc
 	var update interface{} = emptyDoc
+	var err error
 	opts := options.Update()
 
 	elems, _ := args.Elements()
@@ -107,9 +113,12 @@ func executeUpdateOne(coll *mongo.Collection, args bson.Raw) (*mongo.UpdateResul
 		case "filter":
 			filter = val.Document()
 		case "update":
-			update = createUpdate(val)
+			update, err = createUpdate(val)
+			if err != nil {
+				return nil, err
+			}
 		default:
-			panic("unrecognized updateOne option")
+			return nil, errors.New("unrecognized updateOne option: " + key)
 		}
 	}
 	if opts.Upsert == nil {
@@ -138,10 +147,6 @@ func verifyInsertOneResult(actualResult *mongo.InsertOneResult, expectedResult i
 }
 
 func verifyCursorResult(cur *mongo.Cursor, result interface{}) bool {
-	defer func() {
-		cur.Close(context.Background())
-	} ()
-
 	if result == nil {
 		return true
 	}
@@ -149,11 +154,16 @@ func verifyCursorResult(cur *mongo.Cursor, result interface{}) bool {
 	if cur == nil {
 		return false
 	}
+
+	defer func() {
+		cur.Close(context.Background())
+	}()
+
 	for _, expected := range result.(bson.A) {
 		if !cur.Next(context.Background()) {
 			return false
 		}
-		if !bytes.Equal(expected.([]byte), cur.Current) {
+		if !bytes.Equal(expected.(bson.Raw), cur.Current) {
 			return false
 		}
 	}
@@ -190,7 +200,7 @@ func verifyUpdateResult(res *mongo.UpdateResult, result interface{}) bool {
 	if res.UpsertedID != nil {
 		actualUpsertedCount = 1
 	}
-	return expected.UpsertedCount ==  actualUpsertedCount
+	return expected.UpsertedCount == actualUpsertedCount
 }
 
 func executeCollectionOperation(coll *mongo.Collection, op *operation) (bool, error) {
@@ -205,72 +215,79 @@ func executeCollectionOperation(coll *mongo.Collection, op *operation) (bool, er
 		res, err := executeUpdateOne(coll, op.Arguments)
 		return verifyUpdateResult(res, op.Result), err
 	}
-	panic("unrecognized collection operation")
+	return false, errors.New("unrecognized collection operation: " + op.Name)
 }
 
 func runOperation(coll *mongo.Collection, op *operation) (bool, error) {
 	// execute the command on the given object
-	if op.Object == "collection"{
+	if op.Object == "collection" {
 		return executeCollectionOperation(coll, op)
 	}
-	panic("unrecognized object")
-	//panic
+	return false, errors.New("unrecognized object: " + op.Name)
 }
 
 func main() {
-	log.Printf("GO VERSION: %s\n", runtime.Version())
+	connstring := os.Args[1]
+	workloadSpec := os.Args[2]
 
-    connstring := os.Args[1]
-    workloadSpec := os.Args[2]
+	var workload driverWorkload
 
-    var workload driverWorkload
-
-   	err := json.Unmarshal([]byte(workloadSpec), workload)
-   	if err != nil {
-   		panic("failed to unmarshal data")
-   	}
-
-	client, err := mongo.NewClient(options.Client().ApplyURI(connstring))
+	err := bson.UnmarshalExtJSONWithRegistry(specTestRegistry,[]byte(workloadSpec), false, &workload)
 	if err != nil {
-   		panic("failed to connect to client")
-   	}
+		str := "failed to unmarshal data: " + err.Error()
+		panic(str)
+	}
+
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(connstring))
+	if err != nil {
+		str := "failed to connect to client: " + err.Error()
+		panic(str)
+	}
+	defer func() { _ = client.Disconnect(context.Background()) }()
+
 	db := client.Database(workload.Database)
 	coll := db.Collection(workload.Collection)
 
 	results := struct {
-		numErrors int 	 `json:"numErrors"`
-		numFailures int  `json:"numFailures"`
-		numSuccesses int `json:"numSuccesses"`
-	} {}
-
+		NumErrors    int `json:"numErrors"`
+		NumFailures  int `json:"numFailures"`
+		NumSuccesses int `json:"numSuccesses"`
+	}{}
 
 	done := make(chan struct{})
 
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		
+
 		<-c
 		close(done)
 	}()
 
+	_ = coll.Drop(context.Background())
+
 	// insert testdata
 	if len(workload.TestData) > 0 {
-		docs := make([]interface{}, len(workload.TestData))
-
-		for i, val := range workload.TestData {
-			docs[i] = val
-		}
-		_, err := coll.InsertMany(context.Background(), docs)
+		_, err := coll.InsertMany(context.Background(), workload.TestData)
 		if err != nil {
-			panic("inserting testData failed")
+			str := "inserting testData failed: " + err.Error()
+			panic(str)
 		}
 	}
 
 	defer func() {
-        data, _ := json.Marshal(results)
-		_ = ioutil.WriteFile("results.json", data, 0644)
-    }()
+		data, err := json.Marshal(results)
+		if err != nil {
+			str := "marshal results failed: " + err.Error()
+			panic(str)
+		}
+		path, _ := os.Getwd()
+		err = ioutil.WriteFile(path+"/results.json", data, 0644)
+		if err != nil {
+			str := "write to file failed: " + err.Error()
+			panic(str)
+		}
+	}()
 
 	for {
 		select {
@@ -284,12 +301,12 @@ func main() {
 				default:
 					pass, err := runOperation(coll, operation)
 					switch {
-					case !pass:
-						results.numFailures++
 					case err != nil:
-						results.numErrors++
+						results.NumErrors++
+					case !pass:
+						results.NumFailures++
 					default:
-						results.numSuccesses++
+						results.NumSuccesses++
 					}
 				}
 			}

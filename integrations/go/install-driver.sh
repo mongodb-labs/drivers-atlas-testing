@@ -3,11 +3,9 @@
 set -ex
 
 echo "INSTALLING DRIVER"
-pwd
 cd integrations/$DRIVER_DIRNAME
-pwd
 
-export PATH=$GOROOT/bin:$PATH 
-go version
+export PATH=$GOROOT/bin:$PATH
+
 go get go.mongodb.org/mongo-driver@master
 go build -o executor workload-executor.go
