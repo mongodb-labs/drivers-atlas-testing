@@ -247,6 +247,10 @@ axes:
         display_name: Node v12 Erbium
         variables:
           NODE_LTS_NAME: "erbium"
+      - id: java11
+        display_name: Java 11
+        variables:
+          JAVA_HOME: "/opt/java/jdk11"
 
 buildvariants:
 - matrix_name: "tests-python"
@@ -290,6 +294,7 @@ buildvariants:
   matrix_spec:
     driver: ["java-master"]
     platform: ["ubuntu-18.04"]
-  display_name: "${driver} ${platform}"
+    runtime: ["java11"]
+  display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"

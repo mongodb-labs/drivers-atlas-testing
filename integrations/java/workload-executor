@@ -2,8 +2,6 @@
 
 set -o errexit
 
-export JAVA_HOME="/opt/java/jdk11"
-
 OUTPUT_DIRECTORY=$PWD
 
 cd mongo-java-driver || exit
