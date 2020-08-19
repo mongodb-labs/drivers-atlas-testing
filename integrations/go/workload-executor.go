@@ -50,7 +50,8 @@ func executeInsertOne(coll *mongo.Collection, args bson.Raw) (*mongo.InsertOneRe
 		case "document":
 			doc = val.Document()
 		default:
-			return nil, errors.New("unrecognized insertOne option: " + key)
+			str := fmt.Sprintf("unrecognized insertOne option: %v", key)
+			panic(str)
 		}
 	}
 
@@ -72,7 +73,8 @@ func executeFind(coll *mongo.Collection, args bson.Raw) (*mongo.Cursor, error) {
 		case "sort":
 			opts = opts.SetSort(val.Document())
 		default:
-			return nil, errors.New("unrecognized find option: " + key)
+			str := fmt.Sprintf("unrecognized find option: %v", key)
+			panic(str)
 		}
 	}
 
@@ -93,7 +95,8 @@ func createUpdate(updateVal bson.RawValue) (interface{}, error) {
 
 		return updateDocs, nil
 	default:
-		return nil, errors.New("unrecognized update type: " + updateVal.Type.String())
+		str := fmt.Sprintf("unrecognized update type: %v", updateVal.Type)
+		panic(str)
 	}
 
 	return nil, nil
@@ -119,7 +122,8 @@ func executeUpdateOne(coll *mongo.Collection, args bson.Raw) (*mongo.UpdateResul
 				return nil, err
 			}
 		default:
-			return nil, errors.New("unrecognized updateOne option: " + key)
+			str := fmt.Sprintf("unrecognized updateOne option: %v", key)
+			panic(str)
 		}
 	}
 	if opts.Upsert == nil {
@@ -234,12 +238,12 @@ func main() {
 	var workload driverWorkload
 	err := bson.UnmarshalExtJSONWithRegistry(specTestRegistry, []byte(workloadSpec), false, &workload)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(connstring))
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	defer func() { _ = client.Disconnect(context.Background()) }()
 
@@ -269,7 +273,7 @@ func main() {
 	if len(workload.TestData) > 0 {
 		_, err := coll.InsertMany(context.Background(), workload.TestData)
 		if err != nil {
-			str := fmt.Sprintf("inserting testData failed: %s", err.Error())
+			str := fmt.Sprintf("inserting testData failed: %v", err)
 			panic(str)
 		}
 	}
@@ -277,13 +281,13 @@ func main() {
 	defer func() {
 		data, err := json.Marshal(results)
 		if err != nil {
-			str := fmt.Sprintf("marshal results failed: %s", err.Error())
+			str := fmt.Sprintf("marshal results failed: %v", err)
 			panic(str)
 		}
 		path, _ := os.Getwd()
 		err = ioutil.WriteFile(path+"/results.json", data, 0644)
 		if err != nil {
-			str := fmt.Sprintf("write to file failed: %s", err.Error())
+			str := fmt.Sprintf("write to file failed: %v", err)
 			panic(str)
 		}
 	}()
