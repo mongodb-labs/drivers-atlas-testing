@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
@@ -231,17 +232,14 @@ func main() {
 	workloadSpec := os.Args[2]
 
 	var workload driverWorkload
-
-	err := bson.UnmarshalExtJSONWithRegistry(specTestRegistry,[]byte(workloadSpec), false, &workload)
+	err := bson.UnmarshalExtJSONWithRegistry(specTestRegistry, []byte(workloadSpec), false, &workload)
 	if err != nil {
-		str := "failed to unmarshal data: " + err.Error()
-		panic(str)
+		panic(err.Error())
 	}
 
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(connstring))
 	if err != nil {
-		str := "failed to connect to client: " + err.Error()
-		panic(str)
+		panic(err.Error())
 	}
 	defer func() { _ = client.Disconnect(context.Background()) }()
 
@@ -256,6 +254,7 @@ func main() {
 
 	done := make(chan struct{})
 
+	// Waits for the termination signal from astrolabe and terminates the operation loop
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -270,7 +269,7 @@ func main() {
 	if len(workload.TestData) > 0 {
 		_, err := coll.InsertMany(context.Background(), workload.TestData)
 		if err != nil {
-			str := "inserting testData failed: " + err.Error()
+			str := fmt.Sprintf("inserting testData failed: %s", err.Error())
 			panic(str)
 		}
 	}
@@ -278,13 +277,13 @@ func main() {
 	defer func() {
 		data, err := json.Marshal(results)
 		if err != nil {
-			str := "marshal results failed: " + err.Error()
+			str := fmt.Sprintf("marshal results failed: %s", err.Error())
 			panic(str)
 		}
 		path, _ := os.Getwd()
 		err = ioutil.WriteFile(path+"/results.json", data, 0644)
 		if err != nil {
-			str := "write to file failed: " + err.Error()
+			str := fmt.Sprintf("write to file failed: %s", err.Error())
 			panic(str)
 		}
 	}()
@@ -294,20 +293,20 @@ func main() {
 		case <-done:
 			return
 		default:
-			for _, operation := range workload.Operations {
-				select {
-				case <-done:
-					return
+		}
+		for _, operation := range workload.Operations {
+			select {
+			case <-done:
+				return
+			default:
+				pass, err := runOperation(coll, operation)
+				switch {
+				case err != nil:
+					results.NumErrors++
+				case !pass:
+					results.NumFailures++
 				default:
-					pass, err := runOperation(coll, operation)
-					switch {
-					case err != nil:
-						results.NumErrors++
-					case !pass:
-						results.NumFailures++
-					default:
-						results.NumSuccesses++
-					}
+					results.NumSuccesses++
 				}
 			}
 		}
