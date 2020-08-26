@@ -1,14 +1,5 @@
 #!/bin/bash
 
-# Set a trap for the INT signal:
-# - wait for a state change in child process bearing ID $PID
-# - exit with the same status/code as the exit code of the call to wait (which returns the exit code of $PID)
-# Note that calls to wait return immediately if the child has already changed state
-trap 'wait $PID; exit $?' INT
+set -o errexit
 
-# Invoke the workload executor as a background process and store its process ID as $PID
-"$PYMONGO_VIRTUALENV_NAME/$PYTHON_BIN_DIR/python" "integrations/$DRIVER_DIRNAME/workload-executor.py" "$1" "$2" &
-PID=$!
-
-# Wait for a state change in $PID (without this the foreground process would return)
-wait $PID
+"$PYMONGO_VIRTUALENV_NAME/$PYTHON_BIN_DIR/python" "integrations/$DRIVER_DIRNAME/workload-executor.py" "$1" "$2"
