@@ -94,7 +94,7 @@ class ValidateWorkloadExecutor(TestCase):
         num_reported_updates = stats['numSuccesses']
         update_count = self.coll.find_one(
             {'_id': 'validation_sentinel'})['count']
-        if update_count != num_reported_updates:
+        if abs(num_reported_updates - update_count) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
                 "statistics. Expected {} successful "
@@ -124,7 +124,7 @@ class ValidateWorkloadExecutor(TestCase):
         num_reported_updates = stats['numSuccesses']
         update_count = self.coll.find_one(
             {'_id': 'validation_sentinel'})['count']
-        if update_count != num_reported_updates:
+        if abs(num_reported_updates - update_count) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
                 "statistics. Expected {} successful "
