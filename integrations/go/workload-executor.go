@@ -23,7 +23,6 @@ var emptyDoc = []byte{5, 0, 0, 0, 0}
 type driverWorkload struct {
 	Collection string
 	Database   string
-	TestData   []interface{} `bson:"testData"`
 	Operations []*operation
 }
 
@@ -266,17 +265,6 @@ func main() {
 		<-c
 		close(done)
 	}()
-
-	_ = coll.Drop(context.Background())
-
-	// insert testdata
-	if len(workload.TestData) > 0 {
-		_, err := coll.InsertMany(context.Background(), workload.TestData)
-		if err != nil {
-			str := fmt.Sprintf("inserting testData failed: %v", err)
-			panic(str)
-		}
-	}
 
 	defer func() {
 		data, err := json.Marshal(results)
