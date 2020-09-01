@@ -160,7 +160,10 @@ func verifyCursorResult(cur *mongo.Cursor, result interface{}) bool {
 	}
 
 	defer func() {
-		cur.Close(context.Background())
+		err := cur.Close(context.Background())
+		if err != nil {
+			panic(err)
+		}
 	}()
 
 	for _, expected := range result.(bson.A) {
@@ -295,10 +298,10 @@ func main() {
 				switch {
 				case err != nil:
 					results.NumErrors++
-				case !pass:
-					results.NumFailures++
-				default:
+				case pass:
 					results.NumSuccesses++
+				default:
+					results.NumFailures++
 				}
 			}
 		}
