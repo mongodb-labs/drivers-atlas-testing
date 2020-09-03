@@ -47,6 +47,8 @@ After accepting the inputs, the workload executor:
    to run the operations described therein in accordance with the :ref:`test-scenario-format-specification`.
    Note that the workload executor:
 
+   * MUST ignore the ``testData`` array. ``astrolabe`` is responsible for initializing the cluster with
+     this data *before* starting the workload executor.
    * MUST run operations sequentially and in the order in which they appear in the ``operations`` array.
    * MUST repeat the entire set of specified operations indefinitely, until the **termination signal** from
      ``astrolabe`` is received.
@@ -111,6 +113,7 @@ Pseudocode Implementation
         var num_successes = 0;
 
         # Run the workload - operations are run sequentially, repeatedly until the termination signal is received.
+        # Do not attempt to initialize the cluster with the contents of ``testData`` - astrolabe takes care of this.
         try {
             while (True) {
                 for (let operation in workloadSpec.operations) {
