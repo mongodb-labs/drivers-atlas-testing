@@ -230,7 +230,8 @@ func runOperation(coll *mongo.Collection, op *operation) (bool, error) {
 	if op.Object == "collection" {
 		return executeCollectionOperation(coll, op)
 	}
-	return false, errors.New("unrecognized object: " + op.Name)
+	str := "unrecognized object: " + op.Name
+	panic(str)
 }
 
 func main() {
