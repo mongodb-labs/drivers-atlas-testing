@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+set -o errexit  # Exit the script with error if any of the commands fail
+
+# Environment variables used as input:
+#   FRAMEWORK                       Set to specify .NET framework to test against. Values: "net452", "netcoreapp1.1",
+#                                   "netcoreapp2.1"
+#   ASYNC                           Whether or not to use async operations (which may be run synchronously). Values: true, false
+# Environment variables produced as output:
+#   RESULTS_DIR                     Where to output results.json
+#   ASYNC                           Whether or not to use async operations (which may be run synchronously). Values: true, false
+
+FRAMEWORK=${FRAMEWORK:-netcoreapp2.1}
+ASYNC=${ASYNC:-true}
+
+############################################
+#            Main Program                  #
+############################################
+
+set +x # hide connection string in test output
+CONNECTION_STRING=$1
+set -x
+
+WORKLOAD_SPEC=$2
+
+echo workload-executor pid: $BASHPID
+
+if [[ "$OS" =~ Windows|windows ]]; then
+  RESULTS_DIR=$(cygpath -w "$(pwd)")
+else
+  RESULTS_DIR="$(pwd)"
+fi
+
+export RESULTS_DIR
+export ASYNC
+
+PLATFORM="" # partial workaround for https://github.com/dotnet/sdk/issues/12159
+export PLATFORM
+
+# Invoke the workload executor as a background process and store its process ID as NATIVE_WORKLOAD_EXECUTOR_PID
+#     We don't need to build or restore because install-driver.sh handles that
+#     We can't use dotnet run --no-build --no-restore due to https://github.com/dotnet/runtime/issues/38274
+#     Addditionally, we must use the published version to bypass a dependency resolution issue with .NET Core 1.1
+set +x # hide connection string in test output
+if [[ "$FRAMEWORK" == "net452" ]]; then
+    ./mongo-csharp-driver/tests/AstrolabeWorkloadExecutor/bin/Debug/"${FRAMEWORK}"/publish/workload-executor.exe \
+        "${CONNECTION_STRING}" "${WORKLOAD_SPEC}"
+else
+    dotnet mongo-csharp-driver/tests/AstrolabeWorkloadExecutor/bin/Debug/"${FRAMEWORK}"/publish/workload-executor.dll \
+        "${CONNECTION_STRING}" "${WORKLOAD_SPEC}"
+fi
+set -x

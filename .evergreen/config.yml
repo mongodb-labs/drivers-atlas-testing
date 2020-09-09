@@ -194,6 +194,19 @@ axes:
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-java-driver"
           DRIVER_REVISION: "master"
           ASTROLABE_EXECUTOR_STARTUP_TIME: 15
+      - id: dotnet-master
+        display_name: "dotnet (master)"
+        variables:
+          DRIVER_DIRNAME: "dotnet"
+          DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-csharp-driver"
+          DRIVER_REVISION: "master"
+          ASTROLABE_EXECUTOR_STARTUP_TIME: 40
+          DOTNET_CLI_HOME: "Z:/"
+          TMP: "Z:/"
+          TEMP: "Z:/"
+          NUGET_PACKAGES: "Z:/"
+          NUGET_HTTP_CACHE_PATH: "Z:/"
+          APPDATA: "Z:/"
 
   # The 'platform' axis specifies the evergreen host distro to use.
   # Platforms MUST specify the PYTHON3_BINARY variable as this is required to install astrolabe.
@@ -251,6 +264,36 @@ axes:
         display_name: Java 11
         variables:
           JAVA_HOME: "/opt/java/jdk11"
+      - id: dotnet-async-netcoreapp2.1
+        display_name: dotnet-async-netcoreapp2.1
+        variables:
+          ASYNC: "true"
+          FRAMEWORK: "netcoreapp2.1"
+      - id: "dotnet-sync-netcoreapp2.1"
+        display_name: dotnet-sync-netcoreapp2.1
+        variables:
+          ASYNC: "false"
+          FRAMEWORK: "netcoreapp2.1"
+      - id: "dotnet-async-netcoreapp1.1"
+        display_name: dotnet-async-netcoreapp1.1
+        variables:
+          ASYNC: "true"
+          FRAMEWORK: "netcoreapp1.1"
+      - id: "dotnet-sync-netcoreapp1.1"
+        display_name: "dotnet-sync-netcoreapp1.1"
+        variables:
+          ASYNC: "false"
+          FRAMEWORK: "netcoreapp1.1"
+      - id: "dotnet-async-net452"
+        display_name: dotnet-async-net452
+        variables:
+          ASYNC: "true"
+          FRAMEWORK: "net452"
+      - id: "dotnet-sync-net452"
+        display_name: dotnet-sync-452
+        variables:
+          ASYNC: "false"
+          FRAMEWORK: "net452"
 
 buildvariants:
 - matrix_name: "tests-python"
@@ -289,12 +332,25 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - .all
-
 - matrix_name: "tests-java"
   matrix_spec:
     driver: ["java-master"]
     platform: ["ubuntu-18.04"]
     runtime: ["java11"]
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - ".all"
+- matrix_name: "tests-dotnet-windows"
+  matrix_spec:
+    driver: ["dotnet-master"]
+    platform: ["windows-64"]
+    runtime:
+      - "dotnet-async-netcoreapp2.1"
+      - "dotnet-sync-netcoreapp2.1"
+      - "dotnet-async-netcoreapp1.1"
+      - "dotnet-sync-netcoreapp1.1"
+      - "dotnet-async-net452"
+      - "dotnet-sync-net452"
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
