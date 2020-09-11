@@ -70,7 +70,7 @@ class AtlasTestCase:
         if self.__connection_string is None:
             cluster = self.cluster_url.get().data
             prefix, suffix = cluster.srvAddress.split("//")
-            uri_options = self.spec.maintenancePlan.uriOptions.copy()
+            uri_options = self.spec.uriOptions.copy()
 
             # Boolean options must be converted to lowercase strings.
             for key, value in uri_options.items():
@@ -91,20 +91,16 @@ class AtlasTestCase:
         cluster_info = self.cluster_url.get().data
         return cluster_info.stateName.lower() == goal_state.lower()
 
-    def verify_cluster_configuration_matches(self, state):
+    def verify_cluster_configuration_matches(self, expected_configuration):
         """Verify that the cluster config is what we expect it to be (based on
         maintenance status). Raises AssertionError."""
-        state = state.lower()
-        if state not in ("initial", "final"):
-            raise AstrolabeTestCaseError(
-                "State must be either 'initial' or 'final'.")
         cluster_config = self.cluster_url.get().data
         assert_subset(
             cluster_config,
-            self.spec.maintenancePlan[state].clusterConfiguration)
+            expected_configuration.clusterConfiguration)
         process_args = self.cluster_url.processArgs.get().data
         assert_subset(
-            process_args, self.spec.maintenancePlan[state].processArgs)
+            process_args, expected_configuration.processArgs)
 
     def initialize(self):
         """
@@ -113,7 +109,7 @@ class AtlasTestCase:
         """
         LOGGER.info("Initializing cluster {!r}".format(self.cluster_name))
 
-        cluster_config = self.spec.maintenancePlan.initial.\
+        cluster_config = self.spec.initialConfiguration.\
             clusterConfiguration.copy()
         cluster_config["name"] = self.cluster_name
         try:
@@ -130,7 +126,7 @@ class AtlasTestCase:
                 raise
 
         # Apply processArgs if provided.
-        process_args = self.spec.maintenancePlan.initial.processArgs
+        process_args = self.spec.initialConfiguration.processArgs
         if process_args:
             self.client.groups[self.project.id].\
                 clusters[self.cluster_name].processArgs.patch(**process_args)
@@ -163,34 +159,35 @@ class AtlasTestCase:
             driver_workload=self.spec.driverWorkload,
             startup_time=startup_time)
 
-        # Step-3: begin maintenance routine.
-        final_config = self.spec.maintenancePlan.final
-        cluster_config = final_config.clusterConfiguration
-        process_args = final_config.processArgs
+        for operation in self.spec.operations:
+            # Step-3: begin maintenance routine.
+            final_config = operation.setClusterConfiguration
+            cluster_config = final_config.clusterConfiguration
+            process_args = final_config.processArgs
 
-        if not cluster_config and not process_args:
-            raise RuntimeError("invalid maintenance plan")
+            if not cluster_config and not process_args:
+                raise RuntimeError("invalid maintenance plan")
 
-        if cluster_config:
-            LOGGER.info("Pushing cluster configuration update")
-            self.cluster_url.patch(**cluster_config)
+            if cluster_config:
+                LOGGER.info("Pushing cluster configuration update")
+                self.cluster_url.patch(**cluster_config)
 
-        if process_args:
-            LOGGER.info("Pushing process arguments update")
-            self.cluster_url.processArgs.patch(**process_args)
+            if process_args:
+                LOGGER.info("Pushing process arguments update")
+                self.cluster_url.processArgs.patch(**process_args)
 
-        # Sleep before polling to give Atlas time to update cluster.stateName.
-        sleep(3)
+            # Sleep before polling to give Atlas time to update cluster.stateName.
+            sleep(3)
 
-        # Step-4: wait until maintenance completes (cluster is IDLE).
-        selector = BooleanCallablePoller(
-            frequency=self.config.polling_frequency,
-            timeout=self.config.polling_timeout)
-        LOGGER.info("Waiting for cluster maintenance to complete")
-        selector.poll([self], attribute="is_cluster_state", args=("IDLE",),
-                      kwargs={})
-        self.verify_cluster_configuration_matches("final")
-        LOGGER.info("Cluster maintenance complete")
+            # Step-4: wait until maintenance completes (cluster is IDLE).
+            selector = BooleanCallablePoller(
+                frequency=self.config.polling_frequency,
+                timeout=self.config.polling_timeout)
+            LOGGER.info("Waiting for cluster maintenance to complete")
+            selector.poll([self], attribute="is_cluster_state", args=("IDLE",),
+                          kwargs={})
+            self.verify_cluster_configuration_matches(final_config)
+            LOGGER.info("Cluster maintenance complete")
 
         # Step-5: interrupt driver workload and capture streams
         stats = self.workload_runner.terminate()
