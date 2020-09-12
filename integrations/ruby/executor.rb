@@ -6,14 +6,48 @@ Mongo::Logger.logger.level = Logger::WARN
 class UnknownOperation < StandardError; end
 class UnknownOperationConfiguration < StandardError; end
 
+class MetricsCollector
+  def initialize
+    @operations = {}
+    @samples = []
+  end
+
+  attr_reader :samples
+
+  def started(event)
+    @operations[event.operation_id] = event
+  end
+
+  def succeeded(event)
+    started_event = @operations.delete(event.operation_id)
+    raise "Started event for #{event.operation_id} not found" unless started_event
+    @samples << {
+      command_name: started_event.command_name,
+      duration: event.duration,
+    }
+  end
+
+  def failed(event)
+    started_event = @operations.delete(event.operation_id)
+    raise "Started event for #{event.operation_id} not found" unless started_event
+    @samples << {
+      command_name: started_event.command_name,
+      duration: event.duration,
+      failure: event.failure,
+    }
+  end
+end
+
 class Executor
   def initialize(uri, spec)
     @uri, @spec = uri, spec
     @operation_count = @failure_count = @error_count = 0
+    @metrics_collector = MetricsCollector.new
   end
 
   attr_reader :uri, :spec
   attr_reader :operation_count, :failure_count, :error_count
+  attr_reader :metrics_collector
 
   def run
     set_signal_handler
@@ -125,6 +159,9 @@ class Executor
     File.open('results.json', 'w') do |f|
       f << JSON.dump(result)
     end
+    File.open('metrics.json', 'w') do |f|
+      f << JSON.dump(metrics_collector.samples)
+    end
   end
 
   def collection
@@ -132,6 +169,8 @@ class Executor
   end
 
   def client
-    @client ||= Mongo::Client.new(uri)
+    @client ||= Mongo::Client.new(uri).tap do |client|
+      client.subscribe(Mongo::Monitoring::COMMAND, metrics_collector)
+    end
   end
 end
