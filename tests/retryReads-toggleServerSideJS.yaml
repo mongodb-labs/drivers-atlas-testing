@@ -8,10 +8,11 @@ initialConfiguration:
   processArgs: {}
 
 operations:
-  setClusterConfiguration:
-    clusterConfiguration: {}
-    processArgs:
-      javascriptEnabled: true
+  -
+    setClusterConfiguration:
+      clusterConfiguration: {}
+      processArgs:
+        javascriptEnabled: true
 
 uriOptions:
   retryReads: true

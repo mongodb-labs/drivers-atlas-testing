@@ -8,6 +8,7 @@ initialConfiguration:
   processArgs: {}
 
 operations:
+  -
     clusterConfiguration: {}
     processArgs:
       javascriptEnabled: true

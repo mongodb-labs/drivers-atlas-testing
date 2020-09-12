@@ -136,7 +136,7 @@ class AtlasTestCase:
             self.id, self.cluster_name))
 
         # Step-0: sanity-check the cluster configuration.
-        self.verify_cluster_configuration_matches("initial")
+        self.verify_cluster_configuration_matches(self.spec.initialConfiguration)
 
         # Start the test timer.
         timer = Timer()

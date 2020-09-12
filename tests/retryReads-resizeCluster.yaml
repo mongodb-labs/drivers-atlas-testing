@@ -8,13 +8,14 @@ initialConfiguration:
   processArgs: {}
 
 operations:
-  setClusterConfiguration:
-    clusterConfiguration:
-      providerSettings:
-        providerName: AWS
-        regionName: US_WEST_1
-        instanceSizeName: M20
-    processArgs: {}
+  -
+    setClusterConfiguration:
+      clusterConfiguration:
+        providerSettings:
+          providerName: AWS
+          regionName: US_WEST_1
+          instanceSizeName: M20
+      processArgs: {}
 
 uriOptions:
   retryReads: true
