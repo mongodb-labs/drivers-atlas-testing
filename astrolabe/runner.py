@@ -160,34 +160,35 @@ class AtlasTestCase:
             startup_time=startup_time)
 
         for operation in self.spec.operations:
-            # Step-3: begin maintenance routine.
-            final_config = operation.setClusterConfiguration
-            cluster_config = final_config.clusterConfiguration
-            process_args = final_config.processArgs
+            if hasattr(operation, 'setClusterConfiguration'):
+                # Step-3: begin maintenance routine.
+                final_config = operation.setClusterConfiguration
+                cluster_config = final_config.clusterConfiguration
+                process_args = final_config.processArgs
 
-            if not cluster_config and not process_args:
-                raise RuntimeError("invalid maintenance plan")
+                if not cluster_config and not process_args:
+                    raise RuntimeError("invalid maintenance plan")
 
-            if cluster_config:
-                LOGGER.info("Pushing cluster configuration update")
-                self.cluster_url.patch(**cluster_config)
+                if cluster_config:
+                    LOGGER.info("Pushing cluster configuration update")
+                    self.cluster_url.patch(**cluster_config)
 
-            if process_args:
-                LOGGER.info("Pushing process arguments update")
-                self.cluster_url.processArgs.patch(**process_args)
+                if process_args:
+                    LOGGER.info("Pushing process arguments update")
+                    self.cluster_url.processArgs.patch(**process_args)
 
-            # Sleep before polling to give Atlas time to update cluster.stateName.
-            sleep(3)
+                # Sleep before polling to give Atlas time to update cluster.stateName.
+                sleep(3)
 
-            # Step-4: wait until maintenance completes (cluster is IDLE).
-            selector = BooleanCallablePoller(
-                frequency=self.config.polling_frequency,
-                timeout=self.config.polling_timeout)
-            LOGGER.info("Waiting for cluster maintenance to complete")
-            selector.poll([self], attribute="is_cluster_state", args=("IDLE",),
-                          kwargs={})
-            self.verify_cluster_configuration_matches(final_config)
-            LOGGER.info("Cluster maintenance complete")
+                # Step-4: wait until maintenance completes (cluster is IDLE).
+                self.wait_for_idle()
+                self.verify_cluster_configuration_matches(final_config)
+                LOGGER.info("Cluster maintenance complete")
+                
+            if hasattr(operation, 'testFailover'):
+                self.cluster_url['restartPrimaries'].post()
+                
+                self.wait_for_idle()
 
         # Step-5: interrupt driver workload and capture streams
         stats = self.workload_runner.terminate()
@@ -220,6 +221,14 @@ class AtlasTestCase:
                 self.cluster_name))
 
         return junit_test
+        
+    def wait_for_idle(self):
+        selector = BooleanCallablePoller(
+            frequency=self.config.polling_frequency,
+            timeout=self.config.polling_timeout)
+        LOGGER.info("Waiting for cluster maintenance to complete")
+        selector.poll([self], attribute="is_cluster_state", args=("IDLE",),
+                      kwargs={})
 
 
 class SpecTestRunnerBase:
