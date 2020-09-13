@@ -1,0 +1,62 @@
+initialConfiguration:
+  clusterConfiguration:
+    clusterType: REPLICASET
+    providerSettings:
+      providerName: AWS
+      instanceSizeName: M10
+    replicationSpecs:
+      -
+        id: '111111111111111111111111'
+        numShards: 1
+        regionsConfig:
+          US_WEST_1:
+            electableNodes: 3
+            priority: 7
+            readOnlyNodes: 0
+  processArgs: {}
+
+operations:
+  -
+    setClusterConfiguration:
+      clusterConfiguration:
+        clusterType: REPLICASET
+        providerSettings:
+          providerName: AWS
+          instanceSizeName: M10
+        replicationSpecs:
+          -
+            id: '111111111111111111111111'
+            numShards: 1
+            regionsConfig:
+              US_WEST_1:
+                electableNodes: 2
+                priority: 6
+                readOnlyNodes: 0
+              US_EAST_1:
+                electableNodes: 1
+                priority: 7
+                readOnlyNodes: 0
+      processArgs: {}
+
+uriOptions:
+  retryReads: true
+
+driverWorkload:
+  database: test_database
+  collection: test_collection
+  testData:
+    - {_id: 1, x: 11}
+    - {_id: 2, x: 22}
+    - {_id: 3, x: 33}
+  operations:
+    -
+      object: collection
+      name: find
+      arguments:
+        filter:
+          _id: {$gt: 1}
+        sort:
+          _id: 1
+      result:
+        - {_id: 2, x: 22}
+        - {_id: 3, x: 33}
