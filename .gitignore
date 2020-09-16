@@ -5,3 +5,5 @@ results.json
 xunit-output/
 *~
 *.iml
+integrations/go/go.sum
+integrations/go/executor

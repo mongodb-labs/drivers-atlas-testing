@@ -1,0 +1,5 @@
+#! /bin/bash
+
+export PATH=$GOROOT/bin:$PATH
+
+./integrations/$DRIVER_DIRNAME/executor "$1" "$2"
