@@ -84,12 +84,15 @@ def assert_subset(dict1, dict2):
     """Utility that asserts that `dict2` is a subset of `dict1`, while
     accounting for nested fields."""
     for key, value in dict2.items():
-        if key not in dict1:
-            raise AssertionError("not a subset")
-        if isinstance(value, dict):
-            assert_subset(dict1[key], value)
+        if key == 'replicationSpecs':
+            pass
         else:
-            assert dict1[key] == value
+            if key not in dict1:
+                raise AssertionError("not a subset: '%s' from %s is not in %s" % (key, repr(dict2), repr(dict1)))
+            if isinstance(value, dict):
+                assert_subset(dict1[key], value)
+            else:
+                assert dict1[key] == value, "Different values for '%s':\nexpected '%s'\nactual   '%s'" % (key, repr(dict2[key]), repr(dict1[key]))
 
 
 class Timer:
