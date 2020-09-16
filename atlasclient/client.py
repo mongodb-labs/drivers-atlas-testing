@@ -248,6 +248,7 @@ class AtlasClient:
         kwargs = {
             'response': response,
             'request_method': method,
+            'detail': data.get('detail'),
             'error_code': data.get('errorCode')}
 
         if response.status_code == 400:
