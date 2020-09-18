@@ -220,6 +220,8 @@ class AtlasClient:
 
     def construct_resource_url(self, path, api_version=None):
         url_template = "{base_url}/{version}/{resource_path}"
+        if path[0] == '/':
+            url_template = 'https://cloud.mongodb.com{resource_path}'
         return url_template.format(
             base_url=self.config.base_url,
             version=api_version or self.config.api_version,
@@ -241,15 +243,18 @@ class AtlasClient:
             raise AtlasRateLimitError('Too many requests', response=response,
                                       request_method=method, error_code=429)
 
-        if data is None:
+        if data is None and False:
             raise AtlasApiError('Unable to decode JSON response.',
                                 response=response, request_method=method)
 
         kwargs = {
             'response': response,
             'request_method': method,
-            'detail': data.get('detail'),
-            'error_code': data.get('errorCode')}
+        }
+        
+        if data is not None:
+            kwargs['detail'] = data.get('detail')
+            kwargs['error_code'] = data.get('errorCode')
 
         if response.status_code == 400:
             raise AtlasApiError('400: Bad Request.', **kwargs)

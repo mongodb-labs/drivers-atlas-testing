@@ -189,6 +189,14 @@ class AtlasTestCase:
                 self.cluster_url['restartPrimaries'].post()
                 
                 self.wait_for_idle()
+                
+            if hasattr(operation, 'restartVms'):
+                #import pdb;pdb.set_trace()
+                url = "/api/private/nds/groups/%s/clusters/%s/reboot" % (self.project.id, self.cluster_name)
+                self.client.request('POST', url)
+                #self.cluster_url['reboot'].post()
+                
+                self.wait_for_idle()
 
         # Step-5: interrupt driver workload and capture streams
         stats = self.workload_runner.terminate()
