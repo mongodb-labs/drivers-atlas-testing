@@ -16,6 +16,8 @@ initialConfiguration:
   processArgs: {}
 
 operations:
+  - assertPrimaryRegion: US_WEST_1
+  
   -
     setClusterConfiguration:
       clusterConfiguration:
@@ -37,6 +39,9 @@ operations:
                 priority: 7
                 readOnlyNodes: 0
       processArgs: {}
+
+  - assertPrimaryRegion: US_EAST_1
+  
 
 uriOptions:
   retryReads: true
