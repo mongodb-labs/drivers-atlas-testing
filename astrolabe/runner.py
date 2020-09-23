@@ -14,9 +14,10 @@
 
 import logging
 import os
-from time import sleep
+from time import sleep, monotonic
 from urllib.parse import urlencode
 
+from pymongo import MongoClient
 from tabulate import tabulate
 import junitparser
 import yaml
@@ -197,6 +198,29 @@ class AtlasTestCase:
                 #self.cluster_url['reboot'].post()
                 
                 self.wait_for_idle()
+                
+            if hasattr(operation, 'assertPrimaryRegion'):
+                region = operation['assertPrimaryRegion']
+                
+                cluster_config = self.cluster_url.get().data
+                deadline = monotonic() + 20
+                
+                while True:
+                    mc = MongoClient(cluster_config['connectionStrings']['standard'], username='atlasuser', password='mypassword123')
+                    rsc = mc.admin.command('replSetGetConfig')
+                    member = [m for m in rsc['config']['members']
+                        if m['horizons']['PUBLIC'] == '%s:%s' % mc.primary][0]
+                    member_region = member['tags']['region']
+                    mc.close()
+                    
+                    if region == member_region:
+                        break
+                        
+                    if monotonic() > deadline:
+                        raise Exception("Primary in cluster not in expected region '%s' (actual region '%s')" % (region, member_region))
+                    else:
+                        sleep(5)
+                
 
         # Step-5: interrupt driver workload and capture streams
         stats = self.workload_runner.terminate()
