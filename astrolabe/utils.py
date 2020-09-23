@@ -83,16 +83,21 @@ def create_click_option(option_spec, **kwargs):
 def assert_subset(dict1, dict2):
     """Utility that asserts that `dict2` is a subset of `dict1`, while
     accounting for nested fields."""
-    for key, value in dict2.items():
-        if key == 'replicationSpecs':
-            pass
+    for key, value2 in dict2.items():
+        if key not in dict1:
+            raise AssertionError("not a subset: '%s' from %s is not in %s" % (key, repr(dict2), repr(dict1)))
+        value1 = dict1[key]
+        if isinstance(value2, dict):
+            assert_subset(value1, value2)
+        elif isinstance(value2, list):
+            assert len(value1) == len(value2)
+            for i in range(len(value2)):
+                if isinstance(value2[i], dict):
+                    assert_subset(value1[i], value2[i])
+                else:
+                    assert value1[i] == value2[i]
         else:
-            if key not in dict1:
-                raise AssertionError("not a subset: '%s' from %s is not in %s" % (key, repr(dict2), repr(dict1)))
-            if isinstance(value, dict):
-                assert_subset(dict1[key], value)
-            else:
-                assert dict1[key] == value, "Different values for '%s':\nexpected '%s'\nactual   '%s'" % (key, repr(dict2[key]), repr(dict1[key]))
+            assert value1 == value2, "Different values for '%s':\nexpected '%s'\nactual   '%s'" % (key, repr(dict2[key]), repr(dict1[key]))
 
 
 class Timer:
