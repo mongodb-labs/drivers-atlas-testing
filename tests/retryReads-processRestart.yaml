@@ -5,19 +5,19 @@ initialConfiguration:
       providerName: AWS
       regionName: US_WEST_1
       instanceSizeName: M10
-    mongoDBVersion: 4.2.0
-  processArgs: {}
+  processArgs:
+    minimumEnabledTlsProtocol: TLS_1_1
 
 operations:
   -
-    clusterConfiguration:
-      clusterType: REPLICASET
-      providerSettings:
-        providerName: AWS
-        regionName: US_WEST_1
-        instanceSizeName: M10
-      mongoDBVersion: 4.2.1
-    processArgs: {}
+    setClusterConfiguration:
+      clusterConfiguration:
+        providerSettings:
+          providerName: AWS
+          regionName: US_WEST_1
+          instanceSizeName: M10
+      processArgs:
+        minimumEnabledTlsProtocol: TLS_1_2
 
 uriOptions:
   retryReads: true
