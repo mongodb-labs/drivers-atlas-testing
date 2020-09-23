@@ -203,7 +203,7 @@ class AtlasTestCase:
                 region = operation['assertPrimaryRegion']
                 
                 cluster_config = self.cluster_url.get().data
-                deadline = monotonic() + 20
+                deadline = monotonic() + 90
                 
                 while True:
                     mc = MongoClient(cluster_config['connectionStrings']['standard'], username='atlasuser', password='mypassword123')
