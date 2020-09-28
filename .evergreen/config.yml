@@ -78,6 +78,7 @@ functions:
           EVERGREEN_BUILD_ID: ${build_id}
           ATLAS_API_USERNAME: ${atlas_key}
           ATLAS_API_PASSWORD: ${atlas_secret}
+          ATLAS_API_BASE_URL: ${atlas_url}
         add_expansions_to_env: true
         command: |
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml -e integrations/${DRIVER_DIRNAME}/workload-executor
