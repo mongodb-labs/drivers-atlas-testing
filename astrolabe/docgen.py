@@ -12,42 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from itertools import chain
 from textwrap import dedent
 
 from tabulate import tabulate
 
-from astrolabe.configuration import (
-    CONFIG_ENVVARS as ENVVARS,
-    CONFIG_DEFAULTS as DEFAULTS,
-    CLI_OPTION_NAMES as OPTNAMES)
-from atlasclient.configuration import CONFIG_DEFAULTS as CL_DEFAULTS
+from astrolabe.configuration import CONFIGURATION_OPTIONS as CONFIGOPTS
 
 
-def generate_environment_variables_help():
+def generate_configuration_help():
     text = dedent("""\
-    Many of Astrolabe's configuration options can be set at runtime using
-    environment variables. The following table lists configurable options
-    and the corresponding environment variables that can used to set them:
+    Astrolabe has many configurable options that can be set at runtime via the command-line, or using environment variables. The following table 
+    lists these configurable options, their default values, and the environment variables that can be used to specify them. 
+    Note that if an option is specified using an environment variable, and also via the command-line, the command-line value takes precedence.
     {}""")
     tabledata = []
-    for internal_id, envvar_name in ENVVARS.items():
-        tabledata.append([internal_id, OPTNAMES[internal_id], envvar_name])
-    headers = ["Internal ID", "CLI Option Name",
-               "Environment Variable"]
-    tabletext = tabulate(tabledata, headers=headers, tablefmt="rst")
-    return text.format(tabletext)
-
-
-def generate_default_value_help():
-    text = "Default values of Astrolabe's configuration options are:\n{}"
-    tabledata = []
-    for internal_id, default_value in chain(
-            CL_DEFAULTS.items(), DEFAULTS.items()):
-        if internal_id in OPTNAMES:
-            tabledata.append(
-                [internal_id, OPTNAMES[internal_id], default_value])
-    headers = ["Internal ID", "CLI Option Name", "Default Value"]
+    headers = ["CLI Option", "Environment Variable", "Default", "Description"]
+    for _, optspec in CONFIGOPTS.items():
+        cliopt_string = optspec['cliopt']
+        if isinstance(cliopt_string, tuple):
+            cliopt_string = '/'.join(cliopt_string)
+        tabledata.append([
+            cliopt_string, optspec.get('envvar', '-'),
+            str(optspec.get('default', '-')), optspec['help']])
     tabletext = tabulate(tabledata, headers=headers, tablefmt="rst")
     return text.format(tabletext)
 

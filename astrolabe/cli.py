@@ -20,10 +20,10 @@ from urllib.parse import unquote_plus
 import click
 
 import astrolabe.commands as cmd
-import astrolabe.docgen as docgen
 from atlasclient import AtlasClient, AtlasApiBaseError
 from astrolabe.docgen import (
-    tabulate_astrolabe_configuration, tabulate_client_configuration)
+    generate_configuration_help, tabulate_astrolabe_configuration,
+    tabulate_client_configuration)
 from astrolabe.runner import MultiTestRunner, SingleTestRunner
 from astrolabe.configuration import (
     CONFIGURATION_OPTIONS as CONFIGOPTS, TestCaseConfiguration)
@@ -339,16 +339,10 @@ def help_topics():
     pass
 
 
-@help_topics.command('environment-variables')
-def help_environment_variables():
-    """About configuring astrolabe via environment variables."""
-    click.echo_via_pager(docgen.generate_environment_variables_help())
-
-
-@help_topics.command('default-values')
-def help_default_values():
-    """About default values of configuration options."""
-    click.echo_via_pager(docgen.generate_default_value_help())
+@help_topics.command('configuration')
+def help_configuration_options():
+    """About astrolabe's configurable settings."""
+    click.echo_via_pager(generate_configuration_help())
 
 
 @cli.group('spec-tests')
