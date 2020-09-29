@@ -98,13 +98,13 @@ def cli(ctx, atlas_base_url, atlas_api_username,
         username=atlas_api_username,
         password=atlas_api_password,
         timeout=http_timeout)
-    ctx.obj = client
 
-    ctx.admin_client = AtlasClient(
+    admin_client = AtlasClient(
         base_url=atlas_base_url,
         username=os.environ['ATLAS_ADMIN_API_USERNAME'],
         password=os.environ['ATLAS_ADMIN_API_PASSWORD'],
         timeout=http_timeout)
+    ctx.obj = (client,admin_client)
 
     # Configure logging.
     loglevel = getattr(logging, log_level.upper())
@@ -396,7 +396,8 @@ def run_single_test(ctx, spec_test_file, workload_executor,
     LOGGER.info(tabulate_astrolabe_configuration(config))
 
     # Step-1: create the Test-Runner.
-    runner = SingleTestRunner(client=ctx.obj,
+    runner = SingleTestRunner(client=ctx.obj[0],
+        admin_client=ctx.obj[1],
                               test_locator_token=spec_test_file,
                               configuration=config,
                               xunit_output=xunit_output,

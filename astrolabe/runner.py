@@ -38,10 +38,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AtlasTestCase:
-    def __init__(self, *, client, test_name, cluster_name, specification,
+    def __init__(self, *, client, admin_client, test_name, cluster_name, specification,
                  configuration):
         # Initialize.
         self.client = client
+        self.admin_client = admin_client
         self.id = test_name
         self.cluster_name = cluster_name
         self.spec = specification
@@ -192,11 +193,10 @@ class AtlasTestCase:
                 self.wait_for_idle()
                 
             if hasattr(operation, 'restartVms'):
-                #import pdb;pdb.set_trace()
                 url = "/api/private/nds/groups/%s/clusters/%s/reboot" % (self.project.id, self.cluster_name)
-                self.client.request('POST', url)
-                #self.cluster_url['reboot'].post()
+                self.admin_client.request('POST', url)
                 
+                sleep(5)
                 self.wait_for_idle()
                 
             if hasattr(operation, 'assertPrimaryRegion'):
@@ -265,10 +265,11 @@ class AtlasTestCase:
 
 class SpecTestRunnerBase:
     """Base class for spec test runners."""
-    def __init__(self, *, client, test_locator_token, configuration, xunit_output,
+    def __init__(self, *, client, admin_client, test_locator_token, configuration, xunit_output,
                  persist_clusters, workload_startup_time):
         self.cases = []
         self.client = client
+        self.admin_client = admin_client
         self.config = configuration
         self.xunit_logger = SingleTestXUnitLogger(output_directory=xunit_output)
         self.persist_clusters = persist_clusters
@@ -287,7 +288,7 @@ class SpecTestRunnerBase:
             cluster_name = get_cluster_name(test_name, self.config.name_salt)
 
             self.cases.append(
-                AtlasTestCase(client=self.client,
+                AtlasTestCase(client=self.client, admin_client=self.admin_client,
                               test_name=test_name,
                               cluster_name=cluster_name,
                               specification=test_spec,

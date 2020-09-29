@@ -152,6 +152,7 @@ class AtlasClient:
           - `timeout` (float, optional): time, in seconds, after which an
             HTTP request to the Atlas API should timeout. Default: 10.0.
         """
+        self.username=username
         self.config = ClientConfiguration(
             base_url=base_url, api_version=api_version,
             timeout=timeout, auth=requests.auth.HTTPDigestAuth(
@@ -221,7 +222,7 @@ class AtlasClient:
     def construct_resource_url(self, path, api_version=None):
         url_template = "{base_url}/{version}/{resource_path}"
         if path[0] == '/':
-            url_template = 'https://cloud.mongodb.com{resource_path}'
+            url_template = 'https://cloud-dev.mongodb.com{resource_path}'
         return url_template.format(
             base_url=self.config.base_url,
             version=api_version or self.config.api_version,
