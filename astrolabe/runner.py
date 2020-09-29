@@ -126,6 +126,8 @@ class AtlasTestCase:
                 cluster_config.pop("name")
                 self.client.groups[self.project.id].\
                     clusters[self.cluster_name].patch(**cluster_config)
+            else:
+                raise
 
         # Apply processArgs if provided.
         process_args = self.spec.maintenancePlan.initial.processArgs
