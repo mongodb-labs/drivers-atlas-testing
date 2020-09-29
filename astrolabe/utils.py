@@ -45,6 +45,41 @@ class ClickLogHandler(logging.Handler):
             self.handleError(record)
 
 
+def create_click_option(option_spec, **kwargs):
+    """Utility that creates a click option decorator from an `option_spec`
+    mapping. Optionally, the user can pass `**kwargs` which are passed
+    directly to the click.option constructor. The `option_spec` mapping
+    has the following keys:
+
+      - help (required): help-text for this option
+      - cliopt (required): command-line parameter name for this option; can
+        be a tuple to specify short and long-form names for an option
+      - envvar (optional): environment variable name for this option; option
+        values cannot be specified using an environment variable by default
+      - type (optional): click type to use for validating the user-input value
+        for this option; defaults to click.STRING
+      - default (optional): default value for this option; if provided, this
+        will be displayed in the help text unless `show_default=False` is
+        passed in the `**kwargs`; if not provided, the option will be
+        assumed to be `required=True`
+    """
+    click_kwargs = {
+        'type': option_spec.get('type', click.STRING),
+        'help': option_spec['help']}
+    if 'envvar' in option_spec:
+        kwargs['envvar'] = option_spec['envvar']
+    if 'default' in option_spec:
+        kwargs['default'] = option_spec['default']
+        kwargs['show_default'] = True
+    else:
+        kwargs['required'] = True
+
+    click_kwargs.update(kwargs)
+    if isinstance(option_spec['cliopt'], tuple):
+        return click.option(*option_spec['cliopt'], **click_kwargs)
+    return click.option(option_spec['cliopt'], **click_kwargs)
+
+
 def assert_subset(dict1, dict2):
     """Utility that asserts that `dict2` is a subset of `dict1`, while
     accounting for nested fields."""

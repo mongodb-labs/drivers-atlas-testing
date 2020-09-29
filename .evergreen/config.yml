@@ -75,7 +75,7 @@ functions:
         working_dir: astrolabe-src
         env:
           ATLAS_PROJECT_NAME: ${project}
-          EVERGREEN_BUILD_ID: ${build_id}
+          CLUSTER_NAME_SALT: ${build_id}
           ATLAS_API_USERNAME: ${atlas_key}
           ATLAS_API_PASSWORD: ${atlas_secret}
           ATLAS_API_BASE_URL: ${atlas_url}
@@ -107,7 +107,7 @@ functions:
         working_dir: astrolabe-src
         env:
           ATLAS_PROJECT_NAME: ${project}
-          EVERGREEN_BUILD_ID: ${build_id}
+          CLUSTER_NAME_SALT: ${build_id}
           ATLAS_API_USERNAME: ${atlas_key}
           ATLAS_API_PASSWORD: ${atlas_secret}
           ATLAS_API_BASE_URL: ${atlas_url}

@@ -92,9 +92,9 @@ class _ApiResponse:
 class AtlasClient:
     """An easy-to-use MongoDB Atlas API client for Python. """
     def __init__(self, *, username, password,
-                 base_url=DEFAULTS.BASE_URL,
-                 api_version=DEFAULTS.API_VERSION,
-                 timeout=DEFAULTS.HTTP_TIMEOUT):
+                 base_url=DEFAULTS.ATLAS_API_BASE_URL,
+                 api_version=DEFAULTS.ATLAS_API_VERSION,
+                 timeout=DEFAULTS.ATLAS_HTTP_TIMEOUT):
         """
         Client for the `MongoDB Atlas API
         <https://docs.atlas.mongodb.com/api/>`_.

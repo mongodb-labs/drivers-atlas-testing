@@ -26,6 +26,6 @@ ClientConfiguration = namedtuple(
 
 # Default configuration values.
 CONFIG_DEFAULTS = JSONObject.from_dict({
-    "HTTP_TIMEOUT": 10.0,
-    "API_VERSION": 1.0,
-    "BASE_URL": "https://cloud.mongodb.com/api/atlas"})
+    "ATLAS_HTTP_TIMEOUT": 10.0,
+    "ATLAS_API_VERSION": 1.0,
+    "ATLAS_API_BASE_URL": "https://cloud.mongodb.com/api/atlas"})

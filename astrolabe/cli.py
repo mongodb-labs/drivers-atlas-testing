@@ -20,71 +20,48 @@ from urllib.parse import unquote_plus
 import click
 
 import astrolabe.commands as cmd
-import astrolabe.docgen as docgen
 from atlasclient import AtlasClient, AtlasApiBaseError
-from atlasclient.configuration import CONFIG_DEFAULTS as CL_DEFAULTS
 from astrolabe.docgen import (
-    tabulate_astrolabe_configuration, tabulate_client_configuration)
+    generate_configuration_help, tabulate_astrolabe_configuration,
+    tabulate_client_configuration)
 from astrolabe.runner import MultiTestRunner, SingleTestRunner
 from astrolabe.configuration import (
-    CLI_OPTION_NAMES as OPTNAMES,
-    CONFIG_DEFAULTS as DEFAULTS,
-    CONFIG_ENVVARS as ENVVARS,
-    TestCaseConfiguration)
+    CONFIGURATION_OPTIONS as CONFIGOPTS, TestCaseConfiguration)
 from astrolabe.utils import (
-    get_cluster_name, get_test_name_from_spec_file, ClickLogHandler)
+    create_click_option, get_cluster_name, get_test_name_from_spec_file,
+    ClickLogHandler)
 from astrolabe.validator import validator_factory
 
 
 LOGGER = logging.getLogger(__name__)
 
+DBUSERNAME_OPTION = create_click_option(CONFIGOPTS.ATLAS_DB_USERNAME)
 
-# Define CLI options used in multiple commands for easy re-use.
-DBUSERNAME_OPTION = click.option(
-    OPTNAMES.DB_USERNAME, type=click.STRING, default=DEFAULTS.DB_USERNAME,
-    show_default=True, help='Database username on the MongoDB instance.')
+DBPASSWORD_OPTION = create_click_option(CONFIGOPTS.ATLAS_DB_PASSWORD)
 
-DBPASSWORD_OPTION = click.option(
-    OPTNAMES.DB_PASSWORD, type=click.STRING, default=DEFAULTS.DB_PASSWORD,
-    show_default=True, help='Database password on the MongoDB instance.')
+ATLASORGANIZATIONNAME_OPTION = create_click_option(
+    CONFIGOPTS.ATLAS_ORGANIZATION_NAME)
 
-ATLASORGANIZATIONNAME_OPTION = click.option(
-    OPTNAMES.ORGANIZATION_NAME, type=click.STRING,
-    envvar=ENVVARS.ORGANIZATION_NAME, default=DEFAULTS.ORGANIZATION_NAME,
-    show_default=True, help='Name of the Atlas Organization.')
+ATLASPROJECTNAME_OPTION = create_click_option(CONFIGOPTS.ATLAS_PROJECT_NAME)
+
+POLLINGTIMEOUT_OPTION = create_click_option(CONFIGOPTS.ATLAS_POLLING_TIMEOUT)
+
+POLLINGFREQUENCY_OPTION = create_click_option(
+    CONFIGOPTS.ATLAS_POLLING_FREQUENCY)
+
+EXECUTORSTARTUPTIME_OPTION = create_click_option(
+    CONFIGOPTS.ASTROLABE_EXECUTOR_STARTUP_TIME)
+
+CLUSTERNAMESALT_OPTION = create_click_option(CONFIGOPTS.CLUSTER_NAME_SALT)
 
 ATLASCLUSTERNAME_OPTION = click.option(
     '--cluster-name', required=True, type=click.STRING,
     help='Name of the Atlas Cluster.')
 
-ATLASPROJECTNAME_OPTION = click.option(
-    OPTNAMES.PROJECT_NAME, required=True, type=click.STRING,
-    envvar=ENVVARS.PROJECT_NAME, help='Name of the Atlas Project.')
-
-POLLINGTIMEOUT_OPTION = click.option(
-    OPTNAMES.POLLING_TIMEOUT, type=click.FLOAT, show_default=True,
-    envvar=ENVVARS.POLLING_TIMEOUT, default=DEFAULTS.POLLING_TIMEOUT,
-    help="Maximum time (in s) to poll API endpoints.")
-
-POLLINGFREQUENCY_OPTION = click.option(
-    OPTNAMES.POLLING_FREQUENCY, type=click.FLOAT, show_default=True,
-    envvar=ENVVARS.POLLING_FREQUENCY, default=DEFAULTS.POLLING_FREQUENCY,
-    help='Frequency (in Hz) at which to poll API endpoints.')
-
 WORKLOADEXECUTOR_OPTION = click.option(
     '-e', '--workload-executor', required=True, type=click.Path(
         exists=True, file_okay=True, dir_okay=False, resolve_path=True),
     help='Absolute or relative path to the workload-executor.')
-
-EXECUTORSTARTUPTIME_OPTION = click.option(
-    OPTNAMES.EXECUTOR_STARTUP_TIME, default=1, type=click.FLOAT,
-    show_default=True, envvar=ENVVARS.EXECUTOR_STARTUP_TIME,
-    help='Time (in s) to wait for the executor to start running.')
-
-CLUSTERNAMESALT_OPTION = click.option(
-    OPTNAMES.CLUSTER_NAME_SALT, type=click.STRING, required=True,
-    envvar=ENVVARS.CLUSTER_NAME_SALT,
-    help='Salt for generating unique hashes.')
 
 XUNITOUTPUT_OPTION = click.option(
     '--xunit-output', type=click.STRING, default="xunit-output",
@@ -99,24 +76,11 @@ NODELETE_FLAG = click.option(
 
 
 @click.group()
-@click.option(OPTNAMES.BASE_URL, envvar=ENVVARS.BASE_URL,
-              default=CL_DEFAULTS.BASE_URL, show_default=True,
-              type=click.STRING, help='Base URL of the Atlas API.')
-@click.option('-u', '--atlas-api-username', default=None,
-              envvar=ENVVARS.API_USERNAME, type=click.STRING,
-              help='HTTP-Digest username (Atlas API public-key).')
-@click.option('-p', '--atlas-api-password', default=None,
-              envvar=ENVVARS.API_PASSWORD, type=click.STRING,
-              help='HTTP-Digest password (Atlas API private-key).')
-@click.option(OPTNAMES.HTTP_TIMEOUT, envvar=ENVVARS.HTTP_TIMEOUT,
-              default=CL_DEFAULTS.HTTP_TIMEOUT, type=click.FLOAT,
-              show_default=True,
-              help='Time (in s) after which HTTP requests should timeout.')
-@click.option('-v', OPTNAMES.LOG_VERBOSITY, envvar=ENVVARS.LOG_VERBOSITY,
-              type=click.Choice(
-                  ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                  case_sensitive=False), default=DEFAULTS.LOG_VERBOSITY,
-              show_default=True, help='Set the logging level.')
+@create_click_option(CONFIGOPTS.ATLAS_API_BASE_URL)
+@create_click_option(CONFIGOPTS.ATLAS_API_USERNAME)
+@create_click_option(CONFIGOPTS.ATLAS_API_PASSWORD)
+@create_click_option(CONFIGOPTS.ATLAS_HTTP_TIMEOUT)
+@create_click_option(CONFIGOPTS.ASTROLABE_LOGLEVEL)
 @click.version_option()
 @click.pass_context
 def cli(ctx, atlas_base_url, atlas_api_username,
@@ -375,16 +339,10 @@ def help_topics():
     pass
 
 
-@help_topics.command('environment-variables')
-def help_environment_variables():
-    """About configuring astrolabe via environment variables."""
-    click.echo_via_pager(docgen.generate_environment_variables_help())
-
-
-@help_topics.command('default-values')
-def help_default_values():
-    """About default values of configuration options."""
-    click.echo_via_pager(docgen.generate_default_value_help())
+@help_topics.command('configuration')
+def help_configuration_options():
+    """About astrolabe's configurable settings."""
+    click.echo_via_pager(generate_configuration_help())
 
 
 @cli.group('spec-tests')

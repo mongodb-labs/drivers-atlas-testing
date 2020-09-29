@@ -14,47 +14,83 @@
 
 from collections import namedtuple
 
+import click
+
+from atlasclient.configuration import CONFIG_DEFAULTS as CL_DEFAULTS
 from atlasclient.utils import JSONObject
 
-CONFIG_DEFAULTS = JSONObject.from_dict({
-    "ORGANIZATION_NAME": "MongoDB Drivers Team",
-    "DB_USERNAME": "atlasuser",
-    "DB_PASSWORD": "mypassword123",
-    "POLLING_TIMEOUT": 1200.0,
-    "POLLING_FREQUENCY": 1.0,
-    "LOG_VERBOSITY": "INFO"
-})
 
-
-CONFIG_ENVVARS = JSONObject.from_dict({
-    "ORGANIZATION_NAME": "ATLAS_ORGANIZATION_NAME",
-    "PROJECT_NAME": "ATLAS_PROJECT_NAME",         # ${project} in EVG
-    "CLUSTER_NAME_SALT": "EVERGREEN_BUILD_ID",      # ${build_id} in EVG
-    "POLLING_TIMEOUT": "ATLAS_POLLING_TIMEOUT",
-    "POLLING_FREQUENCY": "ATLAS_POLLING_FREQUENCY",
-    "BASE_URL": "ATLAS_API_BASE_URL",
-    "API_USERNAME": "ATLAS_API_USERNAME",
-    "API_PASSWORD": "ATLAS_API_PASSWORD",
-    "HTTP_TIMEOUT": "ATLAS_HTTP_TIMEOUT",
-    "LOG_VERBOSITY": "ASTROLABE_LOGLEVEL",
-    "EXECUTOR_STARTUP_TIME": "ASTROLABE_EXECUTOR_STARTUP_TIME"
-})
-
-
-CLI_OPTION_NAMES = JSONObject.from_dict({
-    "PROJECT_NAME": "--project-name",
-    "CLUSTER_NAME_SALT": "--cluster-name-salt",
-    "POLLING_TIMEOUT": "--polling-timeout",
-    "POLLING_FREQUENCY": "--polling-frequency",
-    "API_USERNAME": "--atlas-api-username",
-    "API_PASSWORD": "--atlas-api-password",
-    "DB_USERNAME": "--db-username",
-    "DB_PASSWORD": "--db-password",
-    "ORGANIZATION_NAME": "--org-name",
-    "BASE_URL": "--atlas-base-url",
-    "HTTP_TIMEOUT": "--http-timeout",
-    "LOG_VERBOSITY": "--log-level",
-    "EXECUTOR_STARTUP_TIME": "--startup-time"
+# Mapping used to generate configurable options for Astrolabe.
+# See astrolabe.utils.create_click_option for details.
+CONFIGURATION_OPTIONS = JSONObject({
+    'ATLAS_PROJECT_NAME': {         # ${project} in EVG
+        'help': 'Name of the Atlas Project.',
+        'cliopt': '--project-name',
+        'envvar': 'ATLAS_PROJECT_NAME'},
+    'CLUSTER_NAME_SALT': {          # ${build_id} in EVG
+        'help': 'Salt for generating unique hashes.',
+        'cliopt': '--cluster-name-salt',
+        'envvar': 'CLUSTER_NAME_SALT'},
+    'ATLAS_POLLING_TIMEOUT': {
+        'type': click.FLOAT,
+        'help': 'Maximum time (in s) to poll API endpoints.',
+        'cliopt': '--polling-timeout',
+        'envvar': 'ATLAS_POLLING_TIMEOUT',
+        'default': 1200.0},
+    'ATLAS_POLLING_FREQUENCY': {
+        'type': click.FLOAT,
+        'help': 'Frequency (in Hz) at which to poll API endpoints.',
+        'cliopt': '--polling-frequency',
+        'envvar': 'ATLAS_POLLING_FREQUENCY',
+        'default': 1.0},
+    'ATLAS_API_USERNAME': {
+        'help': 'HTTP-Digest username (Atlas API public-key).',
+        'cliopt': '--atlas-api-username',
+        'envvar': 'ATLAS_API_USERNAME',
+        'default': None},
+    'ATLAS_API_PASSWORD': {
+        'help': 'HTTP-Digest password (Atlas API private-key).',
+        'cliopt': '--atlas-api-password',
+        'envvar': 'ATLAS_API_PASSWORD',
+        'default': None},
+    'ATLAS_DB_USERNAME': {
+        'help': 'Database username on the MongoDB instance.',
+        'cliopt': '--db-username',
+        'default': 'atlasuser',},
+    'ATLAS_DB_PASSWORD': {
+        'help': 'Database password on the MongoDB instance.',
+        'cliopt': '--db-password',
+        'default': 'mypassword123'},
+    'ATLAS_ORGANIZATION_NAME': {
+        'help': 'Name of the Atlas Organization.',
+        'cliopt': '--org-name',
+        'envvar': 'ATLAS_ORGANIZATION_NAME',
+        'default': 'MongoDB Drivers Team'},
+    'ATLAS_API_BASE_URL': {
+        'help': 'Base URL of the Atlas API.',
+        'cliopt': '--atlas-base-url',
+        'envvar': 'ATLAS_API_BASE_URL',
+        'default': CL_DEFAULTS.ATLAS_API_BASE_URL},
+    'ATLAS_HTTP_TIMEOUT': {
+        'type': click.FLOAT,
+        'help': 'Time (in s) after which HTTP requests should timeout.',
+        'cliopt': '--http-timeout',
+        'envvar': 'ATLAS_HTTP_TIMEOUT',
+        'default': CL_DEFAULTS.ATLAS_HTTP_TIMEOUT},
+    'ASTROLABE_LOGLEVEL': {
+        'type': click.Choice(
+            ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+            case_sensitive=False),
+        'help': 'Set the logging level.',
+        'cliopt': ('-v', '--log-level'),
+        'envvar': 'ASTROLABE_LOGLEVEL',
+        'default': 'INFO'},
+    'ASTROLABE_EXECUTOR_STARTUP_TIME': {
+        'type': click.FLOAT,
+        'help': 'Time (in s) to wait for the executor to start running.',
+        'cliopt': '--startup-time',
+        'envvar': 'ASTROLABE_EXECUTOR_STARTUP_TIME',
+        'default': 1.0}
 })
 
 
