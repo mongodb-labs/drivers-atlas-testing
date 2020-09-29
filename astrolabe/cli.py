@@ -14,7 +14,7 @@
 
 import logging
 from pprint import pprint
-import unittest
+import unittest, os
 from urllib.parse import unquote_plus
 
 import click
@@ -90,6 +90,8 @@ def cli(ctx, atlas_base_url, atlas_api_username,
     Astrolabe is a command-line application for running automated driver
     tests against a MongoDB Atlas cluster undergoing maintenance.
     """
+    
+    atlas_base_url = 'https://cloud-dev.mongodb.com/api/atlas'
     # Create an atlasclient and attach it to the context.
     client = AtlasClient(
         base_url=atlas_base_url,
@@ -97,6 +99,12 @@ def cli(ctx, atlas_base_url, atlas_api_username,
         password=atlas_api_password,
         timeout=http_timeout)
     ctx.obj = client
+
+    ctx.admin_client = AtlasClient(
+        base_url=atlas_base_url,
+        username=os.environ['ATLAS_ADMIN_API_USERNAME'],
+        password=os.environ['ATLAS_ADMIN_API_PASSWORD'],
+        timeout=http_timeout)
 
     # Configure logging.
     loglevel = getattr(logging, log_level.upper())
