@@ -53,7 +53,7 @@ class PollerBase:
             LOGGER.debug("Waiting {:.2f} seconds before retrying".format(
                 self.interval))
             sleep(self.interval)
-        raise PollingTimeoutError
+        raise PollingTimeoutError("Polling timed out after %s seconds" % self.timeout)
 
 
 class BooleanCallablePoller(PollerBase):
