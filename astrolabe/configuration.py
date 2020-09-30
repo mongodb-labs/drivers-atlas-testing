@@ -36,7 +36,7 @@ CONFIGURATION_OPTIONS = JSONObject({
         'help': 'Maximum time (in s) to poll API endpoints.',
         'cliopt': '--polling-timeout',
         'envvar': 'ATLAS_POLLING_TIMEOUT',
-        'default': 1200.0},
+        'default': 3600.0},
     'ATLAS_POLLING_FREQUENCY': {
         'type': click.FLOAT,
         'help': 'Frequency (in Hz) at which to poll API endpoints.',
