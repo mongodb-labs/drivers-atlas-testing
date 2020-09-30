@@ -1,0 +1,43 @@
+initialConfiguration:
+  clusterConfiguration:
+    clusterType: SHARDED
+    providerSettings:
+      providerName: AWS
+      regionName: US_WEST_1
+      instanceSizeName: M10
+  processArgs:
+    minimumEnabledTlsProtocol: TLS1_1
+
+operations:
+  -
+    setClusterConfiguration:
+      clusterConfiguration:
+        providerSettings:
+          providerName: AWS
+          regionName: US_WEST_1
+          instanceSizeName: M10
+      processArgs:
+        minimumEnabledTlsProtocol: TLS1_2
+
+uriOptions:
+  retryReads: true
+
+driverWorkload:
+  database: test_database
+  collection: test_collection
+  testData:
+    - {_id: 1, x: 11}
+    - {_id: 2, x: 22}
+    - {_id: 3, x: 33}
+  operations:
+    -
+      object: collection
+      name: find
+      arguments:
+        filter:
+          _id: {$gt: 1}
+        sort:
+          _id: 1
+      result:
+        - {_id: 2, x: 22}
+        - {_id: 3, x: 33}
