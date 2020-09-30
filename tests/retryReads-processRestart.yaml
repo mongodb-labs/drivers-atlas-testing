@@ -6,7 +6,7 @@ initialConfiguration:
       regionName: US_WEST_1
       instanceSizeName: M10
   processArgs:
-    minimumEnabledTlsProtocol: TLS_1_1
+    minimumEnabledTlsProtocol: TLS1_1
 
 operations:
   -
@@ -17,7 +17,7 @@ operations:
           regionName: US_WEST_1
           instanceSizeName: M10
       processArgs:
-        minimumEnabledTlsProtocol: TLS_1_2
+        minimumEnabledTlsProtocol: TLS1_2
 
 uriOptions:
   retryReads: true
