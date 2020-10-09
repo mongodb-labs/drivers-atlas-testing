@@ -100,7 +100,7 @@ class Executor
 
             if expected_docs = op_spec['expectResult']
               if expected_docs != docs
-                puts "Failure"
+                puts "Failure: expected docs (#{expected_docs.inspect}) != actual docs (#{docs.inspect})"
                 @failure_count += 1
               end
             end
