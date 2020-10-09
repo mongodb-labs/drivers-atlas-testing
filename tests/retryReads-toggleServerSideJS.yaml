@@ -18,21 +18,42 @@ uriOptions:
   retryReads: true
 
 driverWorkload:
-  database: test_database
-  collection: test_collection
-  testData:
-    - {_id: 1, x: 11}
-    - {_id: 2, x: 22}
-    - {_id: 3, x: 33}
-  operations:
-    -
-      object: collection
-      name: find
-      arguments:
-        filter:
-          _id: {$gt: 1}
-        sort:
-          _id: 1
-      result:
+  description: "Find"
+
+  schemaVersion: "1.0"
+
+  createEntities:
+    - client:
+        id: &client0 client0
+    - database:
+        id: &database0 database0
+        client: *client0
+        databaseName: &database0Name dat
+    - collection:
+        id: &collection0 collection0
+        database: *database0
+        collectionName: &collection0Name dat
+
+  initialData:
+    - collectionName: *collection0Name
+      databaseName: *database0Name
+      documents:
+        - {_id: 1, x: 11}
         - {_id: 2, x: 22}
         - {_id: 3, x: 33}
+
+  tests:
+    - description: "Find one"
+      operations:
+        - name: find
+          object: *collection0
+          arguments:
+            filter: { _id: { $gt: 1 }}
+            sort: { _id: 1 }
+          expectResult:
+            -
+              _id: 2
+              x: 22
+            -
+              _id: 3
+              x: 33
