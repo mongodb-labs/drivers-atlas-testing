@@ -74,6 +74,10 @@ NODELETE_FLAG = click.option(
           'the test run. Useful when a test will be run multiple times with '
           'the same cluster name salt.'))
 
+NOCREATE_FLAG = click.option(
+    '--no-create', is_flag=True, default=False,
+    help=('Do not create clusters at the beginning of the run, assume they have already been provisioned by a previous run.'))
+
 
 @click.group()
 @create_click_option(CONFIGOPTS.ATLAS_API_BASE_URL)
@@ -372,12 +376,13 @@ def spec_tests():
 @POLLINGFREQUENCY_OPTION
 @XUNITOUTPUT_OPTION
 @NODELETE_FLAG
+@NOCREATE_FLAG
 @EXECUTORSTARTUPTIME_OPTION
 @click.pass_context
 def run_single_test(ctx, spec_test_file, workload_executor,
                     db_username, db_password, org_name, project_name,
                     cluster_name_salt, polling_timeout, polling_frequency,
-                    xunit_output, no_delete, startup_time):
+                    xunit_output, no_delete, no_create, startup_time):
     """
     Runs one APM test.
     This is the main entry point for running APM tests in headless environments.
@@ -402,6 +407,7 @@ def run_single_test(ctx, spec_test_file, workload_executor,
                               configuration=config,
                               xunit_output=xunit_output,
                               persist_clusters=no_delete,
+                              no_create=no_create,
                               workload_startup_time=startup_time)
 
     # Step-2: run the tests.

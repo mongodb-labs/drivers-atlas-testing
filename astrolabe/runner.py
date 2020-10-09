@@ -104,11 +104,14 @@ class AtlasTestCase:
         assert_subset(
             process_args, expected_configuration.processArgs)
 
-    def initialize(self):
+    def initialize(self, no_create=False):
         """
         Initialize a cluster with the configuration required by the test
         specification.
         """
+        if no_create:
+            return
+            
         LOGGER.info("Initializing cluster {!r}".format(self.cluster_name))
 
         cluster_config = self.spec.initialConfiguration.\
@@ -266,13 +269,14 @@ class AtlasTestCase:
 class SpecTestRunnerBase:
     """Base class for spec test runners."""
     def __init__(self, *, client, admin_client, test_locator_token, configuration, xunit_output,
-                 persist_clusters, workload_startup_time):
+                 persist_clusters, no_create, workload_startup_time):
         self.cases = []
         self.client = client
         self.admin_client = admin_client
         self.config = configuration
         self.xunit_logger = SingleTestXUnitLogger(output_directory=xunit_output)
         self.persist_clusters = persist_clusters
+        self.no_create = no_create
         self.workload_startup_time = workload_startup_time
 
         for full_path in self.find_spec_tests(test_locator_token):
@@ -348,7 +352,7 @@ class SpecTestRunnerBase:
 
         # Step-1: initialize tests clusters
         for case in self.cases:
-            case.initialize()
+            case.initialize(no_create=self.no_create)
 
         # Step-2: run tests round-robin until all have been run.
         remaining_test_cases = self.cases.copy()
