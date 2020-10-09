@@ -167,7 +167,13 @@ class Executor
   end
 
   def collection
-    @collection ||= client.use('database0')['collection0']
+    db_name = spec['createEntities'].detect { |entity|
+      entity['database']&.[]('id') == 'database0'
+    }['database'].fetch('databaseName')
+    collection_name = spec['createEntities'].detect { |entity|
+      entity['collection']&.[]('id') == 'collection0'
+    }['collection'].fetch('collectionName')
+    @collection ||= client.use(db_name)[collection_name]
   end
 
   def client
