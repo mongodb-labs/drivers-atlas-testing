@@ -78,70 +78,72 @@ class Executor
   end
 
   def perform_operations
-    spec['operations'].each do |op_spec|
-      begin
-        case op_spec['name']
-        when 'find'
-          unless op_spec['object'] == 'collection'
-            raise UnknownOperationConfiguration, "Can only find on a collection"
-          end
-
-          args = op_spec['arguments'].dup
-          op = collection.find(args.delete('filter') || {})
-          if sort = args.delete('sort')
-            op = op.sort(sort)
-          end
-          unless args.empty?
-            raise UnknownOperationConfiguration, "Unhandled keys in args: #{args}"
-          end
-
-          docs = op.to_a
-
-          if expected_docs = op_spec['result']
-            if expected_docs != docs
-              puts "Failure"
-              @failure_count += 1
+    spec['tests'].each do |test|
+      test['operations'].each do |op_spec|
+        begin
+          case op_spec['name']
+          when 'find'
+            unless op_spec['object'] == 'collection0'
+              raise UnknownOperationConfiguration, "Can only find on a collection"
             end
-          end
-        when 'insertOne'
-          unless op_spec['object'] == 'collection'
-            raise UnknownOperationConfiguration, "Can only find on a collection"
-          end
 
-          args = op_spec['arguments'].dup
-          document = args.delete('document')
-          unless args.empty?
-            raise UnknownOperationConfiguration, "Unhandled keys in args: #{args}"
-          end
+            args = op_spec['arguments'].dup
+            op = collection.find(args.delete('filter') || {})
+            if sort = args.delete('sort')
+              op = op.sort(sort)
+            end
+            unless args.empty?
+              raise UnknownOperationConfiguration, "Unhandled keys in args: #{args}"
+            end
 
-          collection.insert_one(document)
-        when 'updateOne'
-          unless op_spec['object'] == 'collection'
-            raise UnknownOperationConfiguration, "Can only find on a collection"
-          end
+            docs = op.to_a
 
-          args = op_spec['arguments'].dup
-          scope = collection
-          if filter = args.delete('filter')
-            scope = collection.find(filter)
+            if expected_docs = op_spec['expectResult']
+              if expected_docs != docs
+                puts "Failure"
+                @failure_count += 1
+              end
+            end
+          when 'insertOne'
+            unless op_spec['object'] == 'collection0'
+              raise UnknownOperationConfiguration, "Can only find on a collection"
+            end
+
+            args = op_spec['arguments'].dup
+            document = args.delete('document')
+            unless args.empty?
+              raise UnknownOperationConfiguration, "Unhandled keys in args: #{args}"
+            end
+
+            collection.insert_one(document)
+          when 'updateOne'
+            unless op_spec['object'] == 'collection0'
+              raise UnknownOperationConfiguration, "Can only find on a collection"
+            end
+
+            args = op_spec['arguments'].dup
+            scope = collection
+            if filter = args.delete('filter')
+              scope = collection.find(filter)
+            end
+            if update = args.delete('update')
+              scope.update_one(update)
+            end
+            unless args.empty?
+              raise UnknownOperationConfiguration, "Unhandled keys in args: #{args}"
+            end
+          else
+            raise UnknownOperation, "Unhandled operation #{op_spec['name']}"
           end
-          if update = args.delete('update')
-            scope.update_one(update)
-          end
-          unless args.empty?
-            raise UnknownOperationConfiguration, "Unhandled keys in args: #{args}"
-          end
-        else
-          raise UnknownOperation, "Unhandled operation #{op_spec['name']}"
+        #rescue Mongo::Error => e
+        # The validator intentionally gives us invalid operations, figure out
+        # how to handle this requirement while maintaining diagnostics.
+        rescue => e
+          STDERR.puts "Error: #{e.class}: #{e}"
+          @error_count += 1
         end
-      #rescue Mongo::Error => e
-      # The validator intentionally gives us invalid operations, figure out
-      # how to handle this requirement while maintaining diagnostics.
-      rescue => e
-        STDERR.puts "Error: #{e.class}: #{e}"
-        @error_count += 1
+        @operation_count += 1
       end
-      @operation_count += 1
     end
   end
 
@@ -165,7 +167,7 @@ class Executor
   end
 
   def collection
-    @collection ||= client.use(spec['database'])[spec['collection']]
+    @collection ||= client.use('database0')['collection0']
   end
 
   def client

@@ -148,8 +148,8 @@ class AtlasTestCase:
         timer.start()
 
         # Step-1: load test data.
-        test_data = self.spec.driverWorkload.get('testData')
-        if test_data:
+        test_datas = self.spec.driverWorkload.get('initialData')
+        if test_datas:
             LOGGER.info("Loading test data on cluster {!r}".format(
                 self.cluster_name))
             connection_string = self.get_connection_string()

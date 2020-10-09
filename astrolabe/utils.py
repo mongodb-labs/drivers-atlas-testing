@@ -178,11 +178,12 @@ def load_test_data(connection_string, driver_workload):
         kwargs['tlsCAFile'] = certifi.where()
     client = MongoClient(connection_string, **kwargs)
 
-    coll = client.get_database(
-        driver_workload.database).get_collection(
-        driver_workload.collection)
-    coll.drop()
-    coll.insert_many(driver_workload.testData)
+    for spec in driver_workload.initialData:
+        coll = client.get_database(
+            spec.databaseName).get_collection(
+            spec.collectionName)
+        coll.drop()
+        coll.insert_many(spec.documents)
 
 
 class DriverWorkloadSubprocessRunner:
