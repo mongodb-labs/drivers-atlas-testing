@@ -21,11 +21,25 @@ uriOptions:
   retryWrites: true
 
 driverWorkload:
-  database: test_database
-  collection: test_collection
-  operations:
-    -
-      object: collection
-      name: insertOne
-      arguments:
-        document: {data: 100}
+  description: "Insert"
+
+  schemaVersion: "1.0"
+
+  createEntities:
+    - client:
+        id: &client0 client0
+    - database:
+        id: &database0 database0
+        client: *client0
+        databaseName: &database0Name dat
+    - collection:
+        id: &collection0 collection0
+        database: *database0
+        collectionName: &collection0Name dat
+
+  tests:
+    - description: "Insert one"
+      operations:
+        - name: insertOne
+          object: *collection0
+          arguments: { data: 100 }
