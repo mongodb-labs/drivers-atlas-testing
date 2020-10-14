@@ -77,6 +77,7 @@ class _ApiComponent:
 class _ApiResponse:
     """Private wrapper class for processing HTTP responses."""
     def __init__(self, response, request_method, json_data):
+        self.response = response
         self.resource_url = response.url
         self.headers = response.headers
         self.status_code = response.status_code

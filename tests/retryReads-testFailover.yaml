@@ -10,6 +10,10 @@ initialConfiguration:
 operations:
   -
     testFailover: true
+  -
+    sleep: 10
+  -
+    waitForIdle: true
 
 uriOptions:
   retryReads: true

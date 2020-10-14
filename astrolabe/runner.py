@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-import os
+import logging, datetime, time as _time, gzip
+import os, io
 from time import sleep, monotonic
 from urllib.parse import urlencode
 
@@ -109,6 +109,9 @@ class AtlasTestCase:
         Initialize a cluster with the configuration required by the test
         specification.
         """
+        
+        self.start_time = _time.time()
+        
         if no_create:
             return
             
@@ -195,6 +198,12 @@ class AtlasTestCase:
                 
                 self.wait_for_idle()
                 
+            if hasattr(operation, 'sleep'):
+                _time.sleep(operation['sleep'])
+                
+            if hasattr(operation, 'waitForIdle'):
+                self.wait_for_idle()
+                
             if hasattr(operation, 'restartVms'):
                 url = "/api/private/nds/groups/%s/clusters/%s/reboot" % (self.project.id, self.cluster_name)
                 self.admin_client.request('POST', url)
@@ -247,6 +256,11 @@ class AtlasTestCase:
             # is only visible for failed tests.
 
         LOGGER.info("Workload Statistics: {}".format(stats))
+        
+        LOGGER.info("Waiting 5 minutes for Atlas logs to become available")
+        sleep(5*60)
+        
+        self.retrieve_logs()
 
         # Step 7: download logs asynchronously and delete cluster.
         # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4
@@ -264,6 +278,55 @@ class AtlasTestCase:
         LOGGER.info("Waiting for cluster maintenance to complete")
         selector.poll([self], attribute="is_cluster_state", args=("IDLE",),
                       kwargs={})
+                      
+    def retrieve_logs(self):
+        # There is no straightforward facility in Atlas to retrieve logs
+        # for a cluster. See https://jira.mongodb.org/browse/PRODTRIAGE-968.
+        # Atlas provides the "cluster start" time, added in
+        # https://jira.mongodb.org/browse/CLOUDP-73874. This is however
+        # not the time when any process started, but appears to be roughly
+        # the time when cluster creation began. Since a cluster can take
+        # anywhere from 6 to 30 minutes to provision depending on the type,
+        # simply retrieving logs from the "cluster start" time would result in
+        # several of the intervals retrieving the exact same data from when
+        # a process really started.
+        # Because of this, figure out the times the hard way:
+        # - Retrieve the first log starting with the "cluster start" time.
+        # - Read the first log line.
+        # - Use the time in that line as the actual node start time.
+        # - Step forward in 5 minute increments to get the entire log,
+        #   hopefully in a complete and correct manner. See
+        #   https://jira.mongodb.org/browse/PRODTRIAGE-1030 for why
+        #   using end time (or simply using the API as documented) doesn't work.
+        
+        cluster_config = self.cluster_url.get().data
+        data = self.client.request('GET', 'groups/%s/processes' % self.project.id).data
+        for hostinfo in data['results']:
+            hostname = hostinfo['hostname']
+            
+            log_names = {'mongodb.gz': 'mongod.log'}
+            if cluster_config['clusterType'] == 'SHARDED':
+                log_names['mongos.gz'] = 'mongos.log'
+            
+            for api_log_name, log_name in log_names.items():
+        
+                time = int(self.start_time)
+                while time < _time.time():
+                    fn = '%s_%s_%s.gz' % (hostname, log_name, datetime.datetime.fromtimestamp(time).strftime('%Y%m%dT%H:%M:%SZ'))
+                    LOGGER.info('Retrieving %s' % fn)
+                    resp = self.client.request('GET', 'groups/%s/clusters/%s/logs/%s' % (self.project.id, hostname, api_log_name), startDate=time)
+                    with open(fn, 'wb') as f:
+                        f.write(resp.response.content)
+                        
+                    time += 5*60
+        
+    def iso8601_to_timestamp(self, time_str):
+        if time_str.endswith('Z'):
+            format = '%Y-%m-%dT%H:%M:%SZ'
+        else:
+            format = '%Y-%m-%dT%H:%M:%S.%f+0000'
+        t = datetime.datetime.strptime(time_str, format)
+        return int(_time.mktime(t.timetuple()))
 
 
 class SpecTestRunnerBase:
