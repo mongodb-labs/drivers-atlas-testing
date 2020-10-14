@@ -299,6 +299,7 @@ class AtlasTestCase:
         #   https://jira.mongodb.org/browse/PRODTRIAGE-1030 for why
         #   using end time (or simply using the API as documented) doesn't work.
         
+        end_time = _time.time()
         cluster_config = self.cluster_url.get().data
         data = self.client.request('GET', 'groups/%s/processes' % self.project.id).data
         for hostinfo in data['results']:
@@ -311,7 +312,7 @@ class AtlasTestCase:
             for api_log_name, log_name in log_names.items():
         
                 time = int(self.start_time)
-                while time < _time.time():
+                while time < end_time:
                     fn = '%s_%s_%s.gz' % (hostname, log_name, datetime.datetime.fromtimestamp(time).strftime('%Y%m%dT%H:%M:%SZ'))
                     LOGGER.info('Retrieving %s' % fn)
                     resp = self.client.request('GET', 'groups/%s/clusters/%s/logs/%s' % (self.project.id, hostname, api_log_name), startDate=time)
