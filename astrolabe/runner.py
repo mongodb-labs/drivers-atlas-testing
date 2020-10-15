@@ -257,8 +257,8 @@ class AtlasTestCase:
 
         LOGGER.info("Workload Statistics: {}".format(stats))
         
-        LOGGER.info("Waiting 5 minutes for Atlas logs to become available")
-        sleep(5*60)
+        #LOGGER.info("Waiting 5 minutes for Atlas logs to become available")
+        #sleep(5*60)
         
         self.retrieve_logs()
 
@@ -280,54 +280,40 @@ class AtlasTestCase:
                       kwargs={})
                       
     def retrieve_logs(self):
-        # There is no straightforward facility in Atlas to retrieve logs
-        # for a cluster. See https://jira.mongodb.org/browse/PRODTRIAGE-968.
-        # Atlas provides the "cluster start" time, added in
-        # https://jira.mongodb.org/browse/CLOUDP-73874. This is however
-        # not the time when any process started, but appears to be roughly
-        # the time when cluster creation began. Since a cluster can take
-        # anywhere from 6 to 30 minutes to provision depending on the type,
-        # simply retrieving logs from the "cluster start" time would result in
-        # several of the intervals retrieving the exact same data from when
-        # a process really started.
-        # Because of this, figure out the times the hard way:
-        # - Retrieve the first log starting with the "cluster start" time.
-        # - Read the first log line.
-        # - Use the time in that line as the actual node start time.
-        # - Step forward in 5 minute increments to get the entire log,
-        #   hopefully in a complete and correct manner. See
-        #   https://jira.mongodb.org/browse/PRODTRIAGE-1030 for why
-        #   using end time (or simply using the API as documented) doesn't work.
+        data = self.admin_client.request('GET', '/api/private/nds/groups/%s/clusters/%s' % (self.project.id, self.cluster_name)).data
         
-        end_time = _time.time()
-        cluster_config = self.cluster_url.get().data
-        data = self.client.request('GET', 'groups/%s/processes' % self.project.id).data
-        for hostinfo in data['results']:
-            hostname = hostinfo['hostname']
-            
-            log_names = {'mongodb.gz': 'mongod.log'}
-            if cluster_config['clusterType'] == 'SHARDED':
-                log_names['mongos.gz'] = 'mongos.log'
-            
-            for api_log_name, log_name in log_names.items():
-        
-                time = int(self.start_time)
-                while time < end_time:
-                    fn = '%s_%s_%s.gz' % (hostname, log_name, datetime.datetime.fromtimestamp(time).strftime('%Y%m%dT%H:%M:%SZ'))
-                    LOGGER.info('Retrieving %s' % fn)
-                    resp = self.client.request('GET', 'groups/%s/clusters/%s/logs/%s' % (self.project.id, hostname, api_log_name), startDate=time)
-                    with open(fn, 'wb') as f:
-                        f.write(resp.response.content)
-                        
-                    time += 5*60
-        
-    def iso8601_to_timestamp(self, time_str):
-        if time_str.endswith('Z'):
-            format = '%Y-%m-%dT%H:%M:%SZ'
+        if data['clusterType'] == 'SHARDED':
+            rtype = 'CLUSTER'
+            rname = self.cluster_name
         else:
-            format = '%Y-%m-%dT%H:%M:%S.%f+0000'
-        t = datetime.datetime.strptime(time_str, format)
-        return int(_time.mktime(t.timetuple()))
+            rtype = 'REPLICASET'
+            rname = data['deploymentItemName']
+            
+        params = dict(
+            resourceName=rname,
+            resourceType=rtype,
+            redacted=True,
+            logTypes=['FTDC','MONGODB'],#,'AUTOMATION_AGENT','MONITORING_AGENT','BACKUP_AGENT'],
+            sizeRequestedPerFileBytes=100000000,
+        )
+        data = self.admin_client.request('POST', 'groups/%s/logCollectionJobs' % (self.project.id,), **params).data
+        job_id = data['id']
+        
+        while True:
+            LOGGER.debug('Poll job %s' % job_id)
+            data = self.admin_client.request('GET', 'groups/%s/logCollectionJobs/%s' % (self.project.id, job_id)).data
+            if data['status'] == 'IN_PROGRESS':
+                sleep(1)
+            elif data['status'] == 'SUCCESS':
+                break
+            else:
+                raise Exception("Unexpected log collection job status %s" % data['status'])
+        
+        url = data['downloadUrl'].replace('https://cloud-dev.mongodb.com', '')
+        LOGGER.info('Retrieving %s' % url)
+        resp = self.admin_client.request('GET', url)
+        with open('logs.tar.gz', 'wb') as f:
+            f.write(resp.response.content)
 
 
 class SpecTestRunnerBase:
