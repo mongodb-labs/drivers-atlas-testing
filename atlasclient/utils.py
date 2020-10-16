@@ -23,7 +23,7 @@ class JSONObject(dict):
         if name in self:
             return self[name]
         raise AttributeError('{} has no property named {}.'.format(
-            self.__class__.__name__, name))
+            self, name))
 
     @classmethod
     def from_dict(cls, raw_dict):

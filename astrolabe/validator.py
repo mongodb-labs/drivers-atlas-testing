@@ -18,18 +18,16 @@ from time import sleep
 from unittest import TestCase
 
 from pymongo import MongoClient
+import yaml
 
 from atlasclient import JSONObject
 from astrolabe.exceptions import WorkloadExecutorError
 from astrolabe.utils import DriverWorkloadSubprocessRunner, load_test_data
 
 
-DRIVER_WORKLOAD = JSONObject.from_dict({
-    'database': 'validation_db',
-    'collection': 'validation_coll',
-    'testData': [{'_id': 'validation_sentinel', 'count': 0}],
-    'operations': []
-})
+DRIVER_WORKLOAD = JSONObject.from_dict(
+    yaml.load(open('tests/validator.yaml').read(), Loader=yaml.FullLoader)['driverWorkload']
+)
 
 
 class ValidateWorkloadExecutor(TestCase):
@@ -40,8 +38,8 @@ class ValidateWorkloadExecutor(TestCase):
     def setUp(self):
         self.client = MongoClient(self.CONNECTION_STRING, w='majority')
         self.coll = self.client.get_database(
-            DRIVER_WORKLOAD['database']).get_collection(
-            DRIVER_WORKLOAD['collection'])
+            [e for e in DRIVER_WORKLOAD['createEntities'] if 'database' in e][0]['database']['databaseName']).get_collection(
+            [e for e in DRIVER_WORKLOAD['createEntities'] if 'collection' in e][0]['collection']['collectionName'])
         load_test_data(self.CONNECTION_STRING, DRIVER_WORKLOAD)
 
     def run_test(self, driver_workload):
