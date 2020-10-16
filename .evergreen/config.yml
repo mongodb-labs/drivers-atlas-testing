@@ -80,6 +80,8 @@ functions:
           ATLAS_API_PASSWORD: ${atlas_secret}
           ATLAS_API_BASE_URL: ${atlas_url}
           ATLAS_ORGANIZATION_NAME: ${atlas_organization}
+          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
+          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         command: |
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml -e integrations/${DRIVER_DIRNAME}/workload-executor
@@ -112,6 +114,8 @@ functions:
           ATLAS_API_PASSWORD: ${atlas_secret}
           ATLAS_API_BASE_URL: ${atlas_url}
           ATLAS_ORGANIZATION_NAME: ${atlas_organization}
+          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
+          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         command: |
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests delete-cluster tests/${TEST_NAME}.yaml
@@ -140,30 +144,20 @@ tasks:
     commands:
       - func: "validate executor"
   # One test-case per task.
-  - name: retryReads-resizeCluster
-    tags: ["all", "retryReads", "resizeCluster"]
+  - name: retryReads-processRestart
+    cron: '@weekly'
+    tags: ["all"]
     commands:
       - func: "run test"
         vars:
-          TEST_NAME: retryReads-resizeCluster
-  - name: retryReads-toggleServerSideJS
-    tags: ["all", "retryReads", "toggleServerSideJS"]
+          TEST_NAME: retryReads-processRestart
+  - name: retryReads-processRestart-sharded
+    cron: '@weekly'
+    tags: ["all"]
     commands:
       - func: "run test"
         vars:
-          TEST_NAME: retryReads-toggleServerSideJS
-  - name: retryWrites-resizeCluster
-    tags: ["all", "retryWrites", "resizeCluster"]
-    commands:
-      - func: "run test"
-        vars:
-          TEST_NAME: retryWrites-resizeCluster
-  - name: retryWrites-toggleServerSideJS
-    tags: ["all", "retryWrites", "toggleServerSideJS"]
-    commands:
-      - func: "run test"
-        vars:
-          TEST_NAME: retryWrites-toggleServerSideJS
+          TEST_NAME: retryReads-processRestart-sharded
 
 axes:
   # The 'driver' axis specifies the driver to be tested (including driver version).
@@ -311,22 +305,6 @@ axes:
           GOPATH: /home/ubuntu/go
 
 buildvariants:
-- matrix_name: "tests-python"
-  matrix_spec:
-    driver: ["pymongo-master"]
-    platform: ["ubuntu-18.04"]
-    runtime: ["python27", "python38"]
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
-- matrix_name: "tests-python-windows"
-  matrix_spec:
-    driver: ["pymongo-master"]
-    platform: ["windows-64"]
-    runtime: ["python37-windows"]
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
 - matrix_name: "tests-ruby"
   matrix_spec:
     driver: ["ruby-master"]
@@ -335,46 +313,63 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
-- matrix_name: tests-node
-  matrix_spec:
-    driver:
-      - node-master
-    platform:
-      - ubuntu-18.04
-    runtime:
-      - node-dubnium
-      - node-erbium
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - .all
-- matrix_name: "tests-java"
-  matrix_spec:
-    driver: ["java-master"]
-    platform: ["ubuntu-18.04"]
-    runtime: ["java11"]
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
-- matrix_name: "tests-dotnet-windows"
-  matrix_spec:
-    driver: ["dotnet-master"]
-    platform: ["windows-64"]
-    runtime:
-      - "dotnet-async-netcoreapp2.1"
-      - "dotnet-sync-netcoreapp2.1"
-      - "dotnet-async-netcoreapp1.1"
-      - "dotnet-sync-netcoreapp1.1"
-      - "dotnet-async-net452"
-      - "dotnet-sync-net452"
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
-- matrix_name: "tests-go"
-  matrix_spec:
-    driver: ["go-master"]
-    platform: ubuntu-18.04
-    runtime: go-13
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
-  
+#- matrix_name: "tests-python"
+#  matrix_spec:
+#    driver: ["pymongo-master"]
+#    platform: ["ubuntu-18.04"]
+#    runtime: ["python27", "python38"]
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - ".all"
+#- matrix_name: "tests-python-windows"
+#  matrix_spec:
+#    driver: ["pymongo-master"]
+#    platform: ["windows-64"]
+#    runtime: ["python37-windows"]
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - ".all"
+#- matrix_name: tests-node
+#  matrix_spec:
+#    driver:
+#      - node-master
+#    platform:
+#      - ubuntu-18.04
+#    runtime:
+#      - node-dubnium
+#      - node-erbium
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - .all
+#- matrix_name: "tests-java"
+#  matrix_spec:
+#    driver: ["java-master"]
+#    platform: ["ubuntu-18.04"]
+#    runtime: ["java11"]
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - ".all"
+#- matrix_name: "tests-dotnet-windows"
+#  matrix_spec:
+#    driver: ["dotnet-master"]
+#    platform: ["windows-64"]
+#    runtime:
+#      - "dotnet-async-netcoreapp2.1"
+#      - "dotnet-sync-netcoreapp2.1"
+#      - "dotnet-async-netcoreapp1.1"
+#      - "dotnet-sync-netcoreapp1.1"
+#      - "dotnet-async-net452"
+#      - "dotnet-sync-net452"
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - ".all"
+#- matrix_name: "tests-go"
+#  matrix_spec:
+#    driver: ["go-master"]
+#    platform: ubuntu-18.04
+#    runtime: go-13
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - ".all"
+#  
+#
