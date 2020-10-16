@@ -100,7 +100,7 @@ functions:
         working_dir: astrolabe-src
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests validate-workload-executor -e integrations/${DRIVER_DIRNAME}/workload-executor --connection-string "mongodb://localhost:27017/"
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests validate-workload-executor -e integrations/${DRIVER_DIRNAME}/workload-executor --connection-string "mongodb://localhost:27017/?serverselectiontimeoutms=10000"
 
   "delete test cluster":
     # Delete the cluster that was used to run the test.
