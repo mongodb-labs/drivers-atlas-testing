@@ -53,6 +53,16 @@ CONFIGURATION_OPTIONS = JSONObject({
         'cliopt': '--atlas-api-password',
         'envvar': 'ATLAS_API_PASSWORD',
         'default': None},
+    'ATLAS_ADMIN_API_USERNAME': {
+        'help': 'HTTP-Digest username (Atlas API public-key).',
+        'cliopt': '--atlas-admin-api-username',
+        'envvar': 'ATLAS_ADMIN_API_USERNAME',
+        'default': None},
+    'ATLAS_ADMIN_API_PASSWORD': {
+        'help': 'HTTP-Digest password (Atlas API private-key).',
+        'cliopt': '--atlas-admin-api-password',
+        'envvar': 'ATLAS_ADMIN_API_PASSWORD',
+        'default': None},
     'ATLAS_DB_USERNAME': {
         'help': 'Database username on the MongoDB instance.',
         'cliopt': '--db-username',

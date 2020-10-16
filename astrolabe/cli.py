@@ -83,12 +83,15 @@ NOCREATE_FLAG = click.option(
 @create_click_option(CONFIGOPTS.ATLAS_API_BASE_URL)
 @create_click_option(CONFIGOPTS.ATLAS_API_USERNAME)
 @create_click_option(CONFIGOPTS.ATLAS_API_PASSWORD)
+@create_click_option(CONFIGOPTS.ATLAS_ADMIN_API_USERNAME)
+@create_click_option(CONFIGOPTS.ATLAS_ADMIN_API_PASSWORD)
 @create_click_option(CONFIGOPTS.ATLAS_HTTP_TIMEOUT)
 @create_click_option(CONFIGOPTS.ASTROLABE_LOGLEVEL)
 @click.version_option()
 @click.pass_context
 def cli(ctx, atlas_base_url, atlas_api_username,
-        atlas_api_password, http_timeout, log_level):
+        atlas_api_password, atlas_admin_api_username, atlas_admin_api_password,
+        http_timeout, log_level):
 
     """
     Astrolabe is a command-line application for running automated driver
@@ -105,8 +108,8 @@ def cli(ctx, atlas_base_url, atlas_api_username,
 
     admin_client = AtlasClient(
         base_url=atlas_base_url,
-        username=os.environ['ATLAS_ADMIN_API_USERNAME'],
-        password=os.environ['ATLAS_ADMIN_API_PASSWORD'],
+        username=atlas_admin_api_username,
+        password=atlas_admin_api_password,
         timeout=http_timeout)
     ctx.obj = (client,admin_client)
 

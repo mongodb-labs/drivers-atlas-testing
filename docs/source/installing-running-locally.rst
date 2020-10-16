@@ -51,6 +51,8 @@ Finally, declare the following variables to configure ``astrolabe``::
   $ export ATLAS_ORGANIZATION_NAME=<Atlas Organization Name>
   $ export ATLAS_API_USERNAME=<API Public Key>
   $ export ATLAS_API_PASSWORD=<API Private Key>
+  $ export ATLAS_ADMIN_API_USERNAME=<Admin API Public Key>
+  $ export ATLAS_ADMIN_API_PASSWORD=<Admin API Private Key>
 
 Finally, use the ``check-connection`` command to confirm that ``astrolabe`` is able to connect to and authenticate
 with the Atlas API::
