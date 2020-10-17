@@ -442,7 +442,7 @@ def delete_test_cluster(ctx, spec_test_file, org_name, project_name,
 
     # Step-2: delete the cluster.
     organization = cmd.get_one_organization_by_name(
-        client=ctx.obj, organization_name=org_name)
+        client=ctx.obj[0], organization_name=org_name)
     project = cmd.ensure_project(
         client=ctx.obj, project_name=project_name, organization_id=organization.id)
     try:
