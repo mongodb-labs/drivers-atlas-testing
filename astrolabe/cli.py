@@ -444,9 +444,9 @@ def delete_test_cluster(ctx, spec_test_file, org_name, project_name,
     organization = cmd.get_one_organization_by_name(
         client=ctx.obj[0], organization_name=org_name)
     project = cmd.ensure_project(
-        client=ctx.obj, project_name=project_name, organization_id=organization.id)
+        client=ctx.obj[0], project_name=project_name, organization_id=organization.id)
     try:
-        ctx.obj.groups[project.id].clusters[cluster_name].delete()
+        ctx.obj[0].groups[project.id].clusters[cluster_name].delete()
     except AtlasApiBaseError:
         pass
 
