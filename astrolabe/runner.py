@@ -284,7 +284,7 @@ class AtlasTestCase:
         
         if data['clusterType'] == 'SHARDED':
             rtype = 'CLUSTER'
-            rname = self.cluster_name
+            rname = data['deploymentItemName']
         else:
             rtype = 'REPLICASET'
             rname = data['deploymentItemName']
