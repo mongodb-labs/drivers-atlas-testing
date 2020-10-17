@@ -1,0 +1,37 @@
+operations: []
+
+driverWorkload:
+  description: "Validator - simple"
+
+  schemaVersion: "1.0"
+
+  createEntities:
+    - client:
+        id: &client0 client0
+    - database:
+        id: &database0 database0
+        client: *client0
+        databaseName: &database0Name dat
+    - collection:
+        id: &collection0 collection0
+        database: *database0
+        collectionName: &collection0Name dat
+
+  initialData:
+    - collectionName: *collection0Name
+      databaseName: *database0Name
+      documents:
+        -
+          _id: validation_sentinel
+          count: 0
+
+  tests:
+    - description: "updateOne"
+      operations:
+        - name: updateOne
+          object: *collection0
+          arguments:
+            filter: { _id: validation_sentinel}
+            update: 
+              $inc:
+                count: 1

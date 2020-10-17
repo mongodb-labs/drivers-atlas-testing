@@ -25,11 +25,6 @@ from astrolabe.exceptions import WorkloadExecutorError
 from astrolabe.utils import DriverWorkloadSubprocessRunner, load_test_data
 
 
-DRIVER_WORKLOAD = JSONObject.from_dict(
-    yaml.load(open('tests/validator.yaml').read(), Loader=yaml.FullLoader)['driverWorkload']
-)
-
-
 class ValidateWorkloadExecutor(TestCase):
     WORKLOAD_EXECUTOR = None
     CONNECTION_STRING = None
@@ -37,12 +32,13 @@ class ValidateWorkloadExecutor(TestCase):
 
     def setUp(self):
         self.client = MongoClient(self.CONNECTION_STRING, w='majority')
-        self.coll = self.client.get_database(
-            [e for e in DRIVER_WORKLOAD['createEntities'] if 'database' in e][0]['database']['databaseName']).get_collection(
-            [e for e in DRIVER_WORKLOAD['createEntities'] if 'collection' in e][0]['collection']['collectionName'])
-        load_test_data(self.CONNECTION_STRING, DRIVER_WORKLOAD)
 
     def run_test(self, driver_workload):
+        self.coll = self.client.get_database(
+            [e for e in driver_workload['createEntities'] if 'database' in e][0]['database']['databaseName']).get_collection(
+            [e for e in driver_workload['createEntities'] if 'collection' in e][0]['collection']['collectionName'])
+        load_test_data(self.CONNECTION_STRING, driver_workload)
+        
         subprocess = DriverWorkloadSubprocessRunner()
         try:
             subprocess.spawn(workload_executor=self.WORKLOAD_EXECUTOR,
@@ -77,15 +73,9 @@ class ValidateWorkloadExecutor(TestCase):
         return stats
 
     def test_simple(self):
-        operations = [
-            {'object': 'collection',
-             'name': 'updateOne',
-             'arguments': {
-                 'filter': {'_id': 'validation_sentinel'},
-                 'update': {'$inc': {'count': 1}}}}]
-        driver_workload = deepcopy(DRIVER_WORKLOAD)
-        driver_workload['operations'] = operations
-        driver_workload = JSONObject.from_dict(driver_workload)
+        driver_workload = JSONObject.from_dict(
+            yaml.load(open('tests/validator-simple.yml').read(), Loader=yaml.FullLoader)['driverWorkload']
+        )
 
         stats = self.run_test(driver_workload)
 
@@ -104,18 +94,9 @@ class ValidateWorkloadExecutor(TestCase):
                 "or didn't execute them appropriately.")
 
     def test_num_errors(self):
-        operations = [
-            {'object': 'collection',
-             'name': 'updateOne',
-             'arguments': {
-                 'filter': {'_id': 'validation_sentinel'},
-                 'update': {'$inc': {'count': 1}}}},
-            {'object': 'collection',
-             'name': 'doesNotExist',
-             'arguments': {'foo': 'bar'}}]
-        driver_workload = deepcopy(DRIVER_WORKLOAD)
-        driver_workload['operations'] = operations
-        driver_workload = JSONObject.from_dict(driver_workload)
+        driver_workload = JSONObject.from_dict(
+            yaml.load(open('tests/validator-numErrors.yml').read(), Loader=yaml.FullLoader)['driverWorkload']
+        )
 
         stats = self.run_test(driver_workload)
 

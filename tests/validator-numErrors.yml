@@ -1,7 +1,7 @@
 operations: []
 
 driverWorkload:
-  description: "Validator"
+  description: "Validator - num errors"
 
   schemaVersion: "1.0"
 
@@ -24,3 +24,18 @@ driverWorkload:
         -
           _id: validation_sentinel
           count: 0
+
+  tests:
+    - description: "updateOne"
+      operations:
+        - name: updateOne
+          object: *collection0
+          arguments:
+            filter: { _id: validation_sentinel}
+            update: 
+              $inc:
+                count: 1
+        - name: doesNotExist
+          object: *collection0
+          arguments:
+            foo: bar
