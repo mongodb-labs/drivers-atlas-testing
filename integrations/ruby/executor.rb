@@ -11,9 +11,10 @@ class MetricsCollector
     @operations = {}
     @command_events = []
     @connection_events = []
+    @errors = []
   end
 
-  attr_reader :command_events, :connection_events
+  attr_reader :command_events, :connection_events, :errors
 
   def started(event)
     @operations[event.operation_id] = [event, Time.now]
@@ -160,6 +161,10 @@ class Executor
         # how to handle this requirement while maintaining diagnostics.
         rescue => e
           STDERR.puts "Error: #{e.class}: #{e}"
+          metrics_collector.errors << {
+            error: "#{e.class}: #{e}",
+            time: Time.now.to_f,
+          }
           @error_count += 1
         end
         @operation_count += 1
@@ -185,6 +190,7 @@ class Executor
       f << JSON.dump(
         commands: metrics_collector.command_events,
         connections: metrics_collector.connection_events,
+        errors: metrics_collector.errors,
       )
     end
   end
