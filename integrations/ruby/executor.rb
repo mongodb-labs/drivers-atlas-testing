@@ -9,32 +9,52 @@ class UnknownOperationConfiguration < StandardError; end
 class MetricsCollector
   def initialize
     @operations = {}
-    @samples = []
+    @command_events = []
+    @connection_events = []
   end
 
-  attr_reader :samples
+  attr_reader :command_events, :connection_events
 
   def started(event)
-    @operations[event.operation_id] = event
+    @operations[event.operation_id] = [event, Time.now]
   end
 
   def succeeded(event)
-    started_event = @operations.delete(event.operation_id)
+    started_event, started_at = @operations.delete(event.operation_id)
     raise "Started event for #{event.operation_id} not found" unless started_event
-    @samples << {
+    @command_events << {
       command_name: started_event.command_name,
       duration: event.duration,
+      start_time: started_at.to_f,
+      address: started_event.address.seed,
     }
   end
 
   def failed(event)
-    started_event = @operations.delete(event.operation_id)
+    started_event, started_at = @operations.delete(event.operation_id)
     raise "Started event for #{event.operation_id} not found" unless started_event
-    @samples << {
+    @command_events << {
       command_name: started_event.command_name,
       duration: event.duration,
       failure: event.failure,
+      start_time: started_at.to_f,
+      address: started_event.address.seed,
     }
+  end
+
+  def published(event)
+    @connection_events << {
+      name: event.class.name.sub(/.*::/, ''),
+      time: Time.now.to_f,
+      address: event.address.seed,
+    }.tap do |entry|
+      if event.respond_to?(:connection_id)
+        entry[:connection_id] = event.connection_id
+      end
+      if event.respond_to?(:reason)
+        entry[:reason] = event.reason
+      end
+    end
   end
 end
 
@@ -161,8 +181,11 @@ class Executor
     File.open('results.json', 'w') do |f|
       f << JSON.dump(result)
     end
-    File.open('metrics.json', 'w') do |f|
-      f << JSON.dump(metrics_collector.samples)
+    File.open('events.json', 'w') do |f|
+      f << JSON.dump(
+        commands: metrics_collector.command_events,
+        connections: metrics_collector.connection_events,
+      )
     end
   end
 
@@ -179,6 +202,7 @@ class Executor
   def client
     @client ||= Mongo::Client.new(uri).tap do |client|
       client.subscribe(Mongo::Monitoring::COMMAND, metrics_collector)
+      client.subscribe(Mongo::Monitoring::CONNECTION_POOL, metrics_collector)
     end
   end
 end
