@@ -167,6 +167,7 @@ post:
   - func: "delete test cluster"
   - func: "upload test results"
   - func: "upload server logs"
+  - func: "upload event logs"
 
 tasks:
   # Workload executor validation task (patch-only).
