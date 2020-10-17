@@ -126,6 +126,18 @@ functions:
       params:
         file: "astrolabe-src/xunit-output/*.xml"
 
+  "upload server logs":
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: logs.tar.gz
+        remote_file: ${UPLOAD_BUCKET}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-server-logs.tar.gz
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/x-gzip}
+        display_name: "mongodb-logs.tar.gz"
+
 # Functions to run before the test.
 pre:
   - func: "install astrolabe"
@@ -135,6 +147,7 @@ pre:
 post:
   - func: "delete test cluster"
   - func: "upload test results"
+  - func: "upload server logs"
 
 tasks:
   # Workload executor validation task (patch-only).
