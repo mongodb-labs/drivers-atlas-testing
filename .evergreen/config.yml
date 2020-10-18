@@ -139,7 +139,7 @@ functions:
         display_name: "mongodb-logs.tar.gz"
 
   "upload event logs":
-    - command: subprocess.exec
+    - command: shell.exec
       params:
         working_dir: astrolabe-src
         continue_on_err: true       # Because script may not exist OR platform may not be Windows.
