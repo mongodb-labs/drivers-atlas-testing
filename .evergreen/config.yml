@@ -131,7 +131,7 @@ functions:
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
-        local_file: logs.tar.gz
+        local_file: astrolabe-src/logs.tar.gz
         remote_file: ${UPLOAD_BUCKET}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-server-logs.tar.gz
         bucket: mciuploads
         permissions: public-read
@@ -150,7 +150,7 @@ functions:
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
-        local_file: events.json.gz
+        local_file: astrolabe-src/events.json.gz
         remote_file: ${UPLOAD_BUCKET}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-events.json.gz
         bucket: mciuploads
         permissions: public-read
