@@ -24,9 +24,9 @@ class MetricsCollector
     started_event, started_at = @operations.delete(event.operation_id)
     raise "Started event for #{event.operation_id} not found" unless started_event
     @command_events << {
-      command_name: started_event.command_name,
+      commandName: started_event.command_name,
       duration: event.duration,
-      start_time: started_at.to_f,
+      startTime: started_at.to_f,
       address: started_event.address.seed,
     }
   end
@@ -35,10 +35,10 @@ class MetricsCollector
     started_event, started_at = @operations.delete(event.operation_id)
     raise "Started event for #{event.operation_id} not found" unless started_event
     @command_events << {
-      command_name: started_event.command_name,
+      commandName: started_event.command_name,
       duration: event.duration,
       failure: event.failure,
-      start_time: started_at.to_f,
+      startTime: started_at.to_f,
       address: started_event.address.seed,
     }
   end
@@ -50,7 +50,7 @@ class MetricsCollector
       address: event.address.seed,
     }.tap do |entry|
       if event.respond_to?(:connection_id)
-        entry[:connection_id] = event.connection_id
+        entry[:connectionId] = event.connection_id
       end
       if event.respond_to?(:reason)
         entry[:reason] = event.reason
