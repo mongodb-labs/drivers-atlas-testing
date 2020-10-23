@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import logging
+import json
 from pprint import pprint
 import unittest, os
 from urllib.parse import unquote_plus
+from collections import defaultdict 
 
 import click
 
@@ -522,6 +524,34 @@ def validate_workload_executor(workload_executor, startup_time,
     result = unittest.TextTestRunner(descriptions=True, verbosity=2).run(suite)
     if any([result.errors, result.failures]):
         exit(1)
+
+
+@spec_tests.command('stats')
+@click.pass_context
+def stats(ctx):
+    with open('results.json', 'r') as fp:
+        stats = json.load(fp)
+    with open('events.json', 'r') as fp:
+        events = json.load(fp)
+    
+    import numpy
+    
+    conn_events = events['connections']
+    counts = defaultdict(lambda: 0)
+    max_counts = defaultdict(lambda: 0)
+    conn_count = max_conn_count = 0
+    for e in conn_events:
+        if e['name'] == 'ConnectionCreated':
+            counts[e['address']] += 1
+        elif e['name'] == 'ConnectionClosed':
+            counts[e['address']] -= 1
+        if counts[e['address']] > max_counts[e['address']]:
+            max_counts[e['address']] = counts[e['address']]
+    
+    stats['maxConnectionCounts'] = max_counts
+    
+    with open('stats.json', 'w') as fp:
+        json.dump(stats, fp)
 
 
 if __name__ == '__main__':
