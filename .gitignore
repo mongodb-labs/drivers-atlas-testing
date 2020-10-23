@@ -9,3 +9,4 @@ integrations/go/go.sum
 integrations/go/executor
 events.json
 logs.tar.gz
+stats.json
