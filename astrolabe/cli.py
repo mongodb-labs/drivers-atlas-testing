@@ -100,7 +100,6 @@ def cli(ctx, atlas_base_url, atlas_api_username,
     tests against a MongoDB Atlas cluster undergoing maintenance.
     """
     
-    atlas_base_url = 'https://cloud-dev.mongodb.com/api/atlas'
     # Create an atlasclient and attach it to the context.
     client = AtlasClient(
         base_url=atlas_base_url,
