@@ -26,7 +26,6 @@ class AtlasApiBaseError(Exception):
         self.error_code = error_code
         self.headers = headers
         self.detail = detail
-        #import pdb;pdb.set_trace()
 
     def __str__(self):
         if self.request_method and self.resource_url:
