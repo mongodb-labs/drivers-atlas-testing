@@ -81,6 +81,12 @@ NOCREATE_FLAG = click.option(
     help=('Do not create clusters at the beginning of the run, assume they have already been provisioned by a previous run.'))
 
 
+class ContextStore:
+    def __init__(self, client, admin_client):
+        self.client = client
+        self.admin_client = admin_client
+
+
 @click.group()
 @create_click_option(CONFIGOPTS.ATLAS_API_BASE_URL)
 @create_click_option(CONFIGOPTS.ATLAS_API_USERNAME)
@@ -112,7 +118,7 @@ def cli(ctx, atlas_base_url, atlas_api_username,
         username=atlas_admin_api_username,
         password=atlas_admin_api_password,
         timeout=http_timeout)
-    ctx.obj = (client,admin_client)
+    ctx.obj = ContextStore(client, admin_client)
 
     # Configure logging.
     loglevel = getattr(logging, log_level.upper())
@@ -133,7 +139,7 @@ def cli(ctx, atlas_base_url, atlas_api_username,
 @click.pass_context
 def check_connection(ctx):
     """Command to verify validity of Atlas API credentials."""
-    pprint(ctx.obj.root.get().data)
+    pprint(ctx.obj.client.root.get().data)
 
 
 @cli.group('organizations')
@@ -146,7 +152,7 @@ def atlas_organizations():
 @click.pass_context
 def list_all_organizations(ctx):
     """List all Atlas Organizations (limited to first 100)."""
-    pprint(ctx.obj.orgs.get().data)
+    pprint(ctx.obj.client.orgs.get().data)
 
 
 @atlas_organizations.command('get-one')
@@ -156,7 +162,7 @@ def get_one_organization_by_name(ctx, org_name):
     """Get one Atlas Organization by name. Prints "None" if no organization
     bearing the given name exists."""
     pprint(cmd.get_one_organization_by_name(
-        client=ctx.obj, organization_name=org_name))
+        client=ctx.obj.client, organization_name=org_name))
 
 
 @cli.group('projects')
@@ -172,16 +178,16 @@ def atlas_projects():
 def create_project_if_necessary(ctx, org_name, project_name, ):
     """Ensure that the given Atlas Project exists."""
     org = cmd.get_one_organization_by_name(
-        client=ctx.obj, organization_name=org_name)
+        client=ctx.obj.client, organization_name=org_name)
     pprint(cmd.ensure_project(
-        client=ctx.obj, project_name=project_name, organization_id=org.id))
+        client=ctx.obj.client, project_name=project_name, organization_id=org.id))
 
 
 @atlas_projects.command('list')
 @click.pass_context
 def list_projects(ctx):
     """List all Atlas Projects (limited to first 100)."""
-    pprint(ctx.obj.groups.get().data)
+    pprint(ctx.obj.client.groups.get().data)
 
 
 @atlas_projects.command('get-one')
@@ -189,7 +195,7 @@ def list_projects(ctx):
 @click.pass_context
 def get_one_project_by_name(ctx, project_name):
     """Get one Atlas Project."""
-    pprint(ctx.obj.groups.byName[project_name].get().data)
+    pprint(ctx.obj.client.groups.byName[project_name].get().data)
 
 
 @atlas_projects.command('enable-anywhere-access')
@@ -197,8 +203,8 @@ def get_one_project_by_name(ctx, project_name):
 @click.pass_context
 def enable_project_access_from_anywhere(ctx, project_name):
     """Add 0.0.0.0/0 to the IP whitelist of the Atlas Project."""
-    project = ctx.obj.groups.byName[project_name].get().data
-    cmd.ensure_connect_from_anywhere(client=ctx.obj, project_id=project.id)
+    project = ctx.obj.client.groups.byName[project_name].get().data
+    cmd.ensure_connect_from_anywhere(client=ctx.obj.client, project_id=project.id)
 
 
 @cli.group('users')
@@ -215,9 +221,9 @@ def atlas_users():
 def create_user(ctx, db_username, db_password, project_name):
     """Create an Atlas User with admin privileges. Modifies user
     permissions, if the user already exists."""
-    project = ctx.obj.groups.byName[project_name].get().data
+    project = ctx.obj.client.groups.byName[project_name].get().data
     user = cmd.ensure_admin_user(
-        client=ctx.obj, project_id=project.id, username=db_username,
+        client=ctx.obj.client, project_id=project.id, username=db_username,
         password=db_password)
     pprint(user)
 
@@ -227,8 +233,8 @@ def create_user(ctx, db_username, db_password, project_name):
 @click.pass_context
 def list_users(ctx, project_name):
     """List all Atlas Users."""
-    project = ctx.obj.groups.byName[project_name].get().data
-    pprint(ctx.obj.groups[project.id].databaseUsers.get().data)
+    project = ctx.obj.client.groups.byName[project_name].get().data
+    pprint(ctx.obj.client.groups[project.id].databaseUsers.get().data)
 
 
 @cli.group('clusters')
@@ -246,7 +252,7 @@ def atlas_clusters():
 @click.pass_context
 def create_cluster(ctx, project_name, cluster_name, instance_size_name):
     """Create a new dedicated-tier Atlas Cluster."""
-    project = ctx.obj.groups.byName[project_name].get().data
+    project = ctx.obj.client.groups.byName[project_name].get().data
 
     cluster_config = {
         'name': cluster_name,
@@ -256,7 +262,7 @@ def create_cluster(ctx, project_name, cluster_name, instance_size_name):
             'regionName': 'US_WEST_1',
             'instanceSizeName': instance_size_name}}
 
-    cluster = ctx.obj.groups[project.id].clusters.post(**cluster_config)
+    cluster = ctx.obj.client.groups[project.id].clusters.post(**cluster_config)
     pprint(cluster.data)
 
 
@@ -266,8 +272,8 @@ def create_cluster(ctx, project_name, cluster_name, instance_size_name):
 @click.pass_context
 def get_one_cluster_by_name(ctx, cluster_name, project_name):
     """Get one Atlas Cluster."""
-    project = ctx.obj.groups.byName[project_name].get().data
-    cluster = ctx.obj.groups[project.id].clusters[cluster_name].get()
+    project = ctx.obj.client.groups.byName[project_name].get().data
+    cluster = ctx.obj.client.groups[project.id].clusters[cluster_name].get()
     pprint(cluster.data)
 
 
@@ -280,7 +286,7 @@ def get_one_cluster_by_name(ctx, cluster_name, project_name):
 @click.pass_context
 def resize_cluster(ctx, project_name, cluster_name, instance_size_name):
     """Resize an existing dedicated-tier Atlas Cluster."""
-    project = ctx.obj.groups.byName[project_name].get().data
+    project = ctx.obj.client.groups.byName[project_name].get().data
 
     new_cluster_config = {
         'clusterType': 'REPLICASET',
@@ -289,7 +295,7 @@ def resize_cluster(ctx, project_name, cluster_name, instance_size_name):
             'regionName': 'US_WEST_1',
             'instanceSizeName': instance_size_name}}
 
-    cluster = ctx.obj.groups[project.id].clusters[cluster_name].patch(
+    cluster = ctx.obj.client.groups[project.id].clusters[cluster_name].patch(
         **new_cluster_config)
     pprint(cluster.data)
 
@@ -300,10 +306,10 @@ def resize_cluster(ctx, project_name, cluster_name, instance_size_name):
 @click.pass_context
 def toggle_cluster_javascript(ctx, project_name, cluster_name):
     """Enable/disable server-side javascript for an existing Atlas Cluster."""
-    project = ctx.obj.groups.byName[project_name].get().data
+    project = ctx.obj.client.groups.byName[project_name].get().data
 
     # Alias to reduce verbosity.
-    pargs = ctx.obj.groups[project.id].clusters[cluster_name].processArgs
+    pargs = ctx.obj.client.groups[project.id].clusters[cluster_name].processArgs
 
     initial_process_args = pargs.get()
     target_js_value = not initial_process_args.data.javascriptEnabled
@@ -317,8 +323,8 @@ def toggle_cluster_javascript(ctx, project_name, cluster_name):
 @click.pass_context
 def list_clusters(ctx, project_name):
     """List all Atlas Clusters."""
-    project = ctx.obj.groups.byName[project_name].get().data
-    clusters = ctx.obj.groups[project.id].clusters.get()
+    project = ctx.obj.client.groups.byName[project_name].get().data
+    clusters = ctx.obj.client.groups[project.id].clusters.get()
     pprint(clusters.data)
 
 
@@ -328,8 +334,8 @@ def list_clusters(ctx, project_name):
 @click.pass_context
 def isready_cluster(ctx, project_name, cluster_name):
     """Check if the Atlas Cluster is 'IDLE'."""
-    project = ctx.obj.groups.byName[project_name].get().data
-    state = ctx.obj.groups[project.id].clusters[cluster_name].get().data.stateName
+    project = ctx.obj.client.groups.byName[project_name].get().data
+    state = ctx.obj.client.groups[project.id].clusters[cluster_name].get().data.stateName
 
     if state == "IDLE":
         click.echo("True")
@@ -344,8 +350,8 @@ def isready_cluster(ctx, project_name, cluster_name):
 @click.pass_context
 def delete_cluster(ctx, project_name, cluster_name):
     """Delete the Atlas Cluster."""
-    project = ctx.obj.groups.byName[project_name].get().data
-    ctx.obj.groups[project.id].clusters[cluster_name].delete().data
+    project = ctx.obj.client.groups.byName[project_name].get().data
+    ctx.obj.client.groups[project.id].clusters[cluster_name].delete().data
     click.echo("DONE!")
 
 
@@ -405,8 +411,8 @@ def run_single_test(ctx, spec_test_file, workload_executor,
     LOGGER.info(tabulate_astrolabe_configuration(config))
 
     # Step-1: create the Test-Runner.
-    runner = SingleTestRunner(client=ctx.obj[0],
-        admin_client=ctx.obj[1],
+    runner = SingleTestRunner(client=ctx.obj.client,
+        admin_client=ctx.obj.admin_client,
                               test_locator_token=spec_test_file,
                               configuration=config,
                               xunit_output=xunit_output,
@@ -443,11 +449,11 @@ def delete_test_cluster(ctx, spec_test_file, org_name, project_name,
 
     # Step-2: delete the cluster.
     organization = cmd.get_one_organization_by_name(
-        client=ctx.obj[0], organization_name=org_name)
+        client=ctx.obj.client, organization_name=org_name)
     project = cmd.ensure_project(
-        client=ctx.obj[0], project_name=project_name, organization_id=organization.id)
+        client=ctx.obj.client, project_name=project_name, organization_id=organization.id)
     try:
-        ctx.obj[0].groups[project.id].clusters[cluster_name].delete()
+        ctx.obj.client.groups[project.id].clusters[cluster_name].delete()
     except AtlasApiBaseError:
         pass
 
@@ -489,7 +495,7 @@ def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
     LOGGER.info(tabulate_astrolabe_configuration(config))
 
     # Step-1: create the Test-Runner.
-    runner = MultiTestRunner(client=ctx.obj,
+    runner = MultiTestRunner(client=ctx.obj.client,
                              test_locator_token=spec_tests_directory,
                              configuration=config,
                              xunit_output=xunit_output,
