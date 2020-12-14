@@ -21,7 +21,7 @@ referred to as admin credentials.
     $ astrolabe -u <publicKey> -p <privateKey> --atlas-admin-api-username <publicKey> --atlas-admin-api-password <privateKey> check-connection
 
 * Using the ``ATLAS_API_USERNAME``, ``ATLAS_API_PASSWORD``,
-``ATLAS_ADMIN_API_USERNAME``, ``ATLAS_ADMIN_API_PASSWORD`` environment variables::
+  ``ATLAS_ADMIN_API_USERNAME``, ``ATLAS_ADMIN_API_PASSWORD`` environment variables::
 
     $ ATLAS_API_USERNAME=<publicKey> ATLAS_API_PASSWORD=<privateKey> ATLAS_ADMIN_API_USERNAME=<publicKey> ATLAS_ADMIN_API_PASSWORD=<privateKey> astrolabe check-connection
 
