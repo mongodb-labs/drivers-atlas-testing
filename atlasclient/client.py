@@ -222,7 +222,7 @@ class AtlasClient:
 
     def construct_resource_url(self, path, api_version=None):
         url_template = "{base_url}/{version}/{resource_path}"
-        if path[0] == '/':
+        if path and path[0] == '/':
             url_template = 'https://cloud-dev.mongodb.com{resource_path}'
         return url_template.format(
             base_url=self.config.base_url,

@@ -113,11 +113,15 @@ def cli(ctx, atlas_base_url, atlas_api_username,
         password=atlas_api_password,
         timeout=http_timeout)
 
-    admin_client = AtlasClient(
-        base_url=atlas_base_url,
-        username=atlas_admin_api_username,
-        password=atlas_admin_api_password,
-        timeout=http_timeout)
+    if atlas_admin_api_username:
+        admin_client = AtlasClient(
+            base_url=atlas_base_url,
+            username=atlas_admin_api_username,
+            password=atlas_admin_api_password,
+            timeout=http_timeout)
+    else:
+        admin_client = None
+    
     ctx.obj = ContextStore(client, admin_client)
 
     # Configure logging.
@@ -140,6 +144,8 @@ def cli(ctx, atlas_base_url, atlas_api_username,
 def check_connection(ctx):
     """Command to verify validity of Atlas API credentials."""
     pprint(ctx.obj.client.root.get().data)
+    if ctx.obj.admin_client:
+        pprint(ctx.obj.admin_client.root.get().data)
 
 
 @cli.group('organizations')
