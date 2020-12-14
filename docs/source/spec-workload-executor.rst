@@ -47,18 +47,27 @@ After accepting the inputs, the workload executor:
    to run the operations described therein in accordance with the :ref:`test-scenario-format-specification`.
    Note that the workload executor:
 
-   * MUST ignore the ``testData`` array. ``astrolabe`` is responsible for initializing the cluster with
+   * MUST ignore the ``initialData`` array. ``astrolabe`` is responsible for initializing the cluster with
      this data *before* starting the workload executor.
-   * MUST run operations sequentially and in the order in which they appear in the ``operations`` array.
-   * MUST repeat the entire set of specified operations indefinitely, until the **termination signal** from
+   * MUST run the tests, and the operations in each test, sequentially
+     and in the order in which they appear in the ``tests`` and ``operations`` array.
+   * MUST repeat the entire set of specified tests and operations indefinitely, until the **termination signal** from
      ``astrolabe`` is received.
-   * MUST keep count of the number of operations failures (``numFailures``) that are encountered while running
-     operations. An operation failure is when the actual return value of an operation does not match its
+   * MUST keep count of the number of the number of operation failures
+     (``numFailures``) that are encountered. An operation failure is when
+     the actual return value of an operation does not match its
      expected return value (as defined in the ``result`` field of the ``driverWorkload``).
    * MUST keep count of the number of operation errors (``numErrors``) that are encountered while running
      operations. An operation error is when running an operation unexpectedly raises an error. Workload executors
      implementations should try to be as resilient as possible to these kinds of operation errors.
    * MUST keep count of the number of operations that are run successfully (``numSuccesses``).
+   * MUST record all errors encountered while running operations.
+   * MUST use `command monitoring <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
+     to record started, succeeded and failed events for each operation sent to
+     MongoDB.
+   * MUST use `CMAP <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
+     to record all connection pool and connection-related events published
+     during the course of scenario execution.
 
 #. MUST set a signal handler for handling the termination signal that is sent by ``astrolabe``. The termination signal
    is used by ``astrolabe`` to communicate to the workload executor that it should stop running operations. Upon
