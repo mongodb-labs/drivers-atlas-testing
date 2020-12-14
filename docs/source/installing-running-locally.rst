@@ -43,16 +43,37 @@ Before you can start using ``astrolabe``, you must configure it to give it acces
 
 If you haven't done so already, create a
 `MongoDB Atlas Organization <https://docs.atlas.mongodb.com/organizations-projects>`_ (this can
-only be done via the Atlas UI). Make a note of the name of the Atlas organization. You will also need
-a `Programmatic API Key <https://docs.atlas.mongodb.com/configure-api-access/>` for this Atlas Organization with
-"Organization Owner" permissions. The API key will consist of 2 parts - a public key and a private key.
-Finally, declare the following variables to configure ``astrolabe``::
+only be done via the Atlas UI). Make a note of the name of the Atlas organization.
+
+Depending on the test scenario being executed, you will need either one
+or two sets of a `Programmatic API Keys
+<https://docs.atlas.mongodb.com/configure-api-access/>`_: a regular
+key for Atlas Organization you created with "Organization Owner" permissions,
+and potentially a key with Atlas Global Operator permissions (hereafter
+referred to as the "admin key"). The admin key generally must be created by
+a Cloud team member and would typically be issued for the development environment
+of Atlas (`https://cloud-dev.mongodb.com <https://cloud-dev.mongodb.com>`_),
+meaning the organization and projects must also be created in the development
+environment.
+
+Each API key consists of 2 parts - a public key and a private key.
+
+To configure ``astrolabe`` to use production Atlas and specify only a regular
+API key, declare the following variables::
+
+  $ export ATLAS_ORGANIZATION_NAME=<Atlas Organization Name>
+  $ export ATLAS_API_USERNAME=<API Public Key>
+  $ export ATLAS_API_PASSWORD=<API Private Key>
+
+To configure ``astrolabe`` to use development Atlas and specify two sets of
+API keys, declare the following variables::
 
   $ export ATLAS_ORGANIZATION_NAME=<Atlas Organization Name>
   $ export ATLAS_API_USERNAME=<API Public Key>
   $ export ATLAS_API_PASSWORD=<API Private Key>
   $ export ATLAS_ADMIN_API_USERNAME=<Admin API Public Key>
   $ export ATLAS_ADMIN_API_PASSWORD=<Admin API Private Key>
+  $ export ATLAS_API_BASE_URL=https://cloud-dev.mongodb.com/api/atlas
 
 Finally, use the ``check-connection`` command to confirm that ``astrolabe`` is able to connect to and authenticate
 with the Atlas API::
