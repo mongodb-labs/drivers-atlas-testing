@@ -35,6 +35,16 @@ A Test Scenario File has the following keys:
       `Modify One Cluster <https://docs.atlas.mongodb.com/reference/api/clusters-modify-one/>`_ endpoint.
     * processArgs (document): Document containing final *Advanced Configuration Option* values.
       This MAY be an empty document if the maintenance plan does not require modifying the Advanced Configuration Options.
+      
+    Example::
+    
+      setClusterConfiguration:
+        clusterConfiguration:
+          providerSettings:
+            providerName: AWS
+            regionName: US_WEST_1
+            instanceSizeName: M10
+        processArgs: {}
 
   * testFailover: trigger an election in the cluste rusing the "test failover"
     API endpoint. The value MUST be ``true``.
@@ -42,21 +52,41 @@ A Test Scenario File has the following keys:
     testFailover SHOULD be followed by sleep and waitForIdle operations
     because it does not update maintenance state synchronously (see
     `PRODTRUAGE-1232 <https://jira.mongodb.org/browse/PRODTRIAGE-1232>`_).
+
+    Example::
     
+      testFailover: true
+
   * restartVms: perform a rolling restart of all nodes in the cluster.
     This operation requires Atlas Global Operator API key to be set when
     invoking ``astrolabe``. The value MUST be ``true``.
-    
+
+    Example::
+
+      restartVms: true
+
   * assertPrimaryRegion: assert that the primary in the deployment is in the
     specified region. The value MUST be the region name as defined in Atlas API,
     e.g. ``US_WEST_1``. This operation is undefined and MUST NOT be used when
     the deployment is a sharded cluster.
+
+    Example::
+    
+      assertPrimaryRegion: US_WEST_1
     
   * sleep: do nothing for the specified duration. The value MUST be the duration
     to sleep for, in seconds.
+
+    Example::
+    
+      sleep: 10
     
   * waitForIdle: wait for cluster maintenance state to become "idle".
     The value MUST be ``true``.
+
+    Example::
+
+      waitForIdle: true
 
 * uriOptions (document): Document containing ``key: value`` pairs of URI options that must be included in the
   connection string passed to the workload executor by the *Test Orchestrator*.
