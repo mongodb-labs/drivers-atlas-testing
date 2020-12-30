@@ -43,7 +43,18 @@ After accepting the inputs, the workload executor:
    * MUST NOT override any of the URI options specified in the incoming connection string.
    * MUST NOT augment the incoming connection string with any additional URI options.
 
-#. MUST parse the incoming the ``driverWorkload`` document and use the ``MongoClient`` instance from the previous step
+#. MUST parse the incoming the ``driverWorkload`` document and set up
+   the driver's unified test runner to execute the provided workload, with
+   the following deviations from the unified test runner specification:
+   
+   - Any `MongoClients <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst#entity-client>`_
+     that are instantiated by the workload executor MUST use the input
+     connection string as provided to the workload executor, and MUST
+     apply URI options specified in the particular test, if any, over the
+     provided connection string.
+   
+   
+   use the ``MongoClient`` instance from the previous step
    to run the operations described therein in accordance with the :ref:`test-scenario-format-specification`.
    Note that the workload executor:
 
