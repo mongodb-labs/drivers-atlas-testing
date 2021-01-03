@@ -54,12 +54,20 @@ After accepting the inputs, the workload executor:
      provided connection string.
    
    
-   use the ``MongoClient`` instance from the previous step
-   to run the operations described therein in accordance with the :ref:`test-scenario-format-specification`.
+   Then, the workload executor MUST use the ``MongoClient`` instance
+   from the previous step to run the operations described in the
+   scenario in accordance with the `Unified Test Format specification
+   <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
    Note that the workload executor:
 
    * MUST ignore the ``initialData`` array. ``astrolabe`` is responsible for initializing the cluster with
      this data *before* starting the workload executor.
+   * MUST set up `command monitoring <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
+     event listeners on all MongoClients to record started, succeeded and failed events for each operation sent to
+     MongoDB in the course of scenario execution.
+   * MUST set up `CMAP <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
+     event listeners on all MongoClients to record all connection pool and connection-related events published
+     during the course of scenario execution.
    * MUST run the tests, and the operations in each test, sequentially
      and in the order in which they appear in the ``tests`` and ``operations`` array.
    * MUST repeat the entire set of specified tests and operations indefinitely, until the **termination signal** from
@@ -73,19 +81,48 @@ After accepting the inputs, the workload executor:
      implementations should try to be as resilient as possible to these kinds of operation errors.
    * MUST keep count of the number of operations that are run successfully (``numSuccesses``).
    * MUST record all errors encountered while running operations.
-   * MUST use `command monitoring <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
-     to record started, succeeded and failed events for each operation sent to
-     MongoDB.
-   * MUST use `CMAP <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
-     to record all connection pool and connection-related events published
-     during the course of scenario execution.
 
 #. MUST set a signal handler for handling the termination signal that is sent by ``astrolabe``. The termination signal
    is used by ``astrolabe`` to communicate to the workload executor that it should stop running operations. Upon
    receiving the termination signal, the workload executor:
 
    * MUST stop running driver operations and exit soon.
-   * MUST dump collected workload statistics as a JSON file named ``results.json`` in the current working directory
+   * MUST write the collected events and errors into a JSON file named
+     ``events.json`` in the current directory
+     (i.e. the directory from where the workload executor is being executed). 
+     The data written MUST be a map with the following fields:
+     
+     * ``commands``: an array of command events published during scenario
+       execution. Each command event MUST be a map with the following fields:
+       
+       * ``commandName``: the name of the command, e.g. ``insert``.
+       * ``duration``: the time, in (floating-point) seconds, it took for the command to execute.
+       * ``failure``: if the command succeeded, this field MUST not be set.
+         If the command failed, this field MUST contain a textual description
+         of the error encountered while executing the command.
+       * ``startTime``: the (floating-point) number of seconds since the Unix epoch when the
+         command began executing.
+       * ``address``: the address of the server to which the command
+         was sent, e.g. ``localhost:27017``.
+     * ``connections``: an array of CMAP events published during scenario
+       execution. Each event MUST be a map with the following fields:
+       
+       * ``name``: the name of the event, e.g. ``PoolCreated``.
+       * ``time``: the (floating-point) number of seconds since the Unix epoch
+         when the event was published.
+       * ``address``: the address of the server that the command was
+         published for, e.g. ``localhost:27017``.
+     * ``errors``: an array of errors encountered during scenario execution.
+       Each error MUST be a map with the following fields:
+       
+       * ``error``: textual description of the error.
+       * ``time``: the (floating-point) number of seconds since the Unix epoch
+         when the error occurred.
+         
+       The number of errors MUST be reported as ``numErrors`` in ``results.json``,
+       as described below.
+         
+   * MUST write the collected workload statistics into a JSON file named ``results.json`` in the current working directory
      (i.e. the directory from where the workload executor is being executed). Workload statistics MUST contain the
      following fields (drivers MAY report additional statistics using field names of their choice):
 
