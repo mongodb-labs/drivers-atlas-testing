@@ -153,8 +153,10 @@ Pseudocode Implementation
     # targetDriver is the driver to be tested.
     import { MongoClient } from "targetDriver"
 
-    # The workloadRunner function accepts a connection string and a stringified JSON blob describing the driver workload.
-    # This function will be invoked with arguments parsed from the command-line invocation of the workload executor script.
+    # The workloadRunner function accepts a connection string and a
+    # stringified JSON blob describing the driver workload.
+    # This function will be invoked with arguments parsed from the
+    # command-line invocation of the workload executor script.
     function workloadRunner(connectionString: string, driverWorkload: object): void {
 
         # Use the MongoClient of the driver to be tested to connect to the Atlas Cluster.
@@ -169,8 +171,10 @@ Pseudocode Implementation
         var num_failures = 0;
         var num_successes = 0;
 
-        # Run the workload - operations are run sequentially, repeatedly until the termination signal is received.
-        # Do not attempt to initialize the cluster with the contents of ``testData`` - astrolabe takes care of this.
+        # Run the workload - operations are run sequentially, repeatedly
+        # until the termination signal is received.
+        # Do not attempt to initialize the cluster with the contents of
+        # ``testData`` - astrolabe takes care of this.
         try {
             while (True) {
                 for (let operation in workloadSpec.operations) {
