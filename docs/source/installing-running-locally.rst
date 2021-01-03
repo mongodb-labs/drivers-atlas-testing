@@ -141,6 +141,14 @@ Using this flag with a given test file and static ``--cluster-name-salt`` value 
 times between successive test runs (you will still need to wait for the cluster to be reconfigured to the initial
 configuration).
 
+``astrolabe`` also provides the ``--no-create`` flag which makes it skip
+cluster initialization. This flag may be used to further speed up the test
+runs, but it can only be used for scenarios where the cluster configuration
+does not change from the initial one (otherwise the test would start with the
+wrong configuration) and only after a previous run with ``--no-delete``
+successfully created the cluster.
+
+
 Debugging
 ---------
 
