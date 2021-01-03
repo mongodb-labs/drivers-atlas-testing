@@ -8,14 +8,37 @@ $: << File.dirname(__FILE__)
 $: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver/lib')
 
 require 'executor'
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: workload-executor URI SPEC\n" <<
+    "       workload-executor -s SCENARIO-PATH URI"
+
+  opts.on("-s", "--scenario=PATH", "Specify scenario path") do |v|
+    options[:scenario_path] = v
+  end
+  opts.on('-i', '--insert', 'Insert scenario data') do
+    options[:insert] = true
+  end
+end.parse!
 
 uri, spec = ARGV
 
-if spec.nil?
+if spec.nil? && !options[:scenario_path]
   raise "Usage: executor.rb URI SPEC"
 end
 
-spec = JSON.load(spec)
+if options[:scenario_path]
+  scenario = YAML.load(File.read(options[:scenario_path]))
+  spec = scenario.fetch('driverWorkload')
+else
+  spec = JSON.load(spec)
+end
 
 executor = Executor.new(uri, spec)
-executor.run
+if options[:insert]
+  executor.load_data
+else
+  executor.run
+end

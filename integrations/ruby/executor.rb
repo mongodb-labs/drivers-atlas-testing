@@ -72,9 +72,6 @@ class Executor
 
   def run
     set_signal_handler
-    # Normally, the orchestrator loads test data.
-    # If the executor is run by itself, uncomment the next line.
-    #load_data
     while true
       break if @stop
       perform_operations
@@ -83,18 +80,18 @@ class Executor
     write_result
   end
 
+  def load_data
+    collection.delete_many
+    spec['initialData']&.each do |s|
+      collection.insert_many(s.fetch('documents'))
+    end
+  end
+
   private
 
   def set_signal_handler
     Signal.trap('INT') do
       @stop = true
-    end
-  end
-
-  def load_data
-    collection.delete_many
-    if data = spec['testData']
-      collection.insert_many(data)
     end
   end
 
