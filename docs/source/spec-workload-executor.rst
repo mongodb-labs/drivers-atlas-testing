@@ -53,34 +53,45 @@ After accepting the inputs, the workload executor:
      apply URI options specified in the particular test, if any, over the
      provided connection string.
    
+   - Each MongoClient MUST be set up to publish `command monitoring
+     <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
+     events. The workload executor MUST record all events published
+     in the course of scenario execution.
    
-   Then, the workload executor MUST use the ``MongoClient`` instance
-   from the previous step to run the operations described in the
-   scenario in accordance with the `Unified Test Format specification
-   <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
-   Note that the workload executor:
-
-   * MUST ignore the ``initialData`` array. ``astrolabe`` is responsible for initializing the cluster with
+   - Each MongoClient MUST be set up to publish `CMAP
+     <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
+     events. The workload executor MUST record all events published
+     in the course of scenario execution.
+   
+   - The ``initialData`` array in the scenario MUST be ignored by the
+     unified test runner (and by the workload executor).
+     ``astrolabe`` is responsible for initializing the cluster with
      this data *before* starting the workload executor.
-   * MUST set up `command monitoring <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
-     event listeners on all MongoClients to record started, succeeded and failed events for each operation sent to
-     MongoDB in the course of scenario execution.
-   * MUST set up `CMAP <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
-     event listeners on all MongoClients to record all connection pool and connection-related events published
-     during the course of scenario execution.
-   * MUST run the tests, and the operations in each test, sequentially
-     and in the order in which they appear in the ``tests`` and ``operations`` array.
-   * MUST repeat the entire set of specified tests and operations indefinitely, until the **termination signal** from
-     ``astrolabe`` is received.
-   * MUST keep count of the number of the number of operation failures
+     
+#. MUST use the driver's unified test runner to execute the tests in the
+   scenario, and the operations in each test, sequentially and in the order
+   in which they appear in the ``tests`` and ``operations`` arrays,
+   with the following deviations from the unified test runner specification:
+   
+   * The workload executor MUST repeat execution of the entire set of
+     specified tests and operations indefinitely, until the
+     **termination signal** from ``astrolabe`` is received.
+   
+   * The workload executor MUST keep count of the number of the number of operation failures
      (``numFailures``) that are encountered. An operation failure is when
      the actual return value of an operation does not match its
      expected return value (as defined in the ``result`` field of the ``driverWorkload``).
-   * MUST keep count of the number of operation errors (``numErrors``) that are encountered while running
-     operations. An operation error is when running an operation unexpectedly raises an error. Workload executors
-     implementations should try to be as resilient as possible to these kinds of operation errors.
-   * MUST keep count of the number of operations that are run successfully (``numSuccesses``).
-   * MUST record all errors encountered while running operations.
+   
+   * The workload executor MUST record all errors encountered while running the scenario.
+     An operation error is any error that is propagated out of the unified test runner.
+     Workload executor implementations should try to be as resilient
+     as possible to these kinds of operation errors.
+   
+   * The workload executor MUST keep count of the number of operation errors (``numErrors``) that
+     are encountered while running the scenario.
+   
+   * The workload executor MUST keep count of the number of invocations of the scenario that
+     did not result in an error (``numSuccesses``).
 
 #. MUST set a signal handler for handling the termination signal that is sent by ``astrolabe``. The termination signal
    is used by ``astrolabe`` to communicate to the workload executor that it should stop running operations. Upon
