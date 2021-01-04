@@ -1,5 +1,6 @@
 require 'json'
 require 'mongo'
+require 'runners/unified'
 
 Mongo::Logger.logger.level = Logger::WARN
 
@@ -72,6 +73,9 @@ class Executor
 
   def run
     set_signal_handler
+    unified_tests.each do |test|
+      test.create_entities
+    end
     while true
       break if @stop
       perform_operations
@@ -81,9 +85,8 @@ class Executor
   end
 
   def load_data
-    collection.delete_many
-    spec['initialData']&.each do |s|
-      collection.insert_many(s.fetch('documents'))
+    unified_tests.each do |test|
+      test.set_initial_data
     end
   end
 
@@ -95,77 +98,28 @@ class Executor
     end
   end
 
+  def unified_group
+    @unified_group ||= Unified::TestGroup.new(spec)
+  end
+
+  def unified_tests
+    @tests ||= unified_group.tests
+  end
+
   def perform_operations
-    spec['tests'].each do |test|
-      test['operations'].each do |op_spec|
-        begin
-          case op_spec['name']
-          when 'find'
-            unless op_spec['object'] == 'collection0'
-              raise UnknownOperationConfiguration, "Can only find on a collection"
-            end
-
-            args = op_spec['arguments'].dup
-            op = collection.find(args.delete('filter') || {})
-            if sort = args.delete('sort')
-              op = op.sort(sort)
-            end
-            unless args.empty?
-              raise UnknownOperationConfiguration, "Unhandled keys in args: #{args}"
-            end
-
-            docs = op.to_a
-
-            if expected_docs = op_spec['expectResult']
-              if expected_docs != docs
-                puts "Failure: expected docs (#{expected_docs.inspect}) != actual docs (#{docs.inspect})"
-                @failure_count += 1
-              end
-            end
-          when 'insertOne'
-            unless op_spec['object'] == 'collection0'
-              raise UnknownOperationConfiguration, "Can only find on a collection"
-            end
-
-            args = op_spec['arguments'].dup
-            document = args.delete('document')
-            unless args.empty?
-              raise UnknownOperationConfiguration, "Unhandled keys in args: #{args}"
-            end
-
-            collection.insert_one(document)
-          when 'updateOne'
-            unless op_spec['object'] == 'collection0'
-              raise UnknownOperationConfiguration, "Can only find on a collection"
-            end
-
-            args = op_spec['arguments'].dup
-            scope = collection
-            if filter = args.delete('filter')
-              scope = collection.find(filter)
-            end
-            if update = args.delete('update')
-              scope.update_one(update)
-            end
-            unless args.empty?
-              raise UnknownOperationConfiguration, "Unhandled keys in args: #{args}"
-            end
-          else
-            raise UnknownOperation, "Unhandled operation #{op_spec['name']}"
-          end
-        #rescue Mongo::Error => e
-        # The validator intentionally gives us invalid operations, figure out
-        # how to handle this requirement while maintaining diagnostics.
-        rescue => e
-          STDERR.puts "Error: #{e.class}: #{e}"
-          metrics_collector.errors << {
-            error: "#{e.class}: #{e}",
-            time: Time.now.to_f,
-          }
-          @error_count += 1
-        end
-        @operation_count += 1
+    unified_tests.each do |test|
+      begin
+        test.run
+      rescue => e
+      raise
+        STDERR.puts "Error: #{e.class}: #{e}"
+        metrics_collector.errors << {
+          error: "#{e.class}: #{e}",
+          time: Time.now.to_f,
+        }
+        @error_count += 1
       end
+      @operation_count += 1
     end
   end
 
@@ -189,23 +143,6 @@ class Executor
         connections: metrics_collector.connection_events,
         errors: metrics_collector.errors,
       )
-    end
-  end
-
-  def collection
-    db_name = spec['createEntities'].detect { |entity|
-      entity['database']&.[]('id') == 'database0'
-    }['database'].fetch('databaseName')
-    collection_name = spec['createEntities'].detect { |entity|
-      entity['collection']&.[]('id') == 'collection0'
-    }['collection'].fetch('collectionName')
-    @collection ||= client.use(db_name)[collection_name]
-  end
-
-  def client
-    @client ||= Mongo::Client.new(uri).tap do |client|
-      client.subscribe(Mongo::Monitoring::COMMAND, metrics_collector)
-      client.subscribe(Mongo::Monitoring::CONNECTION_POOL, metrics_collector)
     end
   end
 end

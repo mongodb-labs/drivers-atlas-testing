@@ -6,9 +6,13 @@ puts ([$0] + ARGV.map { |arg| Shellwords.shellescape(arg) }).join(' ')
 
 $: << File.dirname(__FILE__)
 $: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver/lib')
+$: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver/spec')
+$: << File.join(File.dirname(__FILE__), '../../../ruby-driver/lib')
+$: << File.join(File.dirname(__FILE__), '../../../ruby-driver/spec')
 
 require 'executor'
 require 'optparse'
+autoload :Byebug, 'byebug'
 
 options = {}
 OptionParser.new do |opts|
@@ -36,9 +40,33 @@ else
   spec = JSON.load(spec)
 end
 
+$uri = uri
+
+class ClientRegistry
+  def self.instance
+    new
+  end
+
+  def global_client(which)
+    $global_client ||= Mongo::Client.new($uri)
+  end
+end
+
+module Unified
+  class Test
+    def create_client(**opts)
+      Mongo::Client.new($uri, **opts).tap do |client|
+        client.subscribe(Mongo::Monitoring::COMMAND, $metrics_collector)
+        client.subscribe(Mongo::Monitoring::CONNECTION_POOL, $metrics_collector)
+      end
+    end
+  end
+end
+
 executor = Executor.new(uri, spec)
 if options[:insert]
   executor.load_data
 else
+  $metrics_collector = executor.metrics_collector
   executor.run
 end
