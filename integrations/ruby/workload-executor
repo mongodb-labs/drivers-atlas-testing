@@ -60,8 +60,9 @@ end
 
 module Unified
   class Test
+    alias :create_client_without_events :create_client
     def create_client(**opts)
-      Mongo::Client.new($uri, **opts).tap do |client|
+      create_client_without_events(**opts).tap do |client|
         client.subscribe(Mongo::Monitoring::COMMAND, $metrics_collector)
         client.subscribe(Mongo::Monitoring::CONNECTION_POOL, $metrics_collector)
       end
