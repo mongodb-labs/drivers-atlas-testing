@@ -77,10 +77,11 @@ After accepting the inputs, the workload executor:
      specified tests and operations indefinitely, until the
      **termination signal** from ``astrolabe`` is received.
    
-   * The workload executor MUST keep count of the number of the number of operation failures
-     (``numFailures``) that are encountered. An operation failure is when
-     the actual return value of an operation does not match its
-     expected return value (as defined in the ``result`` field of the ``driverWorkload``).
+   * The workload executor MUST keep count of the number of failures
+     (``numFailures``) that are encountered. A failure is when
+     the actual return value of an operation or a published event does not match
+     the respective expected return value or event (as these expectations
+     are defined in the unified test format).
    
    * The workload executor MUST record all errors encountered while running the scenario.
      An operation error is any error that is propagated out of the unified test runner.

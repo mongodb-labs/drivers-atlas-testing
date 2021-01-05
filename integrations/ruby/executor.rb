@@ -13,9 +13,10 @@ class MetricsCollector
     @command_events = []
     @connection_events = []
     @errors = []
+    @failures = []
   end
 
-  attr_reader :command_events, :connection_events, :errors
+  attr_reader :command_events, :connection_events, :errors, :failures
 
   def started(event)
     @operations[event.operation_id] = [event, Time.now]
@@ -110,6 +111,13 @@ class Executor
     unified_tests.each do |test|
       begin
         test.run
+      rescue Unified::Error => e
+        STDERR.puts "Failure: #{e.class}: #{e}"
+        metrics_collector.failures << {
+          failure: "#{e.class}: #{e}",
+          time: Time.now.to_f,
+        }
+        @failure_count += 1
       rescue => e
       raise
         STDERR.puts "Error: #{e.class}: #{e}"

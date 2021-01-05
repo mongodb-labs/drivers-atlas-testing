@@ -16,8 +16,8 @@ autoload :Byebug, 'byebug'
 
 options = {}
 OptionParser.new do |opts|
-  opts.banner = "Usage: workload-executor URI SPEC\n" <<
-    "       workload-executor -s SCENARIO-PATH URI"
+  opts.banner = $usage_banner = "Usage: workload-executor URI SPEC\n" <<
+    "       workload-executor -s SCENARIO-PATH [-i] [-u URI]"
 
   opts.on("-s", "--scenario=PATH", "Specify scenario path") do |v|
     options[:scenario_path] = v
@@ -25,12 +25,18 @@ OptionParser.new do |opts|
   opts.on('-i', '--insert', 'Insert scenario data') do
     options[:insert] = true
   end
+  opts.on("-u", "--uri=URI", "Specify MongoDB server URI") do |v|
+    options[:uri] = v
+  end
 end.parse!
 
 uri, spec = ARGV
+uri ||= options[:uri]
+uri ||= 'mongodb://localhost'
 
 if spec.nil? && !options[:scenario_path]
-  raise "Usage: executor.rb URI SPEC"
+  STDERR.puts $usage_banner
+  exit 1
 end
 
 if options[:scenario_path]
