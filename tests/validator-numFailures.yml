@@ -20,10 +20,28 @@ driverWorkload:
         database: *database0
         collectionName: &collection0Name dat
 
-  initialData: []
+  initialData:
+    - collectionName: *collection0Name
+      databaseName: *database0Name
+      documents:
+        -
+          _id: 2
+          x: 2
 
   tests:
     - description: "Find one"
+      operations:
+        - name: find
+          object: *collection0
+          arguments:
+            filter: { _id: { $gt: 1 }}
+            sort: { _id: 1 }
+          expectResult:
+            -
+              _id: 2
+              x: 2
+
+    - description: "Find one - failure"
       operations:
         - name: find
           object: *collection0
