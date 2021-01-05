@@ -38,6 +38,9 @@ driverWorkload:
             update: 
               $inc:
                 count: 1
+    
+    - description: "error"
+      operations:
         - name: doesNotExist
           object: *collection0
           arguments:

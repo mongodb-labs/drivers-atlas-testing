@@ -119,7 +119,6 @@ class Executor
         }
         @failure_count += 1
       rescue => e
-      raise
         STDERR.puts "Error: #{e.class}: #{e}"
         metrics_collector.errors << {
           error: "#{e.class}: #{e}",
