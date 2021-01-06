@@ -211,7 +211,7 @@ axes:
         variables:
           DRIVER_DIRNAME: "ruby"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-ruby-driver"
-          DRIVER_REVISION: "2.13-stable"
+          DRIVER_REVISION: "master"
       - id: node-master
         display_name: "Node (master)"
         variables:
