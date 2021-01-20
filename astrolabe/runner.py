@@ -257,9 +257,6 @@ class AtlasTestCase:
 
         LOGGER.info("Workload Statistics: {}".format(stats))
         
-        #LOGGER.info("Waiting 5 minutes for Atlas logs to become available")
-        #sleep(5*60)
-        
         self.retrieve_logs()
 
         # Step 7: download logs asynchronously and delete cluster.
