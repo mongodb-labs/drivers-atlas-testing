@@ -187,7 +187,8 @@ class AtlasClient:
             a server to the IP Whitelist, a list of documents must be sent).
         """
         method = method.upper()
-        url = self.construct_resource_url(path)
+        url = self.construct_resource_url(
+            path, api_version=params.pop('api_version', None))
 
         query_params = {}
         for param_name in ("pretty", "envelope", "itemsPerPage", "pageNum"):
@@ -217,11 +218,12 @@ class AtlasClient:
 
         return self.handle_response(method, response)
 
-    def construct_resource_url(self, path):
-        url_template = "{base_url}/v{version}/{resource_path}"
-        return url_template.format(base_url=self.config.base_url,
-                                   version=self.config.api_version,
-                                   resource_path=path)
+    def construct_resource_url(self, path, api_version=None):
+        url_template = "{base_url}/{version}/{resource_path}"
+        return url_template.format(
+            base_url=self.config.base_url,
+            version=api_version or self.config.api_version,
+            resource_path=path)
 
     @staticmethod
     def handle_response(method, response):
