@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import json
 from pprint import pprint
 import unittest, os
 from urllib.parse import unquote_plus
@@ -540,35 +539,7 @@ def validate_workload_executor(workload_executor, startup_time,
 @spec_tests.command('stats')
 @click.pass_context
 def stats(ctx):
-    with open('results.json', 'r') as fp:
-        stats = json.load(fp)
-    with open('events.json', 'r') as fp:
-        events = json.load(fp)
-    
-    import numpy
-    
-    command_events = events['commands']
-    command_times = [c['duration'] for c in command_events]
-    stats['avgCommandTime'] = numpy.average(command_times)
-    stats['p95CommandTime'] = numpy.percentile(command_times, 95)
-    stats['p99CommandTime'] = numpy.percentile(command_times, 99)
-    
-    conn_events = events['connections']
-    counts = defaultdict(lambda: 0)
-    max_counts = defaultdict(lambda: 0)
-    conn_count = max_conn_count = 0
-    for e in conn_events:
-        if e['name'] == 'ConnectionCreated':
-            counts[e['address']] += 1
-        elif e['name'] == 'ConnectionClosed':
-            counts[e['address']] -= 1
-        if counts[e['address']] > max_counts[e['address']]:
-            max_counts[e['address']] = counts[e['address']]
-    
-    stats['maxConnectionCounts'] = max_counts
-    
-    with open('stats.json', 'w') as fp:
-        json.dump(stats, fp)
+    cmd.aggregate_statistics()
 
 
 if __name__ == '__main__':

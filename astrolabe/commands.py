@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import json
 
 from atlasclient import AtlasApiError
 
@@ -88,3 +89,46 @@ def ensure_connect_from_anywhere(*, client, project_id, ):
     ip_details_list = [{"cidrBlock": "0.0.0.0/0"}]
     resp = client.groups[project_id].whitelist.post(json=ip_details_list).data
     LOGGER.debug("Project whitelist details: {}".format(resp))
+
+
+def aggregate_statistics():
+    '''Read the results.json and events.json files, aggregate the events into
+    statistics and write the statistics into stats.json.
+    
+    Statistics calculated:
+    
+    - Average command execution time
+    - 95th percentile command execution time
+    - 99th percentile command execution time
+    - Peak number of open connections
+    '''
+    
+    with open('results.json', 'r') as fp:
+        stats = json.load(fp)
+    with open('events.json', 'r') as fp:
+        events = json.load(fp)
+    
+    import numpy
+    
+    command_events = events['commands']
+    command_times = [c['duration'] for c in command_events]
+    stats['avgCommandTime'] = numpy.average(command_times)
+    stats['p95CommandTime'] = numpy.percentile(command_times, 95)
+    stats['p99CommandTime'] = numpy.percentile(command_times, 99)
+    
+    conn_events = events['connections']
+    counts = defaultdict(lambda: 0)
+    max_counts = defaultdict(lambda: 0)
+    conn_count = max_conn_count = 0
+    for e in conn_events:
+        if e['name'] == 'ConnectionCreated':
+            counts[e['address']] += 1
+        elif e['name'] == 'ConnectionClosed':
+            counts[e['address']] -= 1
+        if counts[e['address']] > max_counts[e['address']]:
+            max_counts[e['address']] = counts[e['address']]
+    
+    stats['maxConnectionCounts'] = max_counts
+    
+    with open('stats.json', 'w') as fp:
+        json.dump(stats, fp)
