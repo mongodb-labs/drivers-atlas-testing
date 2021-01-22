@@ -226,20 +226,20 @@ class AtlasTestCase:
                 timer.start()
                 timeout = op_spec.get('timeout', 90)
                 
-                while True:
-                    with mongo_client(self.get_connection_string()) as mc:
+                with mongo_client(self.get_connection_string()) as mc:
+                    while True:
                         rsc = mc.admin.command('replSetGetConfig')
                         member = [m for m in rsc['config']['members']
                             if m['horizons']['PUBLIC'] == '%s:%s' % mc.primary][0]
                         member_region = member['tags']['region']
                     
-                    if region == member_region:
-                        break
-                        
-                    if timer.elapsed > timeout:
-                        raise Exception("Primary in cluster not in expected region '%s' (actual region '%s')" % (region, member_region))
-                    else:
-                        sleep(5)
+                        if region == member_region:
+                            break
+                            
+                        if timer.elapsed > timeout:
+                            raise Exception("Primary in cluster not in expected region '%s' (actual region '%s')" % (region, member_region))
+                        else:
+                            sleep(5)
 
         # Step-5: interrupt driver workload and capture streams
         stats = self.workload_runner.terminate()
