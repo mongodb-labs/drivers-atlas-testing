@@ -34,9 +34,24 @@ class ValidateWorkloadExecutor(TestCase):
         self.client = MongoClient(self.CONNECTION_STRING, w='majority')
 
     def run_test(self, driver_workload):
-        self.coll = self.client.get_database(
-            [e for e in driver_workload['createEntities'] if 'database' in e][0]['database']['databaseName']).get_collection(
-            [e for e in driver_workload['createEntities'] if 'collection' in e][0]['collection']['collectionName'])
+        # Set self.coll for future use of the validator, such that it can
+        # read the data inserted into the collection.
+        # Actual insertion of initial data isn't done via this object.
+        dbname = None
+        collname = None
+        for e in driver_workload['createEntities']:
+            if dbname and collname:
+                break
+            if dbname is None and 'database' in e:
+                dbname = e['database']['databaseName']
+            elif collanme is None and 'collection' in e:
+                collname = e['collection']['collectionName']
+
+        if not (dbname and collname):
+            self.fail('Invalid scenario: executor validator test cases must provide database and collection entities')
+
+        self.coll = self.client.get_database(dbname).get_collection(collname)
+        
         load_test_data(self.CONNECTION_STRING, driver_workload)
         
         subprocess = DriverWorkloadSubprocessRunner()
