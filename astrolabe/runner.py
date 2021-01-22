@@ -110,8 +110,6 @@ class AtlasTestCase:
         specification.
         """
         
-        self.start_time = _time.time()
-        
         if no_create:
             return
             
