@@ -14,7 +14,7 @@
 
 import logging
 from pprint import pprint
-import unittest, os
+import unittest
 from urllib.parse import unquote_plus
 from collections import defaultdict 
 
