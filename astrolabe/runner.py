@@ -213,8 +213,8 @@ class AtlasTestCase:
                 self.wait_for_idle()
                 
             if op_name == 'restartVms':
-                url = "/api/private/nds/groups/%s/clusters/%s/reboot" % (self.project.id, self.cluster_name)
-                self.admin_client.request('POST', url)
+                rv = self.admin_client.api.private.nds.groups[self.project.id].clusters[self.cluster_name].reboot.post()
+                import pdb;pdb.set_trace()
                 
                 self.wait_for_idle()
                 
@@ -284,7 +284,7 @@ class AtlasTestCase:
                       kwargs={})
                       
     def retrieve_logs(self):
-        data = self.admin_client.request('GET', '/api/private/nds/groups/%s/clusters/%s' % (self.project.id, self.cluster_name)).data
+        data = self.admin_client.api.private.nds.groups[self.project.id].clusters[self.cluster_name].get().data
         
         if data['clusterType'] == 'SHARDED':
             rtype = 'CLUSTER'
@@ -300,12 +300,12 @@ class AtlasTestCase:
             logTypes=['FTDC','MONGODB'],#,'AUTOMATION_AGENT','MONITORING_AGENT','BACKUP_AGENT'],
             sizeRequestedPerFileBytes=100000000,
         )
-        data = self.admin_client.request('POST', 'groups/%s/logCollectionJobs' % (self.project.id,), **params).data
+        data = self.admin_client.groups[self.project.id].logCollectionJobs.post(**params).data
         job_id = data['id']
         
         while True:
             LOGGER.debug('Poll job %s' % job_id)
-            data = self.admin_client.request('GET', 'groups/%s/logCollectionJobs/%s' % (self.project.id, job_id)).data
+            data = self.admin_client.groups[self.project.id].logCollectionJobs[job_id].get().data
             if data['status'] == 'IN_PROGRESS':
                 sleep(1)
             elif data['status'] == 'SUCCESS':
