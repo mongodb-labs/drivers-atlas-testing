@@ -174,9 +174,14 @@ class AtlasTestCase:
             startup_time=startup_time)
 
         for operation in self.spec.operations:
-            if hasattr(operation, 'setClusterConfiguration'):
+            if len(operation) != 1:
+                raise ValueError("Operation must have exactly one key: %s" % operation)
+                
+            op_name, op_spec = next(iteritems(operation))
+            
+            if op_name == 'setClusterConfiguration':
                 # Step-3: begin maintenance routine.
-                final_config = operation.setClusterConfiguration
+                final_config = op_spec
                 cluster_config = final_config.clusterConfiguration
                 process_args = final_config.processArgs
 
@@ -199,26 +204,26 @@ class AtlasTestCase:
                 self.verify_cluster_configuration_matches(final_config)
                 LOGGER.info("Cluster maintenance complete")
                 
-            if hasattr(operation, 'testFailover'):
+            if op_name == 'testFailover':
                 self.cluster_url['restartPrimaries'].post()
                 
                 self.wait_for_idle()
                 
-            if hasattr(operation, 'sleep'):
-                _time.sleep(operation['sleep'])
+            if op_name == 'sleep':
+                _time.sleep(op_spec)
                 
-            if hasattr(operation, 'waitForIdle'):
+            if op_name == 'waitForIdle':
                 self.wait_for_idle()
                 
-            if hasattr(operation, 'restartVms'):
+            if op_name == 'restartVms':
                 url = "/api/private/nds/groups/%s/clusters/%s/reboot" % (self.project.id, self.cluster_name)
                 self.admin_client.request('POST', url)
                 
                 sleep(5)
                 self.wait_for_idle()
                 
-            if hasattr(operation, 'assertPrimaryRegion'):
-                region = operation['assertPrimaryRegion']
+            if op_name == 'assertPrimaryRegion':
+                region = op_spec
                 
                 cluster_config = self.cluster_url.get().data
                 deadline = monotonic() + 90
