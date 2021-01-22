@@ -196,9 +196,6 @@ class AtlasTestCase:
                     LOGGER.info("Pushing process arguments update")
                     self.cluster_url.processArgs.patch(**process_args)
 
-                # Sleep before polling to give Atlas time to update cluster.stateName.
-                sleep(3)
-
                 # Step-4: wait until maintenance completes (cluster is IDLE).
                 self.wait_for_idle()
                 self.verify_cluster_configuration_matches(final_config)
