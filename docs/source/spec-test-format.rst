@@ -61,6 +61,9 @@ A Test Scenario File has the following keys:
     This operation requires Atlas Global Operator API key to be set when
     invoking ``astrolabe``. The value MUST be ``true``.
 
+    testFailover SHOULD be followed by sleep and waitForIdle operations
+    because it does not update maintenance state synchronously.
+
     Example::
 
       restartVms: true

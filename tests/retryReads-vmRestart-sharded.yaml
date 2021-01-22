@@ -10,6 +10,10 @@ initialConfiguration:
 operations:
   -
     restartVms: true
+  -
+    sleep: 10
+  -
+    waitForIdle: true
 
 uriOptions:
   retryReads: true

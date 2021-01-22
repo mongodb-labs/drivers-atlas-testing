@@ -216,7 +216,6 @@ class AtlasTestCase:
                 url = "/api/private/nds/groups/%s/clusters/%s/reboot" % (self.project.id, self.cluster_name)
                 self.admin_client.request('POST', url)
                 
-                sleep(5)
                 self.wait_for_idle()
                 
             if op_name == 'assertPrimaryRegion':
