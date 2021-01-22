@@ -313,7 +313,10 @@ class AtlasTestCase:
             else:
                 raise Exception("Unexpected log collection job status %s" % data['status'])
         
-        url = data['downloadUrl'].replace('https://cloud-dev.mongodb.com', '')
+        LOGGER.info('Log download URL: %s' % data['downloadUrl'])
+        # Assume the URL uses the same host as the other API requests, and
+        # remove it so that we just have the path.
+        url = re.sub(r'\w+://[^/]+', '', data['downloadUrl'])
         LOGGER.info('Retrieving %s' % url)
         resp = self.admin_client.request('GET', url)
         if resp.status_code != 200:
