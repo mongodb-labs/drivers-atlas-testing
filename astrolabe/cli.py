@@ -536,7 +536,7 @@ def validate_workload_executor(workload_executor, startup_time,
         exit(1)
 
 
-@spec_tests.command('stats')
+@spec_tests.command()
 @click.pass_context
 def stats(ctx):
     cmd.aggregate_statistics()
