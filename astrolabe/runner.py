@@ -213,7 +213,7 @@ class AtlasTestCase:
                 self.wait_for_idle()
                 
             if op_name == 'restartVms':
-                rv = self.admin_client.api.private.nds.groups[self.project.id].clusters[self.cluster_name].reboot.post()
+                rv = self.admin_client.nds.groups[self.project.id].clusters[self.cluster_name].reboot.post(api_version='private')
                 import pdb;pdb.set_trace()
                 
                 self.wait_for_idle()
@@ -284,7 +284,7 @@ class AtlasTestCase:
                       kwargs={})
                       
     def retrieve_logs(self):
-        data = self.admin_client.api.private.nds.groups[self.project.id].clusters[self.cluster_name].get().data
+        data = self.admin_client.nds.groups[self.project.id].clusters[self.cluster_name].get(api_version='private').data
         
         if data['clusterType'] == 'SHARDED':
             rtype = 'CLUSTER'
