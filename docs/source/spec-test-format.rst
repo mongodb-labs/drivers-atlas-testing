@@ -69,13 +69,22 @@ A Test Scenario File has the following keys:
       restartVms: true
 
   * assertPrimaryRegion: assert that the primary in the deployment is in the
-    specified region. The value MUST be the region name as defined in Atlas API,
-    e.g. ``US_WEST_1``. This operation is undefined and MUST NOT be used when
-    the deployment is a sharded cluster.
+    specified region. The value MUST be a hash with the following keys:
+    
+    * region (string, required): the region name as defined in Atlas API,
+      e.g. ``US_WEST_1``.
+    * timeout (floating-point number, optional): the maximum time, in
+      seconds, to wait for the region to become the expected one.
+      Default is 90 seconds.
+
+    This operation is undefined and MUST NOT be used when the deployment is
+    a sharded cluster.
 
     Example::
     
-      assertPrimaryRegion: US_WEST_1
+      assertPrimaryRegion:
+        region: US_WEST_1
+        timeout: 15
     
   * sleep: do nothing for the specified duration. The value MUST be the duration
     to sleep for, in seconds.

@@ -40,7 +40,8 @@ operations:
                 readOnlyNodes: 0
       processArgs: {}
 
-  - assertPrimaryRegion: US_WEST_1
+  - assertPrimaryRegion:
+      region: US_WEST_1
   
 
 uriOptions:

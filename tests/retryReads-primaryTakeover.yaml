@@ -41,7 +41,9 @@ operations:
                 readOnlyNodes: 0
       processArgs: {}
 
-  - assertPrimaryRegion: US_EAST_1
+  - assertPrimaryRegion:
+      region: US_EAST_1
+      timeout: 60
   
 
 uriOptions:

@@ -14,7 +14,7 @@
 
 import logging, datetime, time as _time, gzip
 import os, io
-from time import sleep, monotonic
+from time import sleep
 from urllib.parse import urlencode
 
 from pymongo import MongoClient
@@ -219,10 +219,12 @@ class AtlasTestCase:
                 self.wait_for_idle()
                 
             if op_name == 'assertPrimaryRegion':
-                region = op_spec
+                region = op_spec['region']
                 
                 cluster_config = self.cluster_url.get().data
-                deadline = monotonic() + 90
+                timer = Timer()
+                timer.start()
+                timeout = op_spec.get('timeout', 90)
                 
                 while True:
                     mc = MongoClient(cluster_config['connectionStrings']['standard'], username='atlasuser', password='mypassword123')
@@ -235,11 +237,10 @@ class AtlasTestCase:
                     if region == member_region:
                         break
                         
-                    if monotonic() > deadline:
+                    if timer.elapsed > timeout:
                         raise Exception("Primary in cluster not in expected region '%s' (actual region '%s')" % (region, member_region))
                     else:
                         sleep(5)
-                
 
         # Step-5: interrupt driver workload and capture streams
         stats = self.workload_runner.terminate()
