@@ -77,7 +77,7 @@ NODELETE_FLAG = click.option(
 
 NOCREATE_FLAG = click.option(
     '--no-create', is_flag=True, default=False,
-    help=('Do not create clusters at the beginning of the run, assume they have already been provisioned by a previous run.'))
+    help=('Do not create and configure clusters at the beginning of the run if they already exist, assume they have already been provisioned by a previous run.'))
 
 
 class ContextStore:

@@ -142,11 +142,14 @@ times between successive test runs (you will still need to wait for the cluster 
 configuration).
 
 ``astrolabe`` also provides the ``--no-create`` flag which makes it skip
-cluster initialization. This flag may be used to further speed up the test
-runs, but it can only be used for scenarios where the cluster configuration
-does not change from the initial one (otherwise the test would start with the
-wrong configuration) and only after a previous run with ``--no-delete``
-successfully created the cluster.
+cluster initialization if the cluster already exists. This flag may be used
+to further speed up the test runs, but it can only be used for scenarios
+where the cluster configuration does not change from the initial one
+(otherwise the test would start with the wrong configuration). Using
+``--no-delete`` is recommended with ``--no-create``, otherwise each run will
+delete the cluster upon completion. **If the cluster exists but has the wrong
+configuration, ``astrolabe`` will use it as is and the results of the test
+may be incorrect.**
 
 
 Debugging
