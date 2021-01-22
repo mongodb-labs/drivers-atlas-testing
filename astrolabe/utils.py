@@ -19,6 +19,7 @@ import signal
 import subprocess
 import sys
 from hashlib import sha256
+from contextlib import closing
 from time import monotonic, sleep
 
 import click
@@ -167,8 +168,7 @@ def get_cluster_name(test_name, name_salt):
     return name_hash.hexdigest()[:10]
 
 
-def load_test_data(connection_string, driver_workload):
-    """Insert the test data into the cluster."""
+def mongo_client(connection_string):
     kwargs = {'w': "majority"}
 
     # TODO: remove this if...else block after BUILD-10841 is done.
@@ -177,13 +177,19 @@ def load_test_data(connection_string, driver_workload):
         import certifi
         kwargs['tlsCAFile'] = certifi.where()
     client = MongoClient(connection_string, **kwargs)
+    
+    return closing(client)
 
-    for spec in driver_workload.initialData:
-        coll = client.get_database(
-            spec.databaseName).get_collection(
-            spec.collectionName)
-        coll.drop()
-        coll.insert_many(spec.documents)
+
+def load_test_data(connection_string, driver_workload):
+    """Insert the test data into the cluster."""
+    with mongo_client(connection_string) as client:
+        for spec in driver_workload.initialData:
+            coll = client.get_database(
+                spec.databaseName).get_collection(
+                spec.collectionName)
+            coll.drop()
+            coll.insert_many(spec.documents)
 
 
 class DriverWorkloadSubprocessRunner:

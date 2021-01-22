@@ -227,12 +227,11 @@ class AtlasTestCase:
                 timeout = op_spec.get('timeout', 90)
                 
                 while True:
-                    mc = MongoClient(cluster_config['connectionStrings']['standard'], username='atlasuser', password='mypassword123')
-                    rsc = mc.admin.command('replSetGetConfig')
-                    member = [m for m in rsc['config']['members']
-                        if m['horizons']['PUBLIC'] == '%s:%s' % mc.primary][0]
-                    member_region = member['tags']['region']
-                    mc.close()
+                    with mongo_client(self.get_connection_string()) as mc:
+                        rsc = mc.admin.command('replSetGetConfig')
+                        member = [m for m in rsc['config']['members']
+                            if m['horizons']['PUBLIC'] == '%s:%s' % mc.primary][0]
+                        member_region = member['tags']['region']
                     
                     if region == member_region:
                         break
