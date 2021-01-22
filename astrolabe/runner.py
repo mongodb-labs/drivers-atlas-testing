@@ -316,6 +316,8 @@ class AtlasTestCase:
         url = data['downloadUrl'].replace('https://cloud-dev.mongodb.com', '')
         LOGGER.info('Retrieving %s' % url)
         resp = self.admin_client.request('GET', url)
+        if resp.status_code != 200:
+            raise RuntimeError('Request to %s failed: %s' % url, resp.status_code)
         with open('logs.tar.gz', 'wb') as f:
             f.write(resp.response.content)
 
