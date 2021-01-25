@@ -59,7 +59,7 @@ After accepting the inputs, the workload executor:
      in the course of scenario execution.
    
    - Each MongoClient MUST be set up to publish `CMAP
-     <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
+     <https://github.com/mongodb/specifications/blob/master/source/connection-monitoring-and-pooling/connection-monitoring-and-pooling.rst#id61>`_
      events. The workload executor MUST record all events published
      in the course of scenario execution.
    
