@@ -112,14 +112,17 @@ class AtlasTestCase:
         
         if no_create:
             try:
-                self.cluster_url.get().data
                 # If --no-create was specified and the cluster exists, skip
                 # initialization. If the cluster does not exist, continue
                 # with normal creation.
+                self.cluster_url.get().data
+                self.verify_cluster_configuration_matches(self.spec.initialConfiguration)
                 return
             except AtlasApiError as exc:
                 if exc.error_code != 'CLUSTER_NOT_FOUND':
-                    LOGGER.warn('Get cluster failed with unexpected error: %s. Will attempt to create the cluster.' % exc)
+                    LOGGER.warn('Cluster was not found, will create one')
+            except AssertionError as exc:
+                LOGGER.warn('Configuration did not match: %s. Recreating the cluster' % exc)
             
         LOGGER.info("Initializing cluster {!r}".format(self.cluster_name))
 
