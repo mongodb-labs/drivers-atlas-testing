@@ -180,7 +180,7 @@ class AtlasTestCase:
             if len(operation) != 1:
                 raise ValueError("Operation must have exactly one key: %s" % operation)
                 
-            op_name, op_spec = next(iteritems(operation))
+            op_name, op_spec = list(operation.items())[0]
             
             if op_name == 'setClusterConfiguration':
                 # Step-3: begin maintenance routine.
