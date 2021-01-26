@@ -100,9 +100,6 @@ A Test Scenario File has the following keys:
 
       waitForIdle: true
 
-* uriOptions (document): Document containing ``key: value`` pairs of URI options that must be included in the
-  connection string passed to the workload executor by the *Test Orchestrator*.
-
 * driverWorkload (document): Description of the driver workload to execute
   The document must be a complete test as defined by the
   `Unified Test Format specification <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
@@ -110,6 +107,11 @@ A Test Scenario File has the following keys:
   Note that the ``initialData`` (and, by necessity, ``createEntities``)
   field of this document is interpreted and executed by ``astrolabe``, while
   the remaining fields are interpreted and executed by the workload executor.
+
+.. note:: A previous version of this document specified a top-level
+  ``uriOptions`` for specifying URI options for the MongoClient under test.
+  In the current version, options can be specified using the ``uriOptions``
+  key of the unified test format when creating a client entity.
 
 -------
 Changes

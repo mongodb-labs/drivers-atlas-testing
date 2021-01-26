@@ -71,19 +71,7 @@ class AtlasTestCase:
     def get_connection_string(self):
         if self.__connection_string is None:
             cluster = self.cluster_url.get().data
-            prefix, suffix = cluster.srvAddress.split("//")
-            uri_options = self.spec.uriOptions.copy()
-
-            # Boolean options must be converted to lowercase strings.
-            for key, value in uri_options.items():
-                if isinstance(value, bool):
-                    uri_options[key] = str(value).lower()
-
-            connection_string = (prefix + "//" + self.config.database_username
-                                 + ":" + self.config.database_password + "@"
-                                 + suffix + "/?")
-            connection_string += urlencode(uri_options)
-            self.__connection_string = connection_string
+            self.__connection_string = cluster.srvAddress
         return self.__connection_string
 
     def __repr__(self):
