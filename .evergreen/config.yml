@@ -431,6 +431,8 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
+# TODO: re-enable language builds once workload executors have been
+# re-implemented to work with the new format
 #- matrix_name: "tests-python"
 #  matrix_spec:
 #    driver: ["pymongo-master"]
