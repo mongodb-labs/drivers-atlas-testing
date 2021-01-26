@@ -287,3 +287,45 @@ class DriverWorkloadSubprocessRunner:
             stats = self._PLACEHOLDER_EXECUTION_STATISTICS
 
         return stats
+
+
+def get_logs(admin_client, project, cluster_name):
+    data = admin_client.nds.groups[project.id].clusters[cluster_name].get(api_version='private').data
+    
+    if data['clusterType'] == 'SHARDED':
+        rtype = 'CLUSTER'
+        rname = data['deploymentItemName']
+    else:
+        rtype = 'REPLICASET'
+        rname = data['deploymentItemName']
+        
+    params = dict(
+        resourceName=rname,
+        resourceType=rtype,
+        redacted=True,
+        logTypes=['FTDC','MONGODB'],#,'AUTOMATION_AGENT','MONITORING_AGENT','BACKUP_AGENT'],
+        sizeRequestedPerFileBytes=100000000,
+    )
+    data = admin_client.groups[project.id].logCollectionJobs.post(**params).data
+    job_id = data['id']
+    
+    while True:
+        LOGGER.debug('Poll job %s' % job_id)
+        data = admin_client.groups[project.id].logCollectionJobs[job_id].get().data
+        if data['status'] == 'IN_PROGRESS':
+            sleep(1)
+        elif data['status'] == 'SUCCESS':
+            break
+        else:
+            raise Exception("Unexpected log collection job status %s" % data['status'])
+    
+    LOGGER.info('Log download URL: %s' % data['downloadUrl'])
+    # Assume the URL uses the same host as the other API requests, and
+    # remove it so that we just have the path.
+    url = re.sub(r'\w+://[^/]+', '', data['downloadUrl'])
+    LOGGER.info('Retrieving %s' % url)
+    resp = admin_client.request('GET', url)
+    if resp.status_code != 200:
+        raise RuntimeError('Request to %s failed: %s' % url, resp.status_code)
+    with open('logs.tar.gz', 'wb') as f:
+        f.write(resp.response.content)

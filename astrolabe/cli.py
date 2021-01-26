@@ -29,6 +29,7 @@ from astrolabe.runner import MultiTestRunner, SingleTestRunner
 from astrolabe.configuration import (
     CONFIGURATION_OPTIONS as CONFIGOPTS, TestCaseConfiguration)
 from astrolabe.utils import (
+    get_logs,
     create_click_option, get_cluster_name, get_test_name_from_spec_file,
     ClickLogHandler)
 from astrolabe.validator import validator_factory
@@ -432,6 +433,36 @@ def run_single_test(ctx, spec_test_file, workload_executor,
         exit(1)
     else:
         exit(0)
+
+
+@spec_tests.command('get-logs')
+@click.argument("spec_test_file", type=click.Path(
+    exists=True, file_okay=True, dir_okay=False, resolve_path=True))
+@ATLASORGANIZATIONNAME_OPTION
+@ATLASPROJECTNAME_OPTION
+@CLUSTERNAMESALT_OPTION
+@POLLINGTIMEOUT_OPTION
+@POLLINGFREQUENCY_OPTION
+@click.pass_context
+def get_logs_cmd(ctx, spec_test_file, org_name, project_name,
+                    cluster_name_salt, polling_timeout, polling_frequency,
+                    ):
+    """
+    Retrieves logs for the cluster.
+    """
+
+    # Step-1: determine the cluster name for the given test.
+    cluster_name = get_cluster_name(get_test_name_from_spec_file(
+        spec_test_file), cluster_name_salt)
+    
+    organization = cmd.get_one_organization_by_name(
+        client=ctx.obj.client,
+        organization_name=org_name)
+    project = cmd.ensure_project(
+        client=ctx.obj.client, project_name=project_name,
+        organization_id=organization.id)
+    get_logs(admin_client=ctx.obj.admin_client,
+        project=project, cluster_name=cluster_name)
 
 
 @spec_tests.command('delete-cluster')

@@ -31,7 +31,7 @@ from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
     assert_subset, get_cluster_name, get_test_name_from_spec_file,
     load_test_data, DriverWorkloadSubprocessRunner, SingleTestXUnitLogger,
-    Timer)
+    get_logs, Timer)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -267,7 +267,8 @@ class AtlasTestCase:
 
         LOGGER.info("Workload Statistics: {}".format(stats))
         
-        self.retrieve_logs()
+        get_logs(admin_client=self.admin_client,
+            project=self.project, cluster_name=self.cluster_name)
 
         # Step 7: download logs asynchronously and delete cluster.
         # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4
@@ -285,47 +286,6 @@ class AtlasTestCase:
         LOGGER.info("Waiting for cluster maintenance to complete")
         selector.poll([self], attribute="is_cluster_state", args=("IDLE",),
                       kwargs={})
-                      
-    def retrieve_logs(self):
-        data = self.admin_client.nds.groups[self.project.id].clusters[self.cluster_name].get(api_version='private').data
-        
-        if data['clusterType'] == 'SHARDED':
-            rtype = 'CLUSTER'
-            rname = data['deploymentItemName']
-        else:
-            rtype = 'REPLICASET'
-            rname = data['deploymentItemName']
-            
-        params = dict(
-            resourceName=rname,
-            resourceType=rtype,
-            redacted=True,
-            logTypes=['FTDC','MONGODB'],#,'AUTOMATION_AGENT','MONITORING_AGENT','BACKUP_AGENT'],
-            sizeRequestedPerFileBytes=100000000,
-        )
-        data = self.admin_client.groups[self.project.id].logCollectionJobs.post(**params).data
-        job_id = data['id']
-        
-        while True:
-            LOGGER.debug('Poll job %s' % job_id)
-            data = self.admin_client.groups[self.project.id].logCollectionJobs[job_id].get().data
-            if data['status'] == 'IN_PROGRESS':
-                sleep(1)
-            elif data['status'] == 'SUCCESS':
-                break
-            else:
-                raise Exception("Unexpected log collection job status %s" % data['status'])
-        
-        LOGGER.info('Log download URL: %s' % data['downloadUrl'])
-        # Assume the URL uses the same host as the other API requests, and
-        # remove it so that we just have the path.
-        url = re.sub(r'\w+://[^/]+', '', data['downloadUrl'])
-        LOGGER.info('Retrieving %s' % url)
-        resp = self.admin_client.request('GET', url)
-        if resp.status_code != 200:
-            raise RuntimeError('Request to %s failed: %s' % url, resp.status_code)
-        with open('logs.tar.gz', 'wb') as f:
-            f.write(resp.response.content)
 
 
 class SpecTestRunnerBase:

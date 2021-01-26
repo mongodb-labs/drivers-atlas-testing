@@ -224,8 +224,12 @@ class AtlasClient:
         url_template = "{base_url}/{version}/{resource_path}"
         if path and path[0] == '/':
             url_template = '{base_url}{resource_path}'
+        base_url = self.config.base_url
+        # Allow trailing slash like https://cloud-dev.mongodb.com/ in the base URL
+        while base_url.endswith('/'):
+            base_url = base_url[:-1]
         return url_template.format(
-            base_url=self.config.base_url,
+            base_url=base_url,
             version=api_version or self.config.api_version,
             resource_path=path)
 
