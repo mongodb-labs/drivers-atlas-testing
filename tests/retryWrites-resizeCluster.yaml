@@ -17,9 +17,6 @@ operations:
           instanceSizeName: M20
       processArgs: {}
 
-uriOptions:
-  retryWrites: true
-
 driverWorkload:
   description: "Insert"
 
@@ -28,6 +25,8 @@ driverWorkload:
   createEntities:
     - client:
         id: &client0 client0
+        uriOptions:
+          retryWrites: true
     - database:
         id: &database0 database0
         client: *client0

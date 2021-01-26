@@ -17,9 +17,6 @@ operations:
           instanceSizeName: M10
       processArgs: {}
 
-uriOptions:
-  retryReads: true
-
 driverWorkload:
   description: "Find"
 
@@ -28,6 +25,8 @@ driverWorkload:
   createEntities:
     - client:
         id: &client0 client0
+        uriOptions:
+          retryReads: true
     - database:
         id: &database0 database0
         client: *client0
