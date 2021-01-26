@@ -7,7 +7,7 @@ initialConfiguration:
       instanceSizeName: M10
   processArgs: {}
 
-  operations:
+operations:
   -
     restartVms: true
   -
