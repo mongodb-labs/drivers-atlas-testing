@@ -18,6 +18,7 @@ import os
 import signal
 import subprocess
 import sys
+import re
 from hashlib import sha256
 from contextlib import closing
 from time import monotonic, sleep
@@ -323,6 +324,8 @@ def get_logs(admin_client, project, cluster_name):
     # Assume the URL uses the same host as the other API requests, and
     # remove it so that we just have the path.
     url = re.sub(r'\w+://[^/]+', '', data['downloadUrl'])
+    if url.startswith('/api'):
+        url = url[4:]
     LOGGER.info('Retrieving %s' % url)
     resp = admin_client.request('GET', url)
     if resp.status_code != 200:
