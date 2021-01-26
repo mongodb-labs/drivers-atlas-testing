@@ -208,7 +208,6 @@ class AtlasTestCase:
                 
             if op_name == 'restartVms':
                 rv = self.admin_client.nds.groups[self.project.id].clusters[self.cluster_name].reboot.post(api_version='private')
-                import pdb;pdb.set_trace()
                 
                 self.wait_for_idle()
                 
