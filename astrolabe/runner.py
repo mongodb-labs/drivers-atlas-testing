@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import logging, datetime, time as _time, gzip
-import os, io
+import os, io, re
 from time import sleep
 from urllib.parse import urlencode
 
@@ -71,7 +71,10 @@ class AtlasTestCase:
     def get_connection_string(self):
         if self.__connection_string is None:
             cluster = self.cluster_url.get().data
-            self.__connection_string = cluster.srvAddress
+            uri = re.sub(r'://',
+                '://%s:%s@' % (self.config.database_username, self.config.database_password),
+                cluster.srvAddress)
+            self.__connection_string = uri
         return self.__connection_string
 
     def __repr__(self):
