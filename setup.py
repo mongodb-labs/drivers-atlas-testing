@@ -27,7 +27,7 @@ install_requires = [
     'click>=7,<8', 'requests>=2,<3',
     'pymongo>=3.10,<4', 'dnspython>=1.16,<2',
     'pyyaml>=5,<6', 'tabulate>=0.8,<0.9',
-    'numpy',
+    'numpy<2',
     'junitparser>=1,<2']
 if sys.platform == 'win32':
     install_requires.append('certifi')
