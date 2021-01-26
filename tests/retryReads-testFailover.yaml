@@ -45,15 +45,19 @@ driverWorkload:
   tests:
     - description: "Find one"
       operations:
-        - name: find
-          object: *collection0
+        - name: loop
+          object: testRunner
           arguments:
-            filter: { _id: { $gt: 1 }}
-            sort: { _id: 1 }
-          expectResult:
-            -
-              _id: 2
-              x: 22
-            -
-              _id: 3
-              x: 33
+            operations:
+              - name: find
+                object: *collection0
+                arguments:
+                  filter: { _id: { $gt: 1 }}
+                  sort: { _id: 1 }
+                expectResult:
+                  -
+                    _id: 2
+                    x: 22
+                  -
+                    _id: 3
+                    x: 33

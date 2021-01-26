@@ -96,6 +96,9 @@ class Executor
   def set_signal_handler
     Signal.trap('INT') do
       @stop = true
+      unified_tests.each do |test|
+        test.stop!
+      end
     end
   end
 
