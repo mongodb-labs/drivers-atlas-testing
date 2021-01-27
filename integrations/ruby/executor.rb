@@ -147,12 +147,17 @@ class Executor
     File.open('results.json', 'w') do |f|
       f << JSON.dump(result)
     end
+    result = {
+      errors: metrics_collector.errors,
+    }
+    unified_tests.map do |test|
+      test.entities[:event_list].each do |name, events|
+        result[name] ||= []
+        result[name] += events
+      end
+    end
     File.open('events.json', 'w') do |f|
-      f << JSON.dump(
-        commands: metrics_collector.command_events,
-        connections: metrics_collector.connection_events,
-        errors: metrics_collector.errors,
-      )
+      f << JSON.dump(result)
     end
   end
 end
