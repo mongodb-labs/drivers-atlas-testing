@@ -110,11 +110,11 @@ Running Atlas Planned Maintenance Tests
 
 The ``spec-tests`` command-group is used for Atlas Planned Maintenance (APM) tests. To run a single APM test, do::
 
-  $ astrolabe spec-tests run-one <path/to/test-file.yaml> -e <path/to/workload-executor> --project-name <atlasProjectName> --cluster-name-salt <randomString>
+  $ astrolabe spec-tests run-one <path/to/test-file.yml> -e <path/to/workload-executor> --project-name <atlasProjectName> --cluster-name-salt <randomString>
 
 where:
 
-* ``<path/to/test-file.yaml>`` is the absolute or relative path to a test scenario file in the
+* ``<path/to/test-file.yml>`` is the absolute or relative path to a test scenario file in the
   :ref:`test-scenario-format-specification`,
 * ``<path/to/workload-executor>`` is the absolute or relative path to the workload executor of the driver to be tested,
 * ``<atlasProjectName>`` is the name of the Atlas Project under which the test cluster used for the test will be created,

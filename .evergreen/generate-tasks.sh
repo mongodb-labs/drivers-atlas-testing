@@ -1,7 +1,7 @@
 #!/bin/sh
 
-for f in tests/*.yaml; do
-  task=`basename $f |sed -e s/.yaml//`
+for f in tests/*.yml; do
+  task=`basename $f |sed -e s/.yml//`
   
 cat <<-EOT
   - name: $task

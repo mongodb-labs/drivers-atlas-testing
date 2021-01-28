@@ -164,13 +164,13 @@ User-Facing API
 
 The Test Orchestrator MUST be an executable that supports the following invocation pattern::
 
-	./test-orchestrator spec-tests run-one path/to/workload-spec.yaml -e path/to/workload-executor
+	./test-orchestrator spec-tests run-one path/to/workload-spec.yml -e path/to/workload-executor
 
 where:
 
 * ``test-orchestrator`` is the Test Orchestrator executable,
 * ``spec-tests run-one`` is the name of the command issued to this executable,
-* ``path/to/workload-spec.yaml`` is the path to a test scenario file,
+* ``path/to/workload-spec.yml`` is the path to a test scenario file,
 * ``-e`` is a flag indicating that the following argument is the workload executor binary, and
 * ``path/to/workload-executor`` is the path to the workload executor binary that is to be used to run the Driver Workload.
 

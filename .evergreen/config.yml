@@ -84,7 +84,7 @@ functions:
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml -e integrations/${DRIVER_DIRNAME}/workload-executor
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yml -e integrations/${DRIVER_DIRNAME}/workload-executor
 
   "validate executor":
     # Run a MongoDB instance locally.
@@ -118,7 +118,7 @@ functions:
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests delete-cluster tests/${TEST_NAME}.yaml
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests delete-cluster tests/${TEST_NAME}.yml
 
   "upload test results":
     # Upload the xunit-format test results.
