@@ -23,6 +23,21 @@ driverWorkload:
         id: &client0 client0
         uriOptions:
           retryWrites: true
+        storeEventsAsEntities:
+          CommandStartedEvent: command
+          CommandSucceededEvent: command
+          CommandFailedEvent: command
+          PoolCreatedEvent: connection
+          PoolReadyEvent: connection
+          PoolClearedEvent: connection
+          PoolClosedEvent: connection
+          ConnectionCreatedEvent: connection
+          ConnectionReadyEvent: connection
+          ConnectionClosedEvent: connection
+          ConnectionCheckOutStartedEvent: connection
+          ConnectionCheckOutFailedEvent: connection
+          ConnectionCheckedOutEvent: connection
+          ConnectionCheckedInEvent: connection
     - database:
         id: &database0 database0
         client: *client0
@@ -35,6 +50,12 @@ driverWorkload:
   tests:
     - description: "Insert one"
       operations:
-        - name: insertOne
-          object: *collection0
-          arguments: { data: 100 }
+        - name: loop
+          object: testRunner
+          arguments:
+            storeErrorsAsEntity: errors
+            storeIterationsAsEntity: iterations
+            operations:
+            - name: insertOne
+              object: *collection0
+              arguments: { data: 100 }

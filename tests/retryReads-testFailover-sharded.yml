@@ -25,6 +25,21 @@ driverWorkload:
         id: &client0 client0
         uriOptions:
           retryReads: true
+        storeEventsAsEntities:
+          CommandStartedEvent: command
+          CommandSucceededEvent: command
+          CommandFailedEvent: command
+          PoolCreatedEvent: connection
+          PoolReadyEvent: connection
+          PoolClearedEvent: connection
+          PoolClosedEvent: connection
+          ConnectionCreatedEvent: connection
+          ConnectionReadyEvent: connection
+          ConnectionClosedEvent: connection
+          ConnectionCheckOutStartedEvent: connection
+          ConnectionCheckOutFailedEvent: connection
+          ConnectionCheckedOutEvent: connection
+          ConnectionCheckedInEvent: connection
     - database:
         id: &database0 database0
         client: *client0
@@ -45,15 +60,21 @@ driverWorkload:
   tests:
     - description: "Find one"
       operations:
-        - name: find
-          object: *collection0
+        - name: loop
+          object: testRunner
           arguments:
-            filter: { _id: { $gt: 1 }}
-            sort: { _id: 1 }
-          expectResult:
-            -
-              _id: 2
-              x: 22
-            -
-              _id: 3
-              x: 33
+            storeErrorsAsEntity: errors
+            storeIterationsAsEntity: iterations
+            operations:
+              - name: find
+                object: *collection0
+                arguments:
+                  filter: { _id: { $gt: 1 }}
+                  sort: { _id: 1 }
+                expectResult:
+                  -
+                    _id: 2
+                    x: 22
+                  -
+                    _id: 3
+                    x: 33
