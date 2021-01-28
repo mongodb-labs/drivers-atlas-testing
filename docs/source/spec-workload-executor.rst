@@ -44,112 +44,130 @@ After accepting the inputs, the workload executor:
    * MUST NOT override any of the URI options specified in the incoming connection string.
    * MUST NOT augment the incoming connection string with any additional URI options.
 
-#. MUST parse the incoming the ``driverWorkload`` document and set up
-   the driver's unified test runner to execute the provided workload, with
-   the following deviations from the unified test runner specification:
-   
-   - Each MongoClient MUST be set up to publish `command monitoring
-     <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_
-     events. The workload executor MUST record all events published
-     in the course of scenario execution.
-   
-   - Each MongoClient MUST be set up to publish `CMAP
-     <https://github.com/mongodb/specifications/blob/master/source/connection-monitoring-and-pooling/connection-monitoring-and-pooling.rst#id61>`_
-     events. The workload executor MUST record all events published
-     in the course of scenario execution.
-   
-   - The ``initialData`` array in the scenario MUST be ignored by the
-     unified test runner (and by the workload executor).
-     ``astrolabe`` is responsible for initializing the cluster with
-     this data *before* starting the workload executor.
-     
-#. MUST use the driver's unified test runner to execute the tests in the
-   scenario, and the operations in each test, sequentially and in the order
-   in which they appear in the ``tests`` and ``operations`` arrays,
-   with the following deviations from the unified test runner specification:
-   
-   * The workload executor MUST repeat execution of the entire set of
-     specified tests and operations indefinitely, until the
-     **termination signal** from ``astrolabe`` is received.
-   
-   * The workload executor MUST keep count of the number of failures
-     (``numFailures``) that are encountered. A failure is when
-     the actual return value of an operation or a published event does not match
-     the respective expected return value or event (as these expectations
-     are defined in the unified test format).
-   
-   * The workload executor MUST record all errors encountered while running the scenario.
-     An operation error is any error that is propagated out of the unified test runner.
-     Workload executor implementations should try to be as resilient
-     as possible to these kinds of operation errors.
-   
-   * The workload executor MUST keep count of the number of operation errors (``numErrors``) that
-     are encountered while running the scenario.
-   
-   * The workload executor MUST keep count of the number of invocations of the scenario that
-     did not result in an error (``numSuccesses``).
+#. MUST parse the incoming ``driverWorkload`` document and set up
+    the driver's unified test runner to execute the provided workload.
+    
+    .. note::
+    
+      The workload SHOULD include a ``loop`` operation, as described in the
+      unified test format, but the workload executor SHOULD NOT validate that
+      this is the case.
 
-#. MUST set a signal handler for handling the termination signal that is sent by ``astrolabe``. The termination signal
-   is used by ``astrolabe`` to communicate to the workload executor that it should stop running operations. Upon
-   receiving the termination signal, the workload executor:
+#. MUST set a signal handler for handling the termination signal that is
+   sent by ``astrolabe``. The termination signal is used by ``astrolabe``
+   to communicate to the workload executor, and ultimately the unified test
+   runner, that they should stop running operations.
 
-   * MUST stop running driver operations and exit soon.
-   * MUST write the collected events and errors into a JSON file named
-     ``events.json`` in the current directory
-     (i.e. the directory from where the workload executor is being executed). 
-     The data written MUST be a map with the following fields:
-     
-     * ``commands``: an array of command events published during scenario
-       execution. Each command event MUST be a map with the following fields:
-       
-       * ``commandName``: the name of the command, e.g. ``insert``.
-       * ``duration``: the time, in (floating-point) seconds, it took for the command to execute.
-       * ``failure``: if the command succeeded, this field MUST not be set.
-         If the command failed, this field MUST contain a textual description
-         of the error encountered while executing the command.
-       * ``startTime``: the (floating-point) number of seconds since the Unix epoch when the
-         command began executing.
-       * ``address``: the address of the server to which the command
-         was sent, e.g. ``localhost:27017``.
-     * ``connections``: an array of CMAP events published during scenario
-       execution. Each event MUST be a map with the following fields:
-       
-       * ``name``: the name of the event, e.g. ``PoolCreated``.
-       * ``time``: the (floating-point) number of seconds since the Unix epoch
-         when the event was published.
-       * ``address``: the address of the server that the command was
-         published for, e.g. ``localhost:27017``.
-     * ``errors``: an array of errors encountered during scenario execution.
-       Each error MUST be a map with the following fields:
-       
-       * ``error``: textual description of the error.
-       * ``time``: the (floating-point) number of seconds since the Unix epoch
-         when the error occurred.
+#. MUST invoke the unified test runner to execute the workload.
+   If the workload includes a ``loop`` operation, the workload will run until
+   terminated by the workload executor; otherwise, the workload will terminate
+   when the unified test runner finishes executing all of the operations.
+   The workload executor MUST handle the case of a non-looping workload and
+   it MUST terminate when the workload terminates.
+   
+   If the unified test runner raises an error while executing the workload,
+   the error MUST be reported using the same format as errors handled by the
+   unified test runner, as described in the unified test runner specification
+   under the ``loop`` operation. Errors handled by the workload
+   executor MUST be included in the calculated (and reported) error count.
+   
+   If the unified test runner reports a failure while executing the workload,
+   the failure MUST be reported using the same format as failures handled by the
+   unified test runner, as described in the unified test runner specification
+   under the ``loop`` operation. Failures handled by the workload
+   executor MUST be included in the calculated (and reported) failure count.
+   If the driver's unified test runner is intended to handle all failures
+   internally, failures that propagate out of the unified test runner MAY
+   be treated as errors by the workload executor.
+
+#. Upon receipt of the termination signal, MUST instruct the
+   unified test runner to stop running the ``loop`` operation, if one
+   is currently running. If the unified test runner is not currently running
+   any ``loop`` operations, the workload executor MUST instruct the
+   unified test runner to terminate when the next ``loop`` operation is
+   encountered. The workload executor MAY attempt to terminate the
+   unified test runner sooner (such as instructing the unified test runner
+   to terminate after completing the current operation).
+   The workload executor SHOULD terminate the unified test runner gracefully,
+   such that in-progress operations are completed to their natural outcome
+   (success or failure).
+
+#. MUST wait for the unified test runner to terminate, either due to the
+   receipt of the termination signal or due to completely executing all of
+   the operations if they do not include loops.
+   
+#. MUST use the driver's unified test runner to retrieve the following
+   entities from the entity map, if they are set:
+   
+   * iteration count: the number of iterations that the workload executor
+     performed over the looped operations.
+   
+   * error lists: arrays of documents describing the errors that occurred
+     while the workload executor was executing the operations. Each client
+     entity may report errors to a separate error list, or the same
+     error list may be used by multiple client entities.
+   
+   * failure lists: arrays of documents describing the failures that occurred
+     while the workload executor was executing the operations. Each client
+     entity may report errors to a separate failure list, or the same
+     failure list may be used by multiple client entities.
+   
+   * event lists: arrays of documents describing the events that occurred
+     while the workload executor was executing the operations. Each client
+     entity may report events to a separate event list, or the same
+     event list may be used by multiple client entities.
+
+#. MUST calculate the aggregate counts of errors (``numErrors``) and failures
+   (``numFailures``) from the error and failure lists.
+
+#. MUST write the collected events, errors and failures into a JSON file named
+   ``events.json`` in the current directory
+   (i.e. the directory from where the workload executor is being executed). 
+   The data written MUST be a map with the following fields:
+   
+   - For each event list entity, the name of the entity MUST become a key and the
+     documents stored in the entity MUST become the respective value.
+   
+   - For each error list entity, the name of the entity MUST become a key and the
+     documents stored in the entity MUST become the respective value.
+   
+   - The errors that the workload executor handles MUST be stored using the
+     ``errors`` key.
+   
+   - For each failure list entity, the name of the entity MUST become a key and the
+     documents stored in the entity MUST become the respective value.
+   
+   - The failures that the workload executor handles MUST be stored using the
+     ``failures`` key.
          
-       The number of errors MUST be reported as ``numErrors`` in ``results.json``,
-       as described below.
-         
-   * MUST write the collected workload statistics into a JSON file named ``results.json`` in the current working directory
-     (i.e. the directory from where the workload executor is being executed). Workload statistics MUST contain the
-     following fields (drivers MAY report additional statistics using field names of their choice):
+#. MUST write the collected workload statistics into a JSON file named
+   ``results.json`` in the current working directory (i.e. the directory
+   from where the workload executor is being executed). Workload statistics
+   MUST contain the following fields (drivers MAY report additional statistics
+   using field names of their choice):
 
-     * ``numErrors``: the number of operation errors that were encountered during the test.
-     * ``numFailures``: the number of operation failures that were encountered during the test.
-     * ``numSuccesses``: the number of operations executed successfully during the test.
+   * ``numErrors``: the number of operation errors that were encountered
+     during the test. This includes errors handled by the workload executor
+     and errors handled by the unified test runner.
+   * ``numFailures``: the number of operation failures that were encountered
+     during the test. This includes failures handled by the workload executor
+     and failures handled by the unified test runner.
+   * ``numSuccesses``: the number of successful loop iterations executed
+     during the test.
 
-   .. note:: The values of ``numErrors`` and ``numFailures`` are used by ``astrolabe`` to determine the overall
-      success or failure of a driver workload execution. A non-zero value for either of these fields is construed
-      as a sign that something went wrong while executing the workload and the test is marked as a failure.
-      The workload executor's exit code is **not** used for determining success/failure and is ignored.
+ .. note:: The values of ``numErrors`` and ``numFailures`` are used by ``astrolabe`` to determine the overall
+    success or failure of a driver workload execution. A non-zero value for either of these fields is construed
+    as a sign that something went wrong while executing the workload and the test is marked as a failure.
+    The workload executor's exit code is **not** used for determining success/failure and is ignored.
 
-   .. note:: If ``astrolabe`` encounters an error in parsing the workload statistics dumped to ``results.json``
-      (caused, for example, by malformed JSON), ``numErrors``, ``numFailures``, and ``numSuccesses``
-      will be set to ``-1`` and the test run will be assumed to have failed.
+.. note:: If ``astrolabe`` encounters an error in parsing the workload statistics dumped to ``results.json``
+  (caused, for example, by malformed JSON), ``numErrors``, ``numFailures``, and ``numSuccesses``
+  will be set to ``-1`` and the test run will be assumed to have failed.
 
-   .. note:: The choice of termination signal used by ``astrolabe`` varies by platform. ``SIGINT`` [#f1]_ is used as
-      the termination signal on Linux and OSX, while ``CTRL_BREAK_EVENT`` [#f2]_ is used on Windows.
+.. note:: The choice of termination signal used by ``astrolabe`` varies by platform. ``SIGINT`` [#f1]_ is used as
+  the termination signal on Linux and OSX, while ``CTRL_BREAK_EVENT`` [#f2]_ is used on Windows.
 
-   .. note:: On Windows systems, the workload executor is invoked via Cygwin Bash.
+.. note:: On Windows systems, the workload executor is invoked via Cygwin Bash.
 
 
 Pseudocode Implementation
