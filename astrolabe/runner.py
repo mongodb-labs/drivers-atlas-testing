@@ -30,7 +30,7 @@ from astrolabe.exceptions import AstrolabeTestCaseError
 from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
     assert_subset, get_cluster_name, get_test_name_from_spec_file,
-    load_test_data, DriverWorkloadSubprocessRunner, SingleTestXUnitLogger,
+    DriverWorkloadSubprocessRunner, SingleTestXUnitLogger,
     get_logs, Timer)
 
 
@@ -143,22 +143,12 @@ class AtlasTestCase:
         LOGGER.info("Running test {!r} on cluster {!r}".format(
             self.id, self.cluster_name))
 
-        # Step-0: sanity-check the cluster configuration.
+        # Step-1: sanity-check the cluster configuration.
         self.verify_cluster_configuration_matches(self.spec.initialConfiguration)
 
         # Start the test timer.
         timer = Timer()
         timer.start()
-
-        # Step-1: load test data.
-        test_datas = self.spec.driverWorkload.get('initialData')
-        if test_datas:
-            LOGGER.info("Loading test data on cluster {!r}".format(
-                self.cluster_name))
-            connection_string = self.get_connection_string()
-            load_test_data(connection_string, self.spec.driverWorkload)
-            LOGGER.info("Successfully loaded test data on cluster {!r}".format(
-                self.cluster_name))
 
         # Step-2: run driver workload.
         self.workload_runner.spawn(

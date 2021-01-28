@@ -104,9 +104,17 @@ A Test Scenario File has the following keys:
   The document must be a complete test as defined by the
   `Unified Test Format specification <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
   
-  Note that the ``initialData`` (and, by necessity, ``createEntities``)
-  field of this document is interpreted and executed by ``astrolabe``, while
-  the remaining fields are interpreted and executed by the workload executor.
+  The workload SHOULD use the ``loop`` unified test format operation to
+  define the server operations to execute during maintenance. There SHOULD
+  be exactly one ``loop`` operation per scenario, and it SHOULD be the last
+  operation in the scenario. The scenario SHOULD use
+  ``storeErrorsAsEntity``, ``storeFailuresAsEntity`` and
+  ``storeIterationsAsEntity`` operation arguments to allow the workload
+  executor to retrieve errors and failures that occur during these operations.
+  
+  The scenario MAY use ``storeEventsAsEntities`` operation argument
+  when defining MongoClients to record events published during maintenance
+  and store these events as Evergreen artifacts.
 
 .. note:: A previous version of this document specified a top-level
   ``uriOptions`` for specifying URI options for the MongoClient under test.

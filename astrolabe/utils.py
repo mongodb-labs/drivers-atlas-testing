@@ -182,17 +182,6 @@ def mongo_client(connection_string):
     return closing(client)
 
 
-def load_test_data(connection_string, driver_workload):
-    """Insert the test data into the cluster."""
-    with mongo_client(connection_string) as client:
-        for spec in driver_workload.initialData:
-            coll = client.get_database(
-                spec.databaseName).get_collection(
-                spec.collectionName)
-            coll.drop()
-            coll.insert_many(spec.documents)
-
-
 class DriverWorkloadSubprocessRunner:
     """Convenience wrapper to run a workload executor in a subprocess."""
     _PLACEHOLDER_EXECUTION_STATISTICS = {
