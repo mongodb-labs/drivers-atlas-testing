@@ -46,6 +46,18 @@ else
   spec = JSON.load(spec)
 end
 
+$uri = uri
+
+class ClientRegistry
+  def self.instance
+    new
+  end
+
+  def global_client(which)
+    $global_client ||= Mongo::Client.new($uri)
+  end
+end
+
 executor = Executor.new(uri, spec)
 if options[:insert]
   executor.load_data
