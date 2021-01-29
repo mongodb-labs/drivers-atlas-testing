@@ -21,19 +21,14 @@ class Executor
     set_signal_handler
     unified_tests.each do |test|
       test.create_entities
-    end
-    while true
-      break if @stop
-      perform_operations
+      test.set_initial_data
+      test.run
+      test.assert_outcome
+      test.assert_events
+      test.cleanup
     end
     puts "Result: #{result.inspect}"
     write_result
-  end
-
-  def load_data
-    unified_tests.each do |test|
-      test.set_initial_data
-    end
   end
 
   private
@@ -53,22 +48,6 @@ class Executor
 
   def unified_tests
     @tests ||= unified_group.tests
-  end
-
-  def perform_operations
-    unified_tests.each do |test|
-      begin
-        test.run
-      rescue Unified::Error => e
-        STDERR.puts "Failure: #{e.class}: #{e}"
-        @failure_count += 1
-      rescue => e
-        STDERR.puts "Error: #{e.class}: #{e}"
-        @error_count += 1
-      end
-      @operation_count += test.entities.get(:iteration_count, 'iterations')
-      @error_count += test.entities.get(:error_list, 'errors').length
-    end
   end
 
   def result
