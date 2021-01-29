@@ -27,8 +27,8 @@ class Executor
       test.assert_events
       test.cleanup
     end
-    puts "Result: #{result.inspect}"
     write_result
+    puts "Result: #{result.inspect}"
   end
 
   private
@@ -61,23 +61,30 @@ class Executor
   end
 
   def write_result
-    File.open('results.json', 'w') do |f|
-      f << JSON.dump(result)
-    end
     {}.tap do |event_result|
       unified_tests.map do |test|
+        @operation_count += test.entities.get(:iteration_count, 'iterations')
         test.entities[:event_list]&.each do |name, events|
           event_result[name] ||= []
           event_result[name] += events
         end
         test.entities[:error_list]&.each do |name, errors|
+          @error_count += errors.length
           event_result[name] ||= []
           event_result[name] += errors
+        end
+        test.entities[:failure_list]&.each do |name, failures|
+          @failure_count += failures.length
+          event_result[name] ||= []
+          event_result[name] += failures
         end
       end
       File.open('events.json', 'w') do |f|
         f << JSON.dump(event_result)
       end
+    end
+    File.open('results.json', 'w') do |f|
+      f << JSON.dump(result)
     end
   end
 end
