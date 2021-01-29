@@ -22,7 +22,7 @@ import yaml
 
 from atlasclient import JSONObject
 from astrolabe.exceptions import WorkloadExecutorError
-from astrolabe.utils import DriverWorkloadSubprocessRunner, load_test_data
+from astrolabe.utils import DriverWorkloadSubprocessRunner
 
 
 class ValidateWorkloadExecutor(TestCase):
@@ -51,8 +51,6 @@ class ValidateWorkloadExecutor(TestCase):
             self.fail('Invalid scenario: executor validator test cases must provide database and collection entities')
 
         self.coll = self.client.get_database(dbname).get_collection(collname)
-        
-        load_test_data(self.CONNECTION_STRING, driver_workload)
         
         subprocess = DriverWorkloadSubprocessRunner()
         try:
