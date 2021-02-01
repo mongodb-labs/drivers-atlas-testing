@@ -184,46 +184,42 @@ Pseudocode Implementation
     # command-line invocation of the workload executor script.
     function workloadRunner(connectionString: string, driverWorkload: object): void {
 
-        # Use the MongoClient of the driver to be tested to connect to the Atlas Cluster.
-        const client = MongoClient(connectionString);
-
-        # Create objects which will be used to run operations.
-        const db = client.db(driverWorkload.database);
-        const collection = db.collection(driverWorkload.collection);
-
-        # Initialize counters.
-        var num_errors = 0;
-        var num_failures = 0;
-        var num_successes = 0;
-
-        # Run the workload - operations are run sequentially, repeatedly
-        # until the termination signal is received.
-        # Do not attempt to initialize the cluster with the contents of
-        # ``testData`` - astrolabe takes care of this.
+        # Use the driver's unified test runner to run the workload.
+        const runner = UnifiedTestRunner(connectionString);
+        
         try {
-            while (True) {
-                for (let operation in workloadSpec.operations) {
-                    try {
-                        # The runOperation method runs operations as per the test format.
-                        # The method return False if the actual return value of the operation does match the expected.
-                        var was_succesful = runOperation(db, collection, operation);
-                        if (was_successful) {
-                            num_successes += 1;
-                        } else {
-                            num_errors += 1;
-                        }
-                    } catch (operationError) {
-                        # We end up here if runOperation raises an unexpected error.
-                        num_failures += 1;
-                    }
-                }
-            }
+            runner.executeScenario();
         } catch (terminationSignal) {
             # The workloadExecutor MUST handle the termination signal gracefully.
             # The termination signal will be used by astrolabe to terminate drivers operations that otherwise run ad infinitum.
             # The workload statistics must be written to a file named results.json in the current working directory.
-            fs.writeFile('results.json', JSON.stringify({‘numErrors’: num_errors, 'numFailures': num_failures, 'numSuccesses': num_successes}));
         }
+        
+        let results = {};
+        let numSuccesses = runner.entityMap.get('iterationCount');
+        let numErrors = 0;
+        let numFailures = 0;
+        for (name, events in runner.entityMap.get('events')) {
+            results[name] ||= [];
+            results[name].concat(events);
+        }
+        for (name, errors in runner.entityMap.get('errors')) {
+            results[name] ||= [];
+            results[name].concat(errors);
+            numErrors += errors.length;
+        }
+        for (name, failures in runner.entityMap.get('failures')) {
+            results[name] ||= [];
+            results[name].concat(failures);
+            numFailures += failures.length;
+        }
+        fs.writeFile('events.json', JSON.stringify(results);
+
+        fs.writeFile('results.json', JSON.stringify({
+            ‘numErrors’: numErrors,
+            'numFailures': numFailures,
+            'numSuccesses': numSuccesses,
+        }));
     }
 
 Reference Implementation
