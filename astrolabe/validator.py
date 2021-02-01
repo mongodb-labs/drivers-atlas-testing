@@ -44,7 +44,7 @@ class ValidateWorkloadExecutor(TestCase):
                 break
             if dbname is None and 'database' in e:
                 dbname = e['database']['databaseName']
-            elif collanme is None and 'collection' in e:
+            elif collname is None and 'collection' in e:
                 collname = e['collection']['collectionName']
 
         if not (dbname and collname):
