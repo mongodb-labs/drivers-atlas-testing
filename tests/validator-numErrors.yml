@@ -29,19 +29,23 @@ driverWorkload:
           count: 0
 
   tests:
-    - description: "updateOne"
+    - description: "updateOne & error"
       operations:
-        - name: updateOne
-          object: *collection0
+        - name: loop
+          object: testRunner
           arguments:
-            filter: { _id: validation_sentinel}
-            update: 
-              $inc:
-                count: 1
-    
-    - description: "error"
-      operations:
-        - name: doesNotExist
-          object: *collection0
-          arguments:
-            foo: bar
+            storeIterationsAsEntity: iterations
+            storeSuccessesAsEntity: successes
+            storeErrorsAsEntity: errors
+            operations:
+              - name: updateOne
+                object: *collection0
+                arguments:
+                  filter: { _id: validation_sentinel}
+                  update: 
+                    $inc:
+                      count: 1
+              - name: doesNotExist
+                object: *collection0
+                arguments:
+                  foo: bar

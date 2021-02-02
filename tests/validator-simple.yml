@@ -28,10 +28,16 @@ driverWorkload:
   tests:
     - description: "updateOne"
       operations:
-        - name: updateOne
-          object: *collection0
+        - name: loop
+          object: testRunner
           arguments:
-            filter: { _id: validation_sentinel}
-            update: 
-              $inc:
-                count: 1
+            storeIterationsAsEntity: iterations
+            storeSuccessesAsEntity: successes
+            operations:
+              - name: updateOne
+                object: *collection0
+                arguments:
+                  filter: { _id: validation_sentinel}
+                  update: 
+                    $inc:
+                      count: 1

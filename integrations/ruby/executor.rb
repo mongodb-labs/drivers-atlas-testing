@@ -10,7 +10,7 @@ class UnknownOperationConfiguration < StandardError; end
 class Executor
   def initialize(uri, spec)
     @uri, @spec = uri, spec
-    @operation_count = @failure_count = @error_count = 0
+    @operation_count = @success_count = @failure_count = @error_count = 0
   end
 
   attr_reader :uri, :spec
@@ -54,8 +54,8 @@ class Executor
   def result
     {
       numOperations: @operation_count,
-      numSuccessfulOperations: @operation_count-@error_count-@failure_count,
-      numSuccesses: @operation_count-@error_count-@failure_count,
+      numSuccessfulOperations: @success_count,
+      numSuccesses: @success_count,
       numErrors: @error_count,
       numFailures: @failure_count,
     }
@@ -65,6 +65,11 @@ class Executor
     {}.tap do |event_result|
       unified_tests.map do |test|
         @operation_count += test.entities.get(:iteration_count, 'iterations')
+        @success_count += test.entities.get(:success_count, 'successes')
+        test.entities[:event_list]&.each do |name, events|
+          event_result[name] ||= []
+          event_result[name] += events
+        end
         test.entities[:event_list]&.each do |name, events|
           event_result[name] ||= []
           event_result[name] += events

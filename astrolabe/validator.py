@@ -148,6 +148,30 @@ class ValidateWorkloadExecutor(TestCase):
                 "to be reported, got {} instead.".format(
                     num_reported_finds, num_reported_failures))
 
+    def test_num_failures_as_errors(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.load(open('tests/validator-numFailures-as-errors.yml').read(), Loader=yaml.FullLoader)['driverWorkload']
+        )
+
+        stats = self.run_test(driver_workload)
+
+        num_reported_finds = stats['numSuccesses']
+
+        num_reported_errors = stats['numErrors']
+        num_reported_failures = stats['numFailures']
+        if abs(num_reported_errors - num_reported_finds) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected approximately {} errored operations "
+                "to be reported, got {} instead.".format(
+                    num_reported_finds, num_reported_failures))
+        if num_reported_failures > 0:
+            self.fail(
+                "The workload executor reported unexpected execution "
+                "statistics. Expected all failures to be reported as errors, "
+                "got {} failures instead.".format(
+                    num_reported_failures))
+
 
 def validator_factory(workload_executor, connection_string, startup_time):
     ValidateWorkloadExecutor.WORKLOAD_EXECUTOR = workload_executor
