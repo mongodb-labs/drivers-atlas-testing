@@ -108,8 +108,8 @@ A Test Scenario File has the following keys:
   define the server operations to execute during maintenance. There SHOULD
   be exactly one ``loop`` operation per scenario, and it SHOULD be the last
   operation in the scenario. The scenario SHOULD use
-  ``storeErrorsAsEntity``, ``storeFailuresAsEntity`` and
-  ``storeIterationsAsEntity`` operation arguments to allow the workload
+  ``storeErrorsAsEntity``, ``storeFailuresAsEntity``, ``storeSuccesesAsEntity``
+  and ``storeIterationsAsEntity`` operation arguments to allow the workload
   executor to retrieve errors and failures that occur during these operations.
   
   The scenario MAY use ``storeEventsAsEntities`` operation argument

@@ -101,6 +101,12 @@ class ValidateWorkloadExecutor(TestCase):
                 "statistics. Expected {} successful "
                 "updates to be reported, got {} instead.".format(
                     update_count, num_reported_updates))
+        if abs(stats['numIterations'] - update_count) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected {} iterations "
+                "to be reported, got {} instead.".format(
+                    update_count, stats['numIterations']))
         if update_count == 0:
             self.fail(
                 "The workload executor didn't execute any operations "
@@ -130,6 +136,12 @@ class ValidateWorkloadExecutor(TestCase):
                 "statistics. Expected approximately {} errored operations "
                 "to be reported, got {} instead.".format(
                     num_reported_updates, num_reported_errors))
+        if abs(stats['numIterations'] - update_count) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected {} iterations "
+                "to be reported, got {} instead.".format(
+                    update_count, stats['numIterations']))
 
     def test_num_failures(self):
         driver_workload = JSONObject.from_dict(
@@ -147,6 +159,12 @@ class ValidateWorkloadExecutor(TestCase):
                 "statistics. Expected approximately {} errored operations "
                 "to be reported, got {} instead.".format(
                     num_reported_finds, num_reported_failures))
+        if abs(stats['numIterations'] - num_reported_finds) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected {} iterations "
+                "to be reported, got {} instead.".format(
+                    num_reported_finds, stats['numIterations']))
 
     def test_num_failures_as_errors(self):
         driver_workload = JSONObject.from_dict(
@@ -171,6 +189,12 @@ class ValidateWorkloadExecutor(TestCase):
                 "statistics. Expected all failures to be reported as errors, "
                 "got {} failures instead.".format(
                     num_reported_failures))
+        if abs(stats['numIterations'] - num_reported_finds) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected {} iterations "
+                "to be reported, got {} instead.".format(
+                    num_reported_finds, stats['numIterations']))
 
 
 def validator_factory(workload_executor, connection_string, startup_time):

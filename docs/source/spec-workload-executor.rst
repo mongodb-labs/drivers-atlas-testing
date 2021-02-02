@@ -102,6 +102,9 @@ After accepting the inputs, the workload executor:
    * iteration count: the number of iterations that the workload executor
      performed over the looped operations.
    
+   * success count: the number of successful operations that the workload
+     executor performed over the looped operations.
+   
    * error lists: arrays of documents describing the errors that occurred
      while the workload executor was executing the operations. Each client
      entity may report errors to a separate error list, or the same
@@ -152,8 +155,9 @@ After accepting the inputs, the workload executor:
    * ``numFailures``: the number of operation failures that were encountered
      during the test. This includes failures handled by the workload executor
      and failures handled by the unified test runner.
-   * ``numSuccesses``: the number of successful loop iterations executed
+   * ``numSuccesses``: the number of successful operations executed
      during the test.
+   * ``numIterations``: the number of loop iterations executed during the test.
 
  .. note:: The values of ``numErrors`` and ``numFailures`` are used by ``astrolabe`` to determine the overall
     success or failure of a driver workload execution. A non-zero value for either of these fields is construed
