@@ -43,7 +43,8 @@ class Executor
   end
 
   def unified_group
-    @unified_group ||= Unified::TestGroup.new(spec, client_args: uri)
+    @unified_group ||= Unified::TestGroup.new(spec,
+      client_args: uri, kill_sessions: false)
   end
 
   def unified_tests
