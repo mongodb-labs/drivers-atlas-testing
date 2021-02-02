@@ -18,6 +18,8 @@ class Executor
   attr_reader :metrics_collector
 
   def run
+    unified_tests
+
     set_signal_handler
     unified_tests.each do |test|
       test.create_entities
