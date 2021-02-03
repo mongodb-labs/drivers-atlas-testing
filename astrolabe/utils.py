@@ -251,7 +251,9 @@ class DriverWorkloadSubprocessRunner:
         else:
             os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
 
-        t_wait = 10
+        # Since the default server selection timeout is 30 seconds,
+        # allow up to 60 seconds for the workload executor to terminate.
+        t_wait = 60
         try:
             self.workload_subprocess.wait(timeout=t_wait)
             LOGGER.info("Stopped workload executor [PID: {}]".format(self.pid))
