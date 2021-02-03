@@ -46,8 +46,12 @@ A Test Scenario File has the following keys:
             instanceSizeName: M10
         processArgs: {}
 
-  * testFailover: trigger an election in the cluste rusing the "test failover"
+  * testFailover: trigger an election in the cluster using the "test failover"
     API endpoint. The value MUST be ``true``.
+    
+    The workload executor MUST ignore the value of this key, so that
+    the value can be changed to a hash in the future to provide options
+    to the operation.
     
     testFailover SHOULD be followed by sleep and waitForIdle operations
     because it does not update maintenance state synchronously (see
@@ -60,6 +64,10 @@ A Test Scenario File has the following keys:
   * restartVms: perform a rolling restart of all nodes in the cluster.
     This operation requires Atlas Global Operator API key to be set when
     invoking ``astrolabe``. The value MUST be ``true``.
+    
+    The workload executor MUST ignore the value of this key, so that
+    the value can be changed to a hash in the future to provide options
+    to the operation.
 
     testFailover SHOULD be followed by sleep and waitForIdle operations
     because it does not update maintenance state synchronously.
@@ -95,6 +103,10 @@ A Test Scenario File has the following keys:
     
   * waitForIdle: wait for cluster maintenance state to become "idle".
     The value MUST be ``true``.
+    
+    The workload executor MUST ignore the value of this key, so that
+    the value can be changed to a hash in the future to provide options
+    to the operation.
 
     Example::
 
