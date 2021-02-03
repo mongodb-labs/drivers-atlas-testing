@@ -16,8 +16,8 @@ initialConfiguration:
   processArgs: {}
 
 operations:
-  -
-    assertPrimaryRegion: US_WEST_1
+  - assertPrimaryRegion:
+      region: US_WEST_1
   
   -
     setClusterConfiguration:
