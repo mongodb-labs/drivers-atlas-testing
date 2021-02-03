@@ -28,20 +28,18 @@ driverWorkload:
         uriOptions:
           retryReads: true
         storeEventsAsEntities:
-          CommandStartedEvent: command
-          CommandSucceededEvent: command
-          CommandFailedEvent: command
-          PoolCreatedEvent: connection
-          PoolReadyEvent: connection
-          PoolClearedEvent: connection
-          PoolClosedEvent: connection
-          ConnectionCreatedEvent: connection
-          ConnectionReadyEvent: connection
-          ConnectionClosedEvent: connection
-          ConnectionCheckOutStartedEvent: connection
-          ConnectionCheckOutFailedEvent: connection
-          ConnectionCheckedOutEvent: connection
-          ConnectionCheckedInEvent: connection
+          connection:
+            - PoolCreatedEvent
+            - PoolReadyEvent
+            - PoolClearedEvent
+            - PoolClosedEvent
+            - ConnectionCreatedEvent
+            - ConnectionReadyEvent
+            - ConnectionClosedEvent
+            - ConnectionCheckOutStartedEvent
+            - ConnectionCheckOutFailedEvent
+            - ConnectionCheckedOutEvent
+            - ConnectionCheckedInEvent
     - database:
         id: &database0 database0
         client: *client0
