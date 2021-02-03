@@ -8,6 +8,19 @@ driverWorkload:
   createEntities:
     - client:
         id: &client0 client0
+        storeEventsAsEntities:
+          connection:
+            - PoolCreatedEvent
+            - PoolReadyEvent
+            - PoolClearedEvent
+            - PoolClosedEvent
+            - ConnectionCreatedEvent
+            - ConnectionReadyEvent
+            - ConnectionClosedEvent
+            - ConnectionCheckOutStartedEvent
+            - ConnectionCheckOutFailedEvent
+            - ConnectionCheckedOutEvent
+            - ConnectionCheckedInEvent
     - database:
         id: &database0 database0
         client: *client0

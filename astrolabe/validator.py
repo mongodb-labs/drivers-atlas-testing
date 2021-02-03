@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os, os.path
 from copy import deepcopy
 from subprocess import TimeoutExpired
 from time import sleep
@@ -89,6 +90,9 @@ class ValidateWorkloadExecutor(TestCase):
         driver_workload = JSONObject.from_dict(
             yaml.load(open('tests/validator-simple.yml').read(), Loader=yaml.FullLoader)['driverWorkload']
         )
+        
+        if os.path.exists('events.json'):
+            os.unlink('events.json')
 
         stats = self.run_test(driver_workload)
 
@@ -111,6 +115,21 @@ class ValidateWorkloadExecutor(TestCase):
             self.fail(
                 "The workload executor didn't execute any operations "
                 "or didn't execute them appropriately.")
+                
+        events = yaml.load(open('events.json').read())
+        if 'connection' not in events:
+            self.fail(
+                "The workload executor didn't record connection events as expected.")
+        for event in events['connection']:
+            if 'name' not in event:
+                self.fail(
+                    "The workload executor didn't record event name as expected.")
+            if not event['name'].endswith('Event'):
+                self.fail(
+                    "The workload executor didn't record event name as expected.")
+            if 'observedAt' not in event:
+                self.fail(
+                    "The workload executor didn't record observation time as expected.")
 
     def test_num_errors(self):
         driver_workload = JSONObject.from_dict(
