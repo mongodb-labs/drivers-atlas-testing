@@ -233,7 +233,7 @@ Pseudocode Implementation
 Reference Implementation
 ------------------------
 
-`PyMongo's workload executor <https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/integrations/python/pymongo/workload-executor>`_
+`Ruby's workload executor <https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/integrations/ruby/workload-executor>`_
 serves as the reference implementation of the script described by this specification.
 
 
