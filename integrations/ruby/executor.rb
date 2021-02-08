@@ -92,7 +92,11 @@ class Executor
         end
       end
       File.open('events.json', 'w') do |f|
-        f << JSON.dump(event_result)
+        f << JSON.dump(
+          errors: @errors,
+          failures: @failures,
+          events: @events,
+        )
       end
     end
     File.open('results.json', 'w') do |f|

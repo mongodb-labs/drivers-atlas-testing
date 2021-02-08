@@ -188,26 +188,41 @@ Pseudocode Implementation
         }
         
         let results = {};
-        let numIterations = runner.entityMap.get('iterations');
-        let numSuccesses = runner.entityMap.get('successes');
-        let numErrors = 0;
-        let numFailures = 0;
-        for (name, events in runner.entityMap.get('events')) {
-            results[name] ||= [];
-            results[name].concat(events);
+        try {
+          numIterations = runner.entityMap.get('iterations');
+        } catch {
+          numIterations = -1;
         }
-        for (name, errors in runner.entityMap.get('errors')) {
-            results[name] ||= [];
-            results[name].concat(errors);
-            numErrors += errors.length;
+        try {
+          numSuccesses = runner.entityMap.get('successes');
+        } catch {
+          numSuccesses = -1;
         }
-        for (name, failures in runner.entityMap.get('failures')) {
-            results[name] ||= [];
-            results[name].concat(failures);
-            numFailures += failures.length;
+        try {
+          errors = runner.entityMap.get('errors');
+          numErrors = errors.length;
+        } catch {
+          errors = [];
+          numErrors = -1;
         }
-        fs.writeFile('events.json', JSON.stringify(results);
+        try {
+          failures = runner.entityMap.get('failures');
+          numFailures = failures.length;
+        } catch {
+          failures = [];
+          numFailures = -1;
+        }
+        try {
+          events = runner.entityMap.get('events');
+        } catch {
+          events = [];
+        }
 
+        fs.writeFile('events.json', JSON.stringify({
+            events: events,
+            errors: errors,
+            failures: failures,
+        }));
         fs.writeFile('results.json', JSON.stringify({
             ‘numErrors’: numErrors,
             'numFailures': numFailures,
