@@ -64,15 +64,32 @@ class Executor
 
   def write_result
     {}.tap do |event_result|
+      @iteration_count = -1
+      @success_count = -1
       @events = []
       @errors = []
       @failures = []
       unified_tests.map do |test|
-        @iteration_count += test.entities.get(:iteration_count, 'iterations')
-        @success_count += test.entities.get(:success_count, 'successes')
-        @events += test.entities.get(:event_list, 'events')
-        @errors += test.entities.get(:error_list, 'errors')
-        @failures += test.entities.get(:failure_list, 'failures')
+        begin
+          @iteration_count += test.entities.get(:iteration_count, 'iterations')
+        rescue Unified::Error::EntityMissing
+        end
+        begin
+          @success_count += test.entities.get(:success_count, 'successes')
+        rescue Unified::Error::EntityMissing
+        end
+        begin
+          @events += test.entities.get(:event_list, 'events')
+        rescue Unified::Error::EntityMissing
+        end
+        begin
+          @errors += test.entities.get(:error_list, 'errors')
+        rescue Unified::Error::EntityMissing
+        end
+        begin
+          @failures += test.entities.get(:failure_list, 'failures')
+        rescue Unified::Error::EntityMissing
+        end
       end
       File.open('events.json', 'w') do |f|
         f << JSON.dump(event_result)

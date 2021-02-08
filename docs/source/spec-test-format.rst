@@ -116,12 +116,15 @@ A Test Scenario File has the following keys:
   The document must be a complete test as defined by the
   `Unified Test Format specification <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
   
-  The workload SHOULD use the ``loop`` unified test format operation to
+  The workload MUST use a single test, as defined in the unified test format
+  specification.
+  
+  The workload MUST use the ``loop`` unified test format operation to
   define the MongoDB operations to execute during maintenance. There MUST
   be exactly one ``loop`` operation per scenario, and it SHOULD be the last
   operation in the scenario.
 
-  The scenario SHOULD use ``storeErrorsAsEntity``, ``storeFailuresAsEntity``,
+  The scenario MUST use ``storeErrorsAsEntity``, ``storeFailuresAsEntity``,
   ``storeSuccesesAsEntity`` and ``storeIterationsAsEntity`` operation arguments
   to allow the workload executor to retrieve errors, failures and operation
   counts for the executed workload. The entity names for these options MUST

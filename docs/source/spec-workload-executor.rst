@@ -188,7 +188,8 @@ Pseudocode Implementation
         }
         
         let results = {};
-        let numSuccesses = runner.entityMap.get('iterationCount');
+        let numIterations = runner.entityMap.get('iterations');
+        let numSuccesses = runner.entityMap.get('successes');
         let numErrors = 0;
         let numFailures = 0;
         for (name, events in runner.entityMap.get('events')) {
