@@ -55,7 +55,7 @@ A Test Scenario File has the following keys:
     
     testFailover SHOULD be followed by sleep and waitForIdle operations
     because it does not update maintenance state synchronously (see
-    `PRODTRUAGE-1232 <https://jira.mongodb.org/browse/PRODTRIAGE-1232>`_).
+    `PRODTRIAGE-1232 <https://jira.mongodb.org/browse/PRODTRIAGE-1232>`_).
 
     Example::
     
