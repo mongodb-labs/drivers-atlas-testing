@@ -9,7 +9,7 @@ driverWorkload:
     - client:
         id: &client0 client0
         storeEventsAsEntities:
-          connection:
+          events:
             - PoolCreatedEvent
             - PoolReadyEvent
             - PoolClearedEvent

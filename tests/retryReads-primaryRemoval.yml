@@ -56,7 +56,7 @@ driverWorkload:
         uriOptions:
           retryReads: true
         storeEventsAsEntities:
-          connection:
+          events:
             - PoolCreatedEvent
             - PoolReadyEvent
             - PoolClearedEvent
@@ -93,6 +93,7 @@ driverWorkload:
           arguments:
             storeErrorsAsEntity: errors
             storeIterationsAsEntity: iterations
+            storeSuccessesAsEntity: successes
             operations:
               - name: find
                 object: *collection0
