@@ -15,7 +15,6 @@ class Executor
 
   attr_reader :uri, :spec
   attr_reader :iteration_count, :failure_count, :error_count
-  attr_reader :metrics_collector
 
   def run
     unified_tests

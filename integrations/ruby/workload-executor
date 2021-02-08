@@ -62,6 +62,5 @@ executor = Executor.new(uri, spec)
 if options[:insert]
   executor.load_data
 else
-  $metrics_collector = executor.metrics_collector
   executor.run
 end
