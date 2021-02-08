@@ -119,10 +119,18 @@ A Test Scenario File has the following keys:
   The workload SHOULD use the ``loop`` unified test format operation to
   define the MongoDB operations to execute during maintenance. There MUST
   be exactly one ``loop`` operation per scenario, and it SHOULD be the last
-  operation in the scenario. The scenario SHOULD use
-  ``storeErrorsAsEntity``, ``storeFailuresAsEntity``, ``storeSuccesesAsEntity``
-  and ``storeIterationsAsEntity`` operation arguments to allow the workload
-  executor to retrieve errors and failures that occur during these operations.
+  operation in the scenario.
+
+  The scenario SHOULD use ``storeErrorsAsEntity``, ``storeFailuresAsEntity``,
+  ``storeSuccesesAsEntity`` and ``storeIterationsAsEntity`` operation arguments
+  to allow the workload executor to retrieve errors, failures and operation
+  counts for the executed workload. The entity names for these options MUST
+  be as follows:
+  
+  - ``storeErrorsAsEntity``: ``errors``
+  - ``storeFailuresAsEntity``: ``failures``
+  - ``storeSuccessesAsEntity``: ``successes``
+  - ``storeIterationsAsEntity``: ``iterations``
   
   The scenario MAY use ``storeEventsAsEntities`` operation argument
   when defining MongoClients to record CMAP events published during maintenance.

@@ -63,7 +63,8 @@ After accepting the inputs, the workload executor:
    terminated by the workload executor; otherwise, the workload will terminate
    when the unified test runner finishes executing all of the operations.
    The workload executor MUST handle the case of a non-looping workload and
-   it MUST terminate when the workload terminates.
+   it MUST terminate if the unified test runner completely executes the
+   specified workload.
    
    If the unified test runner raises an error while executing the workload,
    the error MUST be reported using the same format as errors handled by the
@@ -81,68 +82,55 @@ After accepting the inputs, the workload executor:
    be treated as errors by the workload executor.
 
 #. Upon receipt of the termination signal, MUST instruct the
-   unified test runner to stop running the ``loop`` operation, if one
-   is currently running. If the unified test runner is not currently running
-   any ``loop`` operations, the workload executor MUST instruct the
-   unified test runner to terminate when the next ``loop`` operation is
-   encountered. The workload executor MAY attempt to terminate the
-   unified test runner sooner (such as instructing the unified test runner
-   to terminate after completing the current operation).
-   The workload executor SHOULD terminate the unified test runner gracefully,
-   such that in-progress operations are completed to their natural outcome
-   (success or failure).
+   unified test runner to stop looping, as defined in the unified test format.
 
-#. MUST wait for the unified test runner to terminate, either due to the
-   receipt of the termination signal or due to completely executing all of
-   the operations if they do not include loops.
+#. MUST wait for the unified test runner to finish executing.
    
-#. MUST use the driver's unified test runner to retrieve the following
-   entities from the entity map, if they are set:
+#. MUST use the unified test runner to retrieve the following
+   entities by name from the entity map, if they are set:
    
-   * iteration count: the number of iterations that the workload executor
-     performed over the looped operations.
+   * ``iterations``: the number of iterations that the workload executor
+     performed over the looped operations. If the iteration count was not
+     reported by the test runner, such as because the respective option was
+     not specified in the test scenario, the workload executor MUST use
+     ``-1`` as the number of iterations.
    
-   * success count: the number of successful operations that the workload
-     executor performed over the looped operations.
+   * ``successes``: the number of successful operations that the workload
+     executor performed over the looped operations. If the iteration count
+     was not reported by the test runner, such as because the respective
+     option was not specified in the test scenario, the workload executor
+     MUST use ``-1`` as the number of successes.
    
-   * error lists: arrays of documents describing the errors that occurred
-     while the workload executor was executing the operations. Each client
-     entity may report errors to a separate error list, or the same
-     error list may be used by multiple client entities.
+   * ``errors``: array of documents describing the errors that occurred
+     while the workload executor was executing the operations.
    
-   * failure lists: arrays of documents describing the failures that occurred
-     while the workload executor was executing the operations. Each client
-     entity may report errors to a separate failure list, or the same
-     failure list may be used by multiple client entities.
+   * ``failures``: array of documents describing the failures that occurred
+     while the workload executor was executing the operations.
    
-   * event lists: arrays of documents describing the events that occurred
-     while the workload executor was executing the operations. Each client
-     entity may report events to a separate event list, or the same
-     event list may be used by multiple client entities.
+   * ``events``: array of documents describing the CMAP events that occurred
+     while the workload executor was executing the operations.
 
 #. MUST calculate the aggregate counts of errors (``numErrors``) and failures
-   (``numFailures``) from the error and failure lists.
+   (``numFailures``) from the error and failure lists. If the errors or
+   failures were not reported by the test runner, such as because the
+   respective options were not specified in the test scenario, the workload
+   executor MUST use ``-1`` as the value for the respective counts.
 
 #. MUST write the collected events, errors and failures into a JSON file named
    ``events.json`` in the current directory
    (i.e. the directory from where the workload executor is being executed). 
    The data written MUST be a map with the following fields:
    
-   - For each event list entity, the name of the entity MUST become a key and the
-     documents stored in the entity MUST become the respective value.
+   - ``events``: the collected CMAP events.
    
-   - For each error list entity, the name of the entity MUST become a key and the
-     documents stored in the entity MUST become the respective value.
+   - ``errors``: the reported errors.
    
-   - The errors that the workload executor handles MUST be stored using the
-     ``errors`` key.
+   - ``failures``: the reported errors.
    
-   - For each failure list entity, the name of the entity MUST become a key and the
-     documents stored in the entity MUST become the respective value.
-   
-   - The failures that the workload executor handles MUST be stored using the
-     ``failures`` key.
-         
+   If events, errors or failures were not reported by the unified test runner,
+   such as because the scenario did not specify the corresponding options,
+   the workload executor MUST write empty arrays into ``events.json``.
+
 #. MUST write the collected workload statistics into a JSON file named
    ``results.json`` in the current working directory (i.e. the directory
    from where the workload executor is being executed). Workload statistics
