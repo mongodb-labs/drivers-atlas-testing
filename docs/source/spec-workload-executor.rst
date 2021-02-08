@@ -110,6 +110,10 @@ After accepting the inputs, the workload executor:
    * ``events``: array of documents describing the CMAP events that occurred
      while the workload executor was executing the operations.
 
+   If the driver's unified test format does not distinguish between errors
+   and failures, and reports one but not the other, the workload executor MUST
+   set the non-reported entry to the empty array.
+
 #. MUST calculate the aggregate counts of errors (``numErrors``) and failures
    (``numFailures``) from the error and failure lists. If the errors or
    failures were not reported by the test runner, such as because the
