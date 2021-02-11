@@ -36,7 +36,7 @@ driverWorkload:
           arguments:
             storeIterationsAsEntity: iterations
             storeSuccessesAsEntity: successes
-            storeFailuresAsEntity: errors
+            storeFailuresAsEntity: failures
             operations:
               - name: find
                 object: *collection0
