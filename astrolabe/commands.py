@@ -139,9 +139,9 @@ def aggregate_statistics():
     max_counts = defaultdict(lambda: 0)
     conn_count = max_conn_count = 0
     for e in conn_events:
-        if e['name'] == 'ConnectionCreated':
+        if e['name'] == 'ConnectionCreatedEvent':
             counts[e['address']] += 1
-        elif e['name'] == 'ConnectionClosed':
+        elif e['name'] == 'ConnectionClosedEvent':
             counts[e['address']] -= 1
         if counts[e['address']] > max_counts[e['address']]:
             max_counts[e['address']] = counts[e['address']]
