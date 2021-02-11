@@ -45,7 +45,7 @@ class PollerBase:
         timer.start()
         while timer.elapsed < self.timeout:
             logmsg = "Polling {} [elapsed: {:.2f} seconds]"
-            LOGGER.debug(logmsg.format(objects, timer.elapsed))
+            LOGGER.info(logmsg.format(objects, timer.elapsed))
             for obj in objects:
                 return_value = self._check_ready(obj, attribute, args, kwargs)
                 if return_value:

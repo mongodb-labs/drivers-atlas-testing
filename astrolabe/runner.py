@@ -261,12 +261,22 @@ class AtlasTestCase:
         return junit_test
         
     def wait_for_idle(self):
-        selector = BooleanCallablePoller(
-            frequency=self.config.polling_frequency,
-            timeout=self.config.polling_timeout)
-        LOGGER.info("Waiting for cluster maintenance to complete")
-        selector.poll([self], attribute="is_cluster_state", args=("IDLE",),
-                      kwargs={})
+        LOGGER.info("Waiting for cluster %s to become idle" % self.cluster_name)
+        timer = Timer()
+        timer.start()
+        ok = False
+        timeout = self.config.polling_timeout
+        wanted_state = 'idle'
+        while timer.elapsed < timeout:
+            cluster_info = self.cluster_url.get().data
+            actual_state = cluster_info.stateName.lower()
+            if actual_state == wanted_state:
+                ok = True
+                break
+            LOGGER.info("Cluster %s: current state: %s; wanted state: %s; waited for %.1f sec" % (self.cluster_name, actual_state, wanted_state, timer.elapsed))
+            sleep(1.0 / self.config.polling_frequency)
+        if not ok:
+            raise PollingTimeoutError("Polling timed out after %s seconds" % timeout)
 
 
 class SpecTestRunnerBase:
@@ -360,15 +370,10 @@ class SpecTestRunnerBase:
         # Step-2: run tests round-robin until all have been run.
         remaining_test_cases = self.cases.copy()
         while remaining_test_cases:
-            selector = BooleanCallablePoller(
-                frequency=self.config.polling_frequency,
-                timeout=self.config.polling_timeout)
+            active_case = remaining_test_cases[0]
 
             # Select a case whose cluster is ready.
-            LOGGER.info("Waiting for a test cluster to become ready")
-            active_case = selector.poll(
-                remaining_test_cases, attribute="is_cluster_state",
-                args=("IDLE",), kwargs={})
+            active_case.wait_for_idle()
             LOGGER.info("Test cluster {!r} is ready".format(
                 active_case.cluster_name))
 
