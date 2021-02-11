@@ -91,6 +91,8 @@ class Executor
         rescue Unified::Error::EntityMissing
         end
       end
+      @error_count += @errors.length
+      @failure_count += @failures.length
       File.open('events.json', 'w') do |f|
         f << JSON.dump(
           errors: @errors,
