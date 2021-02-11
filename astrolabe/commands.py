@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import defaultdict
 import logging
 import json
 
@@ -110,13 +111,30 @@ def aggregate_statistics():
     
     import numpy
     
-    command_events = events['commands']
-    command_times = [c['duration'] for c in command_events]
+    command_events = [
+        event for event in events['events']
+        if event['name'].startswith('Command')
+    ]
+    map = {}
+    correlated_events = []
+    for event in command_events:
+        if event['name'] == 'CommandStartedEvent':
+            map[event['requestId']] = event
+        else:
+            started_event = map[event['requestId']]
+            del map[event['requestId']]
+            _event = dict(started_event)
+            _event.update(event)
+            correlated_events.append(_event)
+    command_times = [c['duration'] for c in correlated_events]
     stats['avgCommandTime'] = numpy.average(command_times)
     stats['p95CommandTime'] = numpy.percentile(command_times, 95)
     stats['p99CommandTime'] = numpy.percentile(command_times, 99)
     
-    conn_events = events['connections']
+    conn_events = [
+        event for event in events['events']
+        if event['name'].startswith('Connection') or event['name'].startswith('Pool')
+    ]
     counts = defaultdict(lambda: 0)
     max_counts = defaultdict(lambda: 0)
     conn_count = max_conn_count = 0
