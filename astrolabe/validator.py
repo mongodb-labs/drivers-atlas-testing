@@ -116,20 +116,37 @@ class ValidateWorkloadExecutor(TestCase):
                 "The workload executor didn't execute any operations "
                 "or didn't execute them appropriately.")
                 
-        events = yaml.safe_load(open('events.json').read())
-        if 'connection' not in events:
+        _events = yaml.safe_load(open('events.json').read())
+        if 'events' not in _events:
+            self.fail(
+                "The workload executor didn't record events as expected.")
+        events = _events['events']
+        connection_events = [event for event in events
+            if event['name'].startswith('Connection')]
+        if not connection_events:
             self.fail(
                 "The workload executor didn't record connection events as expected.")
-        for event in events['connection']:
-            if 'name' not in event:
-                self.fail(
-                    "The workload executor didn't record event name as expected.")
-            if not event['name'].endswith('Event'):
-                self.fail(
-                    "The workload executor didn't record event name as expected.")
-            if 'observedAt' not in event:
-                self.fail(
-                    "The workload executor didn't record observation time as expected.")
+        pool_events = [event for event in events
+            if event['name'].startswith('Pool')]
+        if not pool_events:
+            self.fail(
+                "The workload executor didn't record connection pool events as expected.")
+        command_events = [event for event in events
+            if event['name'].startswith('Command')]
+        if not command_events:
+            self.fail(
+                "The workload executor didn't record command events as expected.")
+        for event_list in [connection_events, pool_events, command_events]:
+            for event in event_list:
+                if 'name' not in event:
+                    self.fail(
+                        "The workload executor didn't record event name as expected.")
+                if not event['name'].endswith('Event'):
+                    self.fail(
+                        "The workload executor didn't record event name as expected.")
+                if 'observedAt' not in event:
+                    self.fail(
+                        "The workload executor didn't record observation time as expected.")
 
     def test_num_errors(self):
         driver_workload = JSONObject.from_dict(
