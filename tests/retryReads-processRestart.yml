@@ -42,6 +42,9 @@ driverWorkload:
             - ConnectionCheckOutFailedEvent
             - ConnectionCheckedOutEvent
             - ConnectionCheckedInEvent
+            - CommandStartedEvent
+            - CommandSucceededEvent
+            - CommandFailedEvent
     - database:
         id: &database0 database0
         client: *client0
