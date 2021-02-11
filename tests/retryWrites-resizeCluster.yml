@@ -64,4 +64,5 @@ driverWorkload:
             operations:
             - name: insertOne
               object: *collection0
-              arguments: { data: 100 }
+              arguments:
+                document: { data: 100 }
