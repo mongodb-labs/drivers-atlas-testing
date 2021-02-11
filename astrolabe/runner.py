@@ -225,6 +225,10 @@ class AtlasTestCase:
                         else:
                             sleep(5)
 
+        # Wait 10 seconds to ensure that the driver is not experiencing any
+        # errors after the maintenance has concluded.
+        sleep(10)
+        
         # Step-5: interrupt driver workload and capture streams
         stats = self.workload_runner.terminate()
 
