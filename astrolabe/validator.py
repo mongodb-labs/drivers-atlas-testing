@@ -88,7 +88,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_simple(self):
         driver_workload = JSONObject.from_dict(
-            yaml.load(open('tests/validator-simple.yml').read(), Loader=yaml.FullLoader)['driverWorkload']
+            yaml.safe_load(open('tests/validator-simple.yml').read())['driverWorkload']
         )
         
         if os.path.exists('events.json'):
@@ -116,7 +116,7 @@ class ValidateWorkloadExecutor(TestCase):
                 "The workload executor didn't execute any operations "
                 "or didn't execute them appropriately.")
                 
-        events = yaml.load(open('events.json').read())
+        events = yaml.safe_load(open('events.json').read())
         if 'connection' not in events:
             self.fail(
                 "The workload executor didn't record connection events as expected.")
@@ -133,7 +133,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_num_errors(self):
         driver_workload = JSONObject.from_dict(
-            yaml.load(open('tests/validator-numErrors.yml').read(), Loader=yaml.FullLoader)['driverWorkload']
+            yaml.safe_load(open('tests/validator-numErrors.yml').read())['driverWorkload']
         )
 
         stats = self.run_test(driver_workload)
@@ -164,7 +164,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_num_failures(self):
         driver_workload = JSONObject.from_dict(
-            yaml.load(open('tests/validator-numFailures.yml').read(), Loader=yaml.FullLoader)['driverWorkload']
+            yaml.safe_load(open('tests/validator-numFailures.yml').read())['driverWorkload']
         )
 
         stats = self.run_test(driver_workload)
@@ -187,7 +187,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_num_failures_as_errors(self):
         driver_workload = JSONObject.from_dict(
-            yaml.load(open('tests/validator-numFailures-as-errors.yml').read(), Loader=yaml.FullLoader)['driverWorkload']
+            yaml.safe_load(open('tests/validator-numFailures-as-errors.yml').read())['driverWorkload']
         )
 
         stats = self.run_test(driver_workload)

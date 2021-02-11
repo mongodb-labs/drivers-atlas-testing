@@ -286,7 +286,7 @@ class SpecTestRunnerBase:
             # Step-1: load test specification.
             with open(full_path, 'r') as spec_file:
                 test_spec = JSONObject.from_dict(
-                    yaml.load(spec_file, Loader=yaml.FullLoader))
+                    yaml.safe_load(spec_file))
 
             # Step-2: generate test name.
             test_name = get_test_name_from_spec_file(full_path)
