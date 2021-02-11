@@ -22,6 +22,7 @@ from tabulate import tabulate
 import junitparser
 import yaml
 
+from .utils import mongo_client
 from atlasclient import AtlasApiError, JSONObject
 from astrolabe.commands import (
     get_one_organization_by_name, ensure_project, ensure_admin_user,
