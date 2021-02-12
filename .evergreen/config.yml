@@ -30,6 +30,11 @@ functions:
         working_dir: astrolabe-src
         command: |
           ${PYTHON3_BINARY} -m pip install virtualenv
+    - command: subprocess.exec
+      params:
+        working_dir: astrolabe-src
+        command: |
+          cat /etc/resolv.conf
     # Create virtualenv using a CPython 3.5+ binary.
     - command: subprocess.exec
       params:
