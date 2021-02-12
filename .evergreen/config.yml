@@ -363,10 +363,6 @@ axes:
   - id: runtime
     display_name: runtime
     values:
-      - id: python27
-        display_name: CPython-2
-        variables:
-          PYTHON_BINARY: "python"
       - id: python38
         display_name: CPython-3
         variables:
