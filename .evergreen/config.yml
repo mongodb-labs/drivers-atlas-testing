@@ -246,10 +246,6 @@ axes:
   - id: runtime
     display_name: runtime
     values:
-      - id: python27
-        display_name: CPython-2
-        variables:
-          PYTHON_BINARY: "python"
       - id: python38
         display_name: CPython-3
         variables:
@@ -315,7 +311,7 @@ buildvariants:
   matrix_spec:
     driver: ["pymongo-master"]
     platform: ["ubuntu-18.04"]
-    runtime: ["python27", "python38"]
+    runtime: ["python38"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"

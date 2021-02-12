@@ -11,7 +11,6 @@ import traceback
 from pymongo import MongoClient
 from pymongo.cursor import Cursor
 from pymongo.command_cursor import CommandCursor
-from bson.py3compat import iteritems
 
 
 IS_INTERRUPTED = False
@@ -49,7 +48,7 @@ def prepare_operation(operation_spec):
     for arg_name in list(arguments):
         if arg_name == "sort":
             sort_dict = arguments[arg_name]
-            arguments[arg_name] = list(iteritems(sort_dict))
+            arguments[arg_name] = list(sort_dict.items())
     return target_name, cmd_name, arguments, operation_spec.get('result')
 
 
