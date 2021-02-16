@@ -107,8 +107,8 @@ After accepting the inputs, the workload executor:
    * ``failures``: array of documents describing the failures that occurred
      while the workload executor was executing the operations.
    
-   * ``events``: array of documents describing the CMAP events that occurred
-     while the workload executor was executing the operations.
+   * ``events``: array of documents describing the command and CMAP events
+     that occurred while the workload executor was executing the operations.
 
    If the driver's unified test format does not distinguish between errors
    and failures, and reports one but not the other, the workload executor MUST
@@ -125,7 +125,7 @@ After accepting the inputs, the workload executor:
    (i.e. the directory from where the workload executor is being executed). 
    The data written MUST be a map with the following fields:
    
-   - ``events``: the collected CMAP events.
+   - ``events``: the collected command and CMAP events.
    
    - ``errors``: the reported errors.
    
