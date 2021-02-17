@@ -9,9 +9,10 @@ initialConfiguration:
 
 operations:
   -
-    clusterConfiguration: {}
-    processArgs:
-      javascriptEnabled: true
+    setClusterConfiguration:
+      clusterConfiguration: {}
+      processArgs:
+        javascriptEnabled: true
 
 driverWorkload:
   description: "Insert"

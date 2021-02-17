@@ -186,23 +186,23 @@ class AtlasTestCase:
                 self.verify_cluster_configuration_matches(final_config)
                 LOGGER.info("Cluster maintenance complete")
                 
-            if op_name == 'testFailover':
+            elif op_name == 'testFailover':
                 self.cluster_url['restartPrimaries'].post()
                 
                 self.wait_for_idle()
                 
-            if op_name == 'sleep':
+            elif op_name == 'sleep':
                 _time.sleep(op_spec)
                 
-            if op_name == 'waitForIdle':
+            elif op_name == 'waitForIdle':
                 self.wait_for_idle()
                 
-            if op_name == 'restartVms':
+            elif op_name == 'restartVms':
                 rv = self.admin_client.nds.groups[self.project.id].clusters[self.cluster_name].reboot.post(api_version='private')
                 
                 self.wait_for_idle()
                 
-            if op_name == 'assertPrimaryRegion':
+            elif op_name == 'assertPrimaryRegion':
                 region = op_spec['region']
                 
                 cluster_config = self.cluster_url.get().data
@@ -224,6 +224,9 @@ class AtlasTestCase:
                             raise Exception("Primary in cluster not in expected region '%s' (actual region '%s')" % (region, member_region))
                         else:
                             sleep(5)
+                
+                else:
+                    raise Exception('Unrecognized operation %s' % op_name)
 
         # Wait 10 seconds to ensure that the driver is not experiencing any
         # errors after the maintenance has concluded.
