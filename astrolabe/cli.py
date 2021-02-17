@@ -16,7 +16,6 @@ import logging
 from pprint import pprint
 import unittest
 from urllib.parse import unquote_plus
-from collections import defaultdict 
 
 import click
 
@@ -78,7 +77,9 @@ NODELETE_FLAG = click.option(
 
 NOCREATE_FLAG = click.option(
     '--no-create', is_flag=True, default=False,
-    help=('Do not create and configure clusters at the beginning of the run if they already exist, assume they have already been provisioned by a previous run.'))
+    help=('Do not create and configure clusters at the beginning of the run '
+        'if they already exist, assume they have already been provisioned by '
+        'a previous run.'))
 
 
 class ContextStore:
@@ -105,7 +106,6 @@ def cli(ctx, atlas_base_url, atlas_api_username,
     Astrolabe is a command-line application for running automated driver
     tests against a MongoDB Atlas cluster undergoing maintenance.
     """
-    
     # Create an atlasclient and attach it to the context.
     client = AtlasClient(
         base_url=atlas_base_url,
