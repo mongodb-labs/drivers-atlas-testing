@@ -448,7 +448,8 @@ def get_logs_cmd(ctx, spec_test_file, org_name, project_name,
                     cluster_name_salt, polling_timeout, polling_frequency,
                     ):
     """
-    Retrieves logs for the cluster.
+    Retrieves logs for the cluster and saves them in logs.tar.gz in the
+    current working directory.
     """
 
     # Step-1: determine the cluster name for the given test.
