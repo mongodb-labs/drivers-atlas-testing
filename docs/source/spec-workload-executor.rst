@@ -47,7 +47,7 @@ After accepting the inputs, the workload executor:
 #. MUST parse the incoming ``driverWorkload`` document and set up
     the driver's unified test runner to execute the provided workload.
     
-    .. note::
+   .. note::
     
       The workload SHOULD include a ``loop`` operation, as described in the
       unified test format, but the workload executor SHOULD NOT validate that
