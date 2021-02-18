@@ -225,8 +225,8 @@ class AtlasTestCase:
                         else:
                             sleep(5)
                 
-                else:
-                    raise Exception('Unrecognized operation %s' % op_name)
+            else:
+                raise Exception('Unrecognized operation %s' % op_name)
 
         # Wait 10 seconds to ensure that the driver is not experiencing any
         # errors after the maintenance has concluded.
