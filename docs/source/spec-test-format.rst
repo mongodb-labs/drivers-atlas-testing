@@ -112,6 +112,12 @@ A Test Scenario File has the following keys:
 
       waitForIdle: true
 
+  For all maintenance operations other than ``sleep``, after the maintenance
+  operation is performed, ``astrolabe`` will wait for cluster state to become
+  idle. When performing a VM restart in a sharded cluster, due to the state
+  not being updated for a potentially long time, the test SHOULD add an
+  explicit ``sleep`` operation for at least 30 seconds.
+
 * driverWorkload (document): Description of the driver workload to execute
   The document must be a complete test as defined by the
   `Unified Test Format specification <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
