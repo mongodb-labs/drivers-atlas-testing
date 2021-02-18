@@ -77,6 +77,7 @@ class _ApiComponent:
 class _ApiResponse:
     """Private wrapper class for processing HTTP responses."""
     def __init__(self, response, request_method, json_data):
+        self.response = response
         self.resource_url = response.url
         self.headers = response.headers
         self.status_code = response.status_code
@@ -152,6 +153,7 @@ class AtlasClient:
           - `timeout` (float, optional): time, in seconds, after which an
             HTTP request to the Atlas API should timeout. Default: 10.0.
         """
+        self.username=username
         self.config = ClientConfiguration(
             base_url=base_url, api_version=api_version,
             timeout=timeout, auth=requests.auth.HTTPDigestAuth(
@@ -220,8 +222,13 @@ class AtlasClient:
 
     def construct_resource_url(self, path, api_version=None):
         url_template = "{base_url}/{version}/{resource_path}"
+        if path and path[0] == '/':
+            url_template = '{base_url}{resource_path}'
+        base_url = self.config.base_url
+        # Allow trailing slash like https://cloud-dev.mongodb.com/ in the base URL
+        base_url = base_url.rstrip('/')
         return url_template.format(
-            base_url=self.config.base_url,
+            base_url=base_url,
             version=api_version or self.config.api_version,
             resource_path=path)
 
@@ -241,14 +248,18 @@ class AtlasClient:
             raise AtlasRateLimitError('Too many requests', response=response,
                                       request_method=method, error_code=429)
 
-        if data is None:
+        if data is None and False:
             raise AtlasApiError('Unable to decode JSON response.',
                                 response=response, request_method=method)
 
         kwargs = {
             'response': response,
             'request_method': method,
-            'error_code': data.get('errorCode')}
+        }
+        
+        if data is not None:
+            kwargs['detail'] = data.get('detail')
+            kwargs['error_code'] = data.get('errorCode')
 
         if response.status_code == 400:
             raise AtlasApiError('400: Bad Request.', **kwargs)

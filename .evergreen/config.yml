@@ -30,6 +30,11 @@ functions:
         working_dir: astrolabe-src
         command: |
           ${PYTHON3_BINARY} -m pip install virtualenv
+    - command: subprocess.exec
+      params:
+        working_dir: astrolabe-src
+        command: |
+          cat /etc/resolv.conf
     # Create virtualenv using a CPython 3.5+ binary.
     - command: subprocess.exec
       params:
@@ -78,11 +83,13 @@ functions:
           CLUSTER_NAME_SALT: ${build_id}
           ATLAS_API_USERNAME: ${atlas_key}
           ATLAS_API_PASSWORD: ${atlas_secret}
-          ATLAS_API_BASE_URL: ${atlas_url}
+          ATLAS_API_BASE_URL: https://cloud-dev.mongodb.com/api
           ATLAS_ORGANIZATION_NAME: ${atlas_organization}
+          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
+          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yaml -e integrations/${DRIVER_DIRNAME}/workload-executor
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yml -e integrations/${DRIVER_DIRNAME}/workload-executor
 
   "validate executor":
     # Run a MongoDB instance locally.
@@ -98,7 +105,7 @@ functions:
         working_dir: astrolabe-src
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests validate-workload-executor -e integrations/${DRIVER_DIRNAME}/workload-executor --connection-string "mongodb://localhost:27017/"
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests validate-workload-executor -e integrations/${DRIVER_DIRNAME}/workload-executor --connection-string "mongodb://localhost:27017/?serverselectiontimeoutms=10000"
 
   "delete test cluster":
     # Delete the cluster that was used to run the test.
@@ -110,17 +117,50 @@ functions:
           CLUSTER_NAME_SALT: ${build_id}
           ATLAS_API_USERNAME: ${atlas_key}
           ATLAS_API_PASSWORD: ${atlas_secret}
-          ATLAS_API_BASE_URL: ${atlas_url}
+          ATLAS_API_BASE_URL: https://cloud-dev.mongodb.com/api
           ATLAS_ORGANIZATION_NAME: ${atlas_organization}
+          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
+          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests delete-cluster tests/${TEST_NAME}.yaml
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests delete-cluster tests/${TEST_NAME}.yml
 
   "upload test results":
     # Upload the xunit-format test results.
     - command: attach.xunit_results
       params:
         file: "astrolabe-src/xunit-output/*.xml"
+
+  "upload server logs":
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: astrolabe-src/logs.tar.gz
+        remote_file: ${UPLOAD_BUCKET}/${version_id}/${build_id}-${task_id}-${execution}/server-logs.tar.gz
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/x-gzip}
+        display_name: "mongodb-logs.tar.gz"
+
+  "upload event logs":
+    - command: shell.exec
+      params:
+        working_dir: astrolabe-src
+        continue_on_err: true       # Because script may not exist OR platform may not be Windows.
+        add_expansions_to_env: true
+        command: |
+          gzip <events.json >events.json.gz
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: astrolabe-src/events.json.gz
+        remote_file: ${UPLOAD_BUCKET}/${version_id}/${build_id}-${task_id}-${execution}/events.json.gz
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/x-gzip}
+        display_name: "events.json.gz"
 
 # Functions to run before the test.
 pre:
@@ -131,6 +171,8 @@ pre:
 post:
   - func: "delete test cluster"
   - func: "upload test results"
+  - func: "upload server logs"
+  - func: "upload event logs"
 
 tasks:
   # Workload executor validation task (patch-only).
@@ -140,26 +182,101 @@ tasks:
     commands:
       - func: "validate executor"
   # One test-case per task.
+  # Use .evergreen/generate-tasks.sh to generate this list.
+  - name: retryReads-move-sharded
+    cron: '@weekly'
+    tags: ["all"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-move-sharded
+  - name: retryReads-move
+    cron: '@weekly'
+    tags: ["all"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-move
+  - name: retryReads-primaryRemoval
+    cron: '@weekly'
+    tags: ["all"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-primaryRemoval
+  - name: retryReads-primaryTakeover
+    cron: '@weekly'
+    tags: ["all"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-primaryTakeover
+  - name: retryReads-processRestart-sharded
+    cron: '@weekly'
+    tags: ["all"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-processRestart-sharded
+  - name: retryReads-processRestart
+    cron: '@weekly'
+    tags: ["all"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-processRestart
   - name: retryReads-resizeCluster
-    tags: ["all", "retryReads", "resizeCluster"]
+    cron: '@weekly'
+    tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-resizeCluster
+  - name: retryReads-testFailover-sharded
+    cron: '@weekly'
+    tags: ["all"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-testFailover-sharded
+  - name: retryReads-testFailover
+    cron: '@weekly'
+    tags: ["all"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-testFailover
   - name: retryReads-toggleServerSideJS
-    tags: ["all", "retryReads", "toggleServerSideJS"]
+    cron: '@weekly'
+    tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-toggleServerSideJS
+  - name: retryReads-vmRestart-sharded
+    cron: '@weekly'
+    tags: ["all"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-vmRestart-sharded
+  - name: retryReads-vmRestart
+    cron: '@weekly'
+    tags: ["all"]
+    commands:
+      - func: "run test"
+        vars:
+          TEST_NAME: retryReads-vmRestart
   - name: retryWrites-resizeCluster
-    tags: ["all", "retryWrites", "resizeCluster"]
+    cron: '@weekly'
+    tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryWrites-resizeCluster
   - name: retryWrites-toggleServerSideJS
-    tags: ["all", "retryWrites", "toggleServerSideJS"]
+    cron: '@weekly'
+    tags: ["all"]
     commands:
       - func: "run test"
         vars:
@@ -307,22 +424,6 @@ axes:
           GOPATH: /home/ubuntu/go
 
 buildvariants:
-- matrix_name: "tests-python"
-  matrix_spec:
-    driver: ["pymongo-master"]
-    platform: ["ubuntu-18.04"]
-    runtime: ["python38"]
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
-- matrix_name: "tests-python-windows"
-  matrix_spec:
-    driver: ["pymongo-master"]
-    platform: ["windows-64"]
-    runtime: ["python37-windows"]
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
 - matrix_name: "tests-ruby"
   matrix_spec:
     driver: ["ruby-master"]
@@ -331,46 +432,65 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
-- matrix_name: tests-node
-  matrix_spec:
-    driver:
-      - node-master
-    platform:
-      - ubuntu-18.04
-    runtime:
-      - node-dubnium
-      - node-erbium
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - .all
-- matrix_name: "tests-java"
-  matrix_spec:
-    driver: ["java-master"]
-    platform: ["ubuntu-18.04"]
-    runtime: ["java11"]
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
-- matrix_name: "tests-dotnet-windows"
-  matrix_spec:
-    driver: ["dotnet-master"]
-    platform: ["windows-64"]
-    runtime:
-      - "dotnet-async-netcoreapp2.1"
-      - "dotnet-sync-netcoreapp2.1"
-      - "dotnet-async-netcoreapp1.1"
-      - "dotnet-sync-netcoreapp1.1"
-      - "dotnet-async-net452"
-      - "dotnet-sync-net452"
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
-- matrix_name: "tests-go"
-  matrix_spec:
-    driver: ["go-master"]
-    platform: ubuntu-18.04
-    runtime: go-13
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
-  
+# TODO: re-enable language builds once workload executors have been
+# re-implemented to work with the new format
+#- matrix_name: "tests-python"
+#  matrix_spec:
+#    driver: ["pymongo-master"]
+#    platform: ["ubuntu-18.04"]
+#    runtime: ["python27", "python38"]
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - ".all"
+#- matrix_name: "tests-python-windows"
+#  matrix_spec:
+#    driver: ["pymongo-master"]
+#    platform: ["windows-64"]
+#    runtime: ["python37-windows"]
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - ".all"
+#- matrix_name: tests-node
+#  matrix_spec:
+#    driver:
+#      - node-master
+#    platform:
+#      - ubuntu-18.04
+#    runtime:
+#      - node-dubnium
+#      - node-erbium
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - .all
+#- matrix_name: "tests-java"
+#  matrix_spec:
+#    driver: ["java-master"]
+#    platform: ["ubuntu-18.04"]
+#    runtime: ["java11"]
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - ".all"
+#- matrix_name: "tests-dotnet-windows"
+#  matrix_spec:
+#    driver: ["dotnet-master"]
+#    platform: ["windows-64"]
+#    runtime:
+#      - "dotnet-async-netcoreapp2.1"
+#      - "dotnet-sync-netcoreapp2.1"
+#      - "dotnet-async-netcoreapp1.1"
+#      - "dotnet-sync-netcoreapp1.1"
+#      - "dotnet-async-net452"
+#      - "dotnet-sync-net452"
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - ".all"
+#- matrix_name: "tests-go"
+#  matrix_spec:
+#    driver: ["go-master"]
+#    platform: ubuntu-18.04
+#    runtime: go-13
+#  display_name: "${driver} ${platform} ${runtime}"
+#  tasks:
+#    - ".all"
+#  
+#

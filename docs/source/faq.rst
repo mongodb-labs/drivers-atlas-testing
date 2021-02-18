@@ -11,15 +11,19 @@ not provided an API key, or that the API key that you have provided is has expir
 see the `MongoDB Atlas API <https://docs.atlas.mongodb.com/>`_ documentation for instructions on
 how to create programmatic API keys.
 
+You also need a set of API keys with Atlas global operator permissions,
+referred to as admin credentials.
+
 ``astrolabe`` can be configured to use API keys in one of 2 ways:
 
 * Using the `-u/--username` and `-p/--password` command options::
 
-    $ astrolabe -u <publicKey> -p <privateKey> check-connection
+    $ astrolabe -u <publicKey> -p <privateKey> --atlas-admin-api-username <publicKey> --atlas-admin-api-password <privateKey> check-connection
 
-* Using the ``ATLAS_API_USERNAME`` and ``ATLAS_API_PASSWORD`` environment variables::
+* Using the ``ATLAS_API_USERNAME``, ``ATLAS_API_PASSWORD``,
+  ``ATLAS_ADMIN_API_USERNAME``, ``ATLAS_ADMIN_API_PASSWORD`` environment variables::
 
-    $ ATLAS_API_USERNAME=<publicKey> ATLAS_API_PASSWORD=<privateKey> astrolabe check-connection
+    $ ATLAS_API_USERNAME=<publicKey> ATLAS_API_PASSWORD=<privateKey> ATLAS_ADMIN_API_USERNAME=<publicKey> ATLAS_ADMIN_API_PASSWORD=<privateKey> astrolabe check-connection
 
 .. _faq-why-custom-distro:
 

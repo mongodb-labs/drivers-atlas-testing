@@ -43,14 +43,37 @@ Before you can start using ``astrolabe``, you must configure it to give it acces
 
 If you haven't done so already, create a
 `MongoDB Atlas Organization <https://docs.atlas.mongodb.com/organizations-projects>`_ (this can
-only be done via the Atlas UI). Make a note of the name of the Atlas organization. You will also need
-a `Programmatic API Key <https://docs.atlas.mongodb.com/configure-api-access/>` for this Atlas Organization with
-"Organization Owner" permissions. The API key will consist of 2 parts - a public key and a private key.
-Finally, declare the following variables to configure ``astrolabe``::
+only be done via the Atlas UI). Make a note of the name of the Atlas organization.
+
+Depending on the test scenario being executed, you will need either one
+or two sets of a `Programmatic API Keys
+<https://docs.atlas.mongodb.com/configure-api-access/>`_: a regular
+key for Atlas Organization you created with "Organization Owner" permissions,
+and potentially a key with Atlas Global Operator permissions (hereafter
+referred to as the "admin key"). The admin key generally must be created by
+a Cloud team member and would typically be issued for the development environment
+of Atlas (`https://cloud-dev.mongodb.com <https://cloud-dev.mongodb.com>`_),
+meaning the organization and projects must also be created in the development
+environment.
+
+Each API key consists of 2 parts - a public key and a private key.
+
+To configure ``astrolabe`` to use production Atlas and specify only a regular
+API key, declare the following variables::
 
   $ export ATLAS_ORGANIZATION_NAME=<Atlas Organization Name>
   $ export ATLAS_API_USERNAME=<API Public Key>
   $ export ATLAS_API_PASSWORD=<API Private Key>
+
+To configure ``astrolabe`` to use development Atlas and specify two sets of
+API keys, declare the following variables::
+
+  $ export ATLAS_ORGANIZATION_NAME=<Atlas Organization Name>
+  $ export ATLAS_API_USERNAME=<API Public Key>
+  $ export ATLAS_API_PASSWORD=<API Private Key>
+  $ export ATLAS_ADMIN_API_USERNAME=<Admin API Public Key>
+  $ export ATLAS_ADMIN_API_PASSWORD=<Admin API Private Key>
+  $ export ATLAS_API_BASE_URL=https://cloud-dev.mongodb.com/api/atlas
 
 Finally, use the ``check-connection`` command to confirm that ``astrolabe`` is able to connect to and authenticate
 with the Atlas API::
@@ -87,11 +110,11 @@ Running Atlas Planned Maintenance Tests
 
 The ``spec-tests`` command-group is used for Atlas Planned Maintenance (APM) tests. To run a single APM test, do::
 
-  $ astrolabe spec-tests run-one <path/to/test-file.yaml> -e <path/to/workload-executor> --project-name <atlasProjectName> --cluster-name-salt <randomString>
+  $ astrolabe spec-tests run-one <path/to/test-file.yml> -e <path/to/workload-executor> --project-name <atlasProjectName> --cluster-name-salt <randomString>
 
 where:
 
-* ``<path/to/test-file.yaml>`` is the absolute or relative path to a test scenario file in the
+* ``<path/to/test-file.yml>`` is the absolute or relative path to a test scenario file in the
   :ref:`test-scenario-format-specification`,
 * ``<path/to/workload-executor>`` is the absolute or relative path to the workload executor of the driver to be tested,
 * ``<atlasProjectName>`` is the name of the Atlas Project under which the test cluster used for the test will be created,
@@ -117,6 +140,15 @@ supports a ``--no-delete`` flag that prevents the deletion of the cluster at the
 Using this flag with a given test file and static ``--cluster-name-salt`` value helps significantly reduce waiting
 times between successive test runs (you will still need to wait for the cluster to be reconfigured to the initial
 configuration).
+
+``astrolabe`` also provides the ``--no-create`` flag which makes it skip
+cluster initialization if the cluster already exists. This flag may be used
+to further speed up the test runs, but it can only be used for scenarios
+where the cluster configuration does not change from the initial one
+(otherwise the test would start with the wrong configuration). Using
+``--no-delete`` is recommended with ``--no-create``, otherwise each run will
+delete the cluster upon completion.
+
 
 Debugging
 ---------

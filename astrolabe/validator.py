@@ -12,24 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os, os.path
 from copy import deepcopy
 from subprocess import TimeoutExpired
 from time import sleep
 from unittest import TestCase
 
 from pymongo import MongoClient
+import yaml
 
 from atlasclient import JSONObject
 from astrolabe.exceptions import WorkloadExecutorError
-from astrolabe.utils import DriverWorkloadSubprocessRunner, load_test_data
-
-
-DRIVER_WORKLOAD = JSONObject.from_dict({
-    'database': 'validation_db',
-    'collection': 'validation_coll',
-    'testData': [{'_id': 'validation_sentinel', 'count': 0}],
-    'operations': []
-})
+from astrolabe.utils import DriverWorkloadSubprocessRunner
 
 
 class ValidateWorkloadExecutor(TestCase):
@@ -39,12 +33,26 @@ class ValidateWorkloadExecutor(TestCase):
 
     def setUp(self):
         self.client = MongoClient(self.CONNECTION_STRING, w='majority')
-        self.coll = self.client.get_database(
-            DRIVER_WORKLOAD['database']).get_collection(
-            DRIVER_WORKLOAD['collection'])
-        load_test_data(self.CONNECTION_STRING, DRIVER_WORKLOAD)
 
     def run_test(self, driver_workload):
+        # Set self.coll for future use of the validator, such that it can
+        # read the data inserted into the collection.
+        # Actual insertion of initial data isn't done via this object.
+        dbname = None
+        collname = None
+        for e in driver_workload['createEntities']:
+            if dbname and collname:
+                break
+            if dbname is None and 'database' in e:
+                dbname = e['database']['databaseName']
+            elif collname is None and 'collection' in e:
+                collname = e['collection']['collectionName']
+
+        if not (dbname and collname):
+            self.fail('Invalid scenario: executor validator test cases must provide database and collection entities')
+
+        self.coll = self.client.get_database(dbname).get_collection(collname)
+        
         subprocess = DriverWorkloadSubprocessRunner()
         try:
             subprocess.spawn(workload_executor=self.WORKLOAD_EXECUTOR,
@@ -79,15 +87,12 @@ class ValidateWorkloadExecutor(TestCase):
         return stats
 
     def test_simple(self):
-        operations = [
-            {'object': 'collection',
-             'name': 'updateOne',
-             'arguments': {
-                 'filter': {'_id': 'validation_sentinel'},
-                 'update': {'$inc': {'count': 1}}}}]
-        driver_workload = deepcopy(DRIVER_WORKLOAD)
-        driver_workload['operations'] = operations
-        driver_workload = JSONObject.from_dict(driver_workload)
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-simple.yml').read())['driverWorkload']
+        )
+        
+        if os.path.exists('events.json'):
+            os.unlink('events.json')
 
         stats = self.run_test(driver_workload)
 
@@ -100,24 +105,53 @@ class ValidateWorkloadExecutor(TestCase):
                 "statistics. Expected {} successful "
                 "updates to be reported, got {} instead.".format(
                     update_count, num_reported_updates))
+        if abs(stats['numIterations'] - update_count) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected {} iterations "
+                "to be reported, got {} instead.".format(
+                    update_count, stats['numIterations']))
         if update_count == 0:
             self.fail(
                 "The workload executor didn't execute any operations "
                 "or didn't execute them appropriately.")
+                
+        _events = yaml.safe_load(open('events.json').read())
+        if 'events' not in _events:
+            self.fail(
+                "The workload executor didn't record events as expected.")
+        events = _events['events']
+        connection_events = [event for event in events
+            if event['name'].startswith('Connection')]
+        if not connection_events:
+            self.fail(
+                "The workload executor didn't record connection events as expected.")
+        pool_events = [event for event in events
+            if event['name'].startswith('Pool')]
+        if not pool_events:
+            self.fail(
+                "The workload executor didn't record connection pool events as expected.")
+        command_events = [event for event in events
+            if event['name'].startswith('Command')]
+        if not command_events:
+            self.fail(
+                "The workload executor didn't record command events as expected.")
+        for event_list in [connection_events, pool_events, command_events]:
+            for event in event_list:
+                if 'name' not in event:
+                    self.fail(
+                        "The workload executor didn't record event name as expected.")
+                if not event['name'].endswith('Event'):
+                    self.fail(
+                        "The workload executor didn't record event name as expected.")
+                if 'observedAt' not in event:
+                    self.fail(
+                        "The workload executor didn't record observation time as expected.")
 
     def test_num_errors(self):
-        operations = [
-            {'object': 'collection',
-             'name': 'updateOne',
-             'arguments': {
-                 'filter': {'_id': 'validation_sentinel'},
-                 'update': {'$inc': {'count': 1}}}},
-            {'object': 'collection',
-             'name': 'doesNotExist',
-             'arguments': {'foo': 'bar'}}]
-        driver_workload = deepcopy(DRIVER_WORKLOAD)
-        driver_workload['operations'] = operations
-        driver_workload = JSONObject.from_dict(driver_workload)
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numErrors.yml').read())['driverWorkload']
+        )
 
         stats = self.run_test(driver_workload)
 
@@ -138,6 +172,65 @@ class ValidateWorkloadExecutor(TestCase):
                 "statistics. Expected approximately {} errored operations "
                 "to be reported, got {} instead.".format(
                     num_reported_updates, num_reported_errors))
+        if abs(stats['numIterations'] - update_count) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected {} iterations "
+                "to be reported, got {} instead.".format(
+                    update_count, stats['numIterations']))
+
+    def test_num_failures(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numFailures.yml').read())['driverWorkload']
+        )
+
+        stats = self.run_test(driver_workload)
+
+        num_reported_finds = stats['numSuccesses']
+
+        num_reported_failures = stats['numFailures']
+        if abs(num_reported_failures - num_reported_finds) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected approximately {} errored operations "
+                "to be reported, got {} instead.".format(
+                    num_reported_finds, num_reported_failures))
+        if abs(stats['numIterations'] - num_reported_finds) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected {} iterations "
+                "to be reported, got {} instead.".format(
+                    num_reported_finds, stats['numIterations']))
+
+    def test_num_failures_as_errors(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numFailures-as-errors.yml').read())['driverWorkload']
+        )
+
+        stats = self.run_test(driver_workload)
+
+        num_reported_finds = stats['numSuccesses']
+
+        num_reported_errors = stats['numErrors']
+        num_reported_failures = stats['numFailures']
+        if abs(num_reported_errors - num_reported_finds) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected approximately {} errored operations "
+                "to be reported, got {} instead.".format(
+                    num_reported_finds, num_reported_failures))
+        if num_reported_failures > 0:
+            self.fail(
+                "The workload executor reported unexpected execution "
+                "statistics. Expected all failures to be reported as errors, "
+                "got {} failures instead.".format(
+                    num_reported_failures))
+        if abs(stats['numIterations'] - num_reported_finds) > 1:
+            self.fail(
+                "The workload executor reported inconsistent execution "
+                "statistics. Expected {} iterations "
+                "to be reported, got {} instead.".format(
+                    num_reported_finds, stats['numIterations']))
 
 
 def validator_factory(workload_executor, connection_string, startup_time):

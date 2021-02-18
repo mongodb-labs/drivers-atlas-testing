@@ -36,7 +36,7 @@ CONFIGURATION_OPTIONS = JSONObject({
         'help': 'Maximum time (in s) to poll API endpoints.',
         'cliopt': '--polling-timeout',
         'envvar': 'ATLAS_POLLING_TIMEOUT',
-        'default': 1200.0},
+        'default': 3600.0},
     'ATLAS_POLLING_FREQUENCY': {
         'type': click.FLOAT,
         'help': 'Frequency (in Hz) at which to poll API endpoints.',
@@ -52,6 +52,16 @@ CONFIGURATION_OPTIONS = JSONObject({
         'help': 'HTTP-Digest password (Atlas API private-key).',
         'cliopt': '--atlas-api-password',
         'envvar': 'ATLAS_API_PASSWORD',
+        'default': None},
+    'ATLAS_ADMIN_API_USERNAME': {
+        'help': 'HTTP-Digest username (Atlas API public-key).',
+        'cliopt': '--atlas-admin-api-username',
+        'envvar': 'ATLAS_ADMIN_API_USERNAME',
+        'default': None},
+    'ATLAS_ADMIN_API_PASSWORD': {
+        'help': 'HTTP-Digest password (Atlas API private-key).',
+        'cliopt': '--atlas-admin-api-password',
+        'envvar': 'ATLAS_ADMIN_API_PASSWORD',
         'default': None},
     'ATLAS_DB_USERNAME': {
         'help': 'Database username on the MongoDB instance.',

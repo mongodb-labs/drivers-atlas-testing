@@ -18,7 +18,9 @@ import os
 import signal
 import subprocess
 import sys
+import re
 from hashlib import sha256
+from contextlib import closing
 from time import monotonic, sleep
 
 import click
@@ -83,13 +85,21 @@ def create_click_option(option_spec, **kwargs):
 def assert_subset(dict1, dict2):
     """Utility that asserts that `dict2` is a subset of `dict1`, while
     accounting for nested fields."""
-    for key, value in dict2.items():
+    for key, value2 in dict2.items():
         if key not in dict1:
-            raise AssertionError("not a subset")
-        if isinstance(value, dict):
-            assert_subset(dict1[key], value)
+            raise AssertionError("not a subset: '%s' from %s is not in %s" % (key, repr(dict2), repr(dict1)))
+        value1 = dict1[key]
+        if isinstance(value2, dict):
+            assert_subset(value1, value2)
+        elif isinstance(value2, list):
+            assert len(value1) == len(value2)
+            for i in range(len(value2)):
+                if isinstance(value2[i], dict):
+                    assert_subset(value1[i], value2[i])
+                else:
+                    assert value1[i] == value2[i]
         else:
-            assert dict1[key] == value
+            assert value1 == value2, "Different values for '%s':\nexpected '%s'\nactual   '%s'" % (key, repr(dict2[key]), repr(dict1[key]))
 
 
 class Timer:
@@ -159,8 +169,7 @@ def get_cluster_name(test_name, name_salt):
     return name_hash.hexdigest()[:10]
 
 
-def load_test_data(connection_string, driver_workload):
-    """Insert the test data into the cluster."""
+def mongo_client(connection_string):
     kwargs = {'w': "majority"}
 
     # TODO: remove this if...else block after BUILD-10841 is done.
@@ -169,12 +178,8 @@ def load_test_data(connection_string, driver_workload):
         import certifi
         kwargs['tlsCAFile'] = certifi.where()
     client = MongoClient(connection_string, **kwargs)
-
-    coll = client.get_database(
-        driver_workload.database).get_collection(
-        driver_workload.collection)
-    coll.drop()
-    coll.insert_many(driver_workload.testData)
+    
+    return closing(client)
 
 
 class DriverWorkloadSubprocessRunner:
@@ -246,7 +251,9 @@ class DriverWorkloadSubprocessRunner:
         else:
             os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
 
-        t_wait = 10
+        # Since the default server selection timeout is 30 seconds,
+        # allow up to 60 seconds for the workload executor to terminate.
+        t_wait = 60
         try:
             self.workload_subprocess.wait(timeout=t_wait)
             LOGGER.info("Stopped workload executor [PID: {}]".format(self.pid))
@@ -272,3 +279,47 @@ class DriverWorkloadSubprocessRunner:
             stats = self._PLACEHOLDER_EXECUTION_STATISTICS
 
         return stats
+
+
+def get_logs(admin_client, project, cluster_name):
+    data = admin_client.nds.groups[project.id].clusters[cluster_name].get(api_version='private').data
+    
+    if data['clusterType'] == 'SHARDED':
+        rtype = 'CLUSTER'
+        rname = data['deploymentItemName']
+    else:
+        rtype = 'REPLICASET'
+        rname = data['deploymentItemName']
+        
+    params = dict(
+        resourceName=rname,
+        resourceType=rtype,
+        redacted=True,
+        logTypes=['FTDC','MONGODB'],#,'AUTOMATION_AGENT','MONITORING_AGENT','BACKUP_AGENT'],
+        sizeRequestedPerFileBytes=100000000,
+    )
+    data = admin_client.groups[project.id].logCollectionJobs.post(**params).data
+    job_id = data['id']
+    
+    while True:
+        LOGGER.debug('Poll job %s' % job_id)
+        data = admin_client.groups[project.id].logCollectionJobs[job_id].get().data
+        if data['status'] == 'IN_PROGRESS':
+            sleep(1)
+        elif data['status'] == 'SUCCESS':
+            break
+        else:
+            raise Exception("Unexpected log collection job status %s" % data['status'])
+    
+    LOGGER.info('Log download URL: %s' % data['downloadUrl'])
+    # Assume the URL uses the same host as the other API requests, and
+    # remove it so that we just have the path.
+    url = re.sub(r'\w+://[^/]+', '', data['downloadUrl'])
+    if url.startswith('/api'):
+        url = url[4:]
+    LOGGER.info('Retrieving %s' % url)
+    resp = admin_client.request('GET', url)
+    if resp.status_code != 200:
+        raise RuntimeError('Request to %s failed: %s' % url, resp.status_code)
+    with open('logs.tar.gz', 'wb') as f:
+        f.write(resp.response.content)

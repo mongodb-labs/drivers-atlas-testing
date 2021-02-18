@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import defaultdict
 import logging
+import json
 
 from atlasclient import AtlasApiError
 
@@ -88,3 +90,63 @@ def ensure_connect_from_anywhere(*, client, project_id, ):
     ip_details_list = [{"cidrBlock": "0.0.0.0/0"}]
     resp = client.groups[project_id].whitelist.post(json=ip_details_list).data
     LOGGER.debug("Project whitelist details: {}".format(resp))
+
+
+def aggregate_statistics():
+    '''Read the results.json and events.json files, aggregate the events into
+    statistics and write the statistics into stats.json.
+    
+    Statistics calculated:
+    
+    - Average command execution time
+    - 95th percentile command execution time
+    - 99th percentile command execution time
+    - Peak number of open connections
+    '''
+    
+    with open('results.json', 'r') as fp:
+        stats = json.load(fp)
+    with open('events.json', 'r') as fp:
+        events = json.load(fp)
+    
+    import numpy
+    
+    command_events = [
+        event for event in events['events']
+        if event['name'].startswith('Command')
+    ]
+    map = {}
+    correlated_events = []
+    for event in command_events:
+        if event['name'] == 'CommandStartedEvent':
+            map[event['requestId']] = event
+        else:
+            started_event = map[event['requestId']]
+            del map[event['requestId']]
+            _event = dict(started_event)
+            _event.update(event)
+            correlated_events.append(_event)
+    command_times = [c['duration'] for c in correlated_events]
+    stats['avgCommandTime'] = numpy.average(command_times)
+    stats['p95CommandTime'] = numpy.percentile(command_times, 95)
+    stats['p99CommandTime'] = numpy.percentile(command_times, 99)
+    
+    conn_events = [
+        event for event in events['events']
+        if event['name'].startswith('Connection') or event['name'].startswith('Pool')
+    ]
+    counts = defaultdict(lambda: 0)
+    max_counts = defaultdict(lambda: 0)
+    conn_count = max_conn_count = 0
+    for e in conn_events:
+        if e['name'] == 'ConnectionCreatedEvent':
+            counts[e['address']] += 1
+        elif e['name'] == 'ConnectionClosedEvent':
+            counts[e['address']] -= 1
+        if counts[e['address']] > max_counts[e['address']]:
+            max_counts[e['address']] = counts[e['address']]
+    
+    stats['maxConnectionCounts'] = max_counts
+    
+    with open('stats.json', 'w') as fp:
+        json.dump(stats, fp)

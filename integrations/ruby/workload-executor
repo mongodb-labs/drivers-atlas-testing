@@ -6,16 +6,61 @@ puts ([$0] + ARGV.map { |arg| Shellwords.shellescape(arg) }).join(' ')
 
 $: << File.dirname(__FILE__)
 $: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver/lib')
+$: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver/spec')
+$: << File.join(File.dirname(__FILE__), '../../../ruby-driver/lib')
+$: << File.join(File.dirname(__FILE__), '../../../ruby-driver/spec')
 
 require 'executor'
+require 'optparse'
+autoload :Byebug, 'byebug'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = $usage_banner = "Usage: workload-executor URI SPEC\n" <<
+    "       workload-executor -s SCENARIO-PATH [-i] [-u URI]"
+
+  opts.on("-s", "--scenario=PATH", "Specify scenario path") do |v|
+    options[:scenario_path] = v
+  end
+  opts.on('-i', '--insert', 'Insert scenario data') do
+    options[:insert] = true
+  end
+  opts.on("-u", "--uri=URI", "Specify MongoDB server URI") do |v|
+    options[:uri] = v
+  end
+end.parse!
 
 uri, spec = ARGV
+uri ||= options[:uri]
+uri ||= 'mongodb://localhost'
 
-if spec.nil?
-  raise "Usage: executor.rb URI SPEC"
+if spec.nil? && !options[:scenario_path]
+  STDERR.puts $usage_banner
+  exit 1
 end
 
-spec = JSON.load(spec)
+if options[:scenario_path]
+  scenario = YAML.load(File.read(options[:scenario_path]))
+  spec = scenario.fetch('driverWorkload')
+else
+  spec = JSON.load(spec)
+end
+
+$uri = uri
+
+class ClientRegistry
+  def self.instance
+    new
+  end
+
+  def global_client(which)
+    $global_client ||= Mongo::Client.new($uri)
+  end
+end
 
 executor = Executor.new(uri, spec)
-executor.run
+if options[:insert]
+  executor.load_data
+else
+  executor.run
+end

@@ -45,7 +45,7 @@ class PollerBase:
         timer.start()
         while timer.elapsed < self.timeout:
             logmsg = "Polling {} [elapsed: {:.2f} seconds]"
-            LOGGER.debug(logmsg.format(objects, timer.elapsed))
+            LOGGER.info(logmsg.format(objects, timer.elapsed))
             for obj in objects:
                 return_value = self._check_ready(obj, attribute, args, kwargs)
                 if return_value:
@@ -53,7 +53,7 @@ class PollerBase:
             LOGGER.debug("Waiting {:.2f} seconds before retrying".format(
                 self.interval))
             sleep(self.interval)
-        raise PollingTimeoutError
+        raise PollingTimeoutError("Polling timed out after %s seconds" % self.timeout)
 
 
 class BooleanCallablePoller(PollerBase):

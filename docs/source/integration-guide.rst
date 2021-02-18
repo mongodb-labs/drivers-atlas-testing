@@ -272,3 +272,20 @@ in the Evergreen configuration file:
 .. note:: Users are asked to be extra cautious while dealing with environment variables that contain sensitive secrets.
    Using these variables in a script that sets ``-xtrace`` can, for instance, result in leaking these secrets
    into Evergreen's log output.
+
+---------------
+Troubleshooting
+---------------
+
+When using ``cloud-dev``, be aware that operational issues within Atlas are
+not being monitored and solved with a particular SLA. If builds are failing
+and the failure appears to be caused by Atlas rather than the tests themselves,
+the driver being tested or ``astrolabe``, inquiring in ``cloud-non-prod-ops``
+Slack channel is the next suggested troubleshooting step.
+
+Atlas has a limit of 40 "cross-region network permissions" by default.
+This means a project can have no more than 40 nodes across all of its
+clusters if any of its clusters employ multiple regions. The primary
+takeover and primary removal tests use multi-region clusters; running
+these tests alongside other tests may exceed the 40 node limit. A
+request to the Cloud team is required to raise the limit.

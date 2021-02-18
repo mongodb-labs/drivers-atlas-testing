@@ -10,19 +10,23 @@ The YAML file format described herein is used to define platform-independent *At
 YAML-formatted *Test Scenario Files*. Each Test Scenario File describes exactly one Atlas Planned Maintenance Test.
 A Test Scenario File has the following keys:
 
-* maintenancePlan (document): a *Planned Maintenance Scenario* object. Each object has the following keys:
+* initialConfiguration (document): Description of *Cluster Configuration Options* to be used for initializing the
+  test cluster. This document MUST contain the following keys:
 
-  * initialConfiguration (document): Description of *Cluster Configuration Options* to be used for initializing the
-    test cluster. This document MUST contain the following keys:
+  * clusterConfiguration (document): Document containing initial *Basic Configuration Options* values.
+    This document MUST, at a minimum, have all fields **required** by the
+    `Create One Cluster <https://docs.atlas.mongodb.com/reference/api/clusters-create-one/>`_ endpoint.
+  * processArgs (document): Document containing initial *Advanced Configuration Option* values. This MAY be an empty
+    document if the maintenance plan does not require modifying the Advanced Configuration Options.
 
-    * clusterConfiguration (document): Document containing initial *Basic Configuration Options* values.
-      This document MUST, at a minimum, have all fields **required** by the
-      `Create One Cluster <https://docs.atlas.mongodb.com/reference/api/clusters-create-one/>`_ endpoint.
-    * processArgs (document): Document containing initial *Advanced Configuration Option* values. This MAY be an empty
-      document if the maintenance plan does not require modifying the Advanced Configuration Options.
-
-  * finalConfiguration (document): Description of **new** *Cluster Configuration Options* to be applied to the
-    test cluster. This document MUST contain the following keys (note that at least one of these fields MUST be
+* operations (array): List of operations to be performed, representing the
+  maintenance event. Each operation is a document containing one key which is
+  the name of the operation. The possible operations are:
+  
+  * setClusterConfiguration: set the cluster configuration to the specified
+    *Cluster Configuration Options* as defined in initialConfiguration.
+    The value must be the *Cluster Configuration Options* which MUST contain
+    the following keys (note that at least one of these fields MUST be
     a non-empty document):
 
     * clusterConfiguration (document): Document containing final *Basic Configuration Option* values.
@@ -31,25 +35,124 @@ A Test Scenario File has the following keys:
       `Modify One Cluster <https://docs.atlas.mongodb.com/reference/api/clusters-modify-one/>`_ endpoint.
     * processArgs (document): Document containing final *Advanced Configuration Option* values.
       This MAY be an empty document if the maintenance plan does not require modifying the Advanced Configuration Options.
+      
+    Example::
+    
+      setClusterConfiguration:
+        clusterConfiguration:
+          providerSettings:
+            providerName: AWS
+            regionName: US_WEST_1
+            instanceSizeName: M10
+        processArgs: {}
 
-  * uriOptions (document): Document containing ``key: value`` pairs of URI options that must be included in the
-    connection string passed to the workload executor by the *Test Orchestrator*.
+  * testFailover: trigger an election in the cluster using the "test failover"
+    API endpoint. The value MUST be ``true``.
+    
+    The workload executor MUST ignore the value of this key, so that
+    the value can be changed to a hash in the future to provide options
+    to the operation.
+    
+    testFailover SHOULD be followed by sleep and waitForIdle operations
+    because it does not update maintenance state synchronously (see
+    `PRODTRIAGE-1232 <https://jira.mongodb.org/browse/PRODTRIAGE-1232>`_).
 
-* driverWorkload (document): Object describing a *Driver Workload*. Has the following keys:
+    Example::
+    
+      testFailover: true
 
-  * collection (string): Name of the collection to use for running test operations.
-  * database (string): Name of the database to use for running test operations.
-  * testData (array, optional): Array of documents to be inserted into the ``database.collection`` namespace before
-    starting the test run. Test data insertion is performed by the *Test Orchestrator* and this field MUST be ignored
-    by the *Workload Executor*.
-  * operations (array): Array of Operation objects, each describing an operation to be executed. The operations are run
-    sequentially and repeatedly until the maintenance completes. Each object has the following keys:
+  * restartVms: perform a rolling restart of all nodes in the cluster.
+    This operation requires Atlas Global Operator API key to be set when
+    invoking ``astrolabe``. The value MUST be ``true``.
+    
+    The workload executor MUST ignore the value of this key, so that
+    the value can be changed to a hash in the future to provide options
+    to the operation.
 
-    * object (string): The entity on which to perform the operation. Can be "database" or "collection".
-    * name (string): name of the operation.
-    * arguments (document): the names and values of arguments to be passed to the operation.
-    * result (optional, multiple types): The result of executing the operation. This will correspond to the operation's
-      return value.
+    testFailover SHOULD be followed by sleep and waitForIdle operations
+    because it does not update maintenance state synchronously.
+
+    Example::
+
+      restartVms: true
+
+  * assertPrimaryRegion: assert that the primary in the deployment is in the
+    specified region. The value MUST be a hash with the following keys:
+    
+    * region (string, required): the region name as defined in Atlas API,
+      e.g. ``US_WEST_1``.
+    * timeout (floating-point number, optional): the maximum time, in
+      seconds, to wait for the region to become the expected one.
+      Default is 90 seconds.
+
+    This operation is undefined and MUST NOT be used when the deployment is
+    a sharded cluster.
+
+    Example::
+    
+      assertPrimaryRegion:
+        region: US_WEST_1
+        timeout: 15
+    
+  * sleep: do nothing for the specified duration. The value MUST be the duration
+    to sleep for, in seconds.
+
+    Example::
+    
+      sleep: 10
+    
+  * waitForIdle: wait for cluster maintenance state to become "idle".
+    The value MUST be ``true``.
+    
+    The workload executor MUST ignore the value of this key, so that
+    the value can be changed to a hash in the future to provide options
+    to the operation.
+
+    Example::
+
+      waitForIdle: true
+
+  For all maintenance operations other than ``sleep``, after the maintenance
+  operation is performed, ``astrolabe`` will wait for cluster state to become
+  idle. When performing a VM restart in a sharded cluster, due to the state
+  not being updated for a potentially long time, the test SHOULD add an
+  explicit ``sleep`` operation for at least 30 seconds.
+
+* driverWorkload (document): Description of the driver workload to execute
+  The document must be a complete test as defined by the
+  `Unified Test Format specification <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
+  
+  The workload MUST use a single test, as defined in the unified test format
+  specification.
+  
+  The workload MUST use the ``loop`` unified test format operation to
+  define the MongoDB operations to execute during maintenance. There MUST
+  be exactly one ``loop`` operation per scenario, and it SHOULD be the last
+  operation in the scenario.
+
+  The scenario MUST use ``storeErrorsAsEntity``, ``storeFailuresAsEntity``,
+  ``storeSuccesesAsEntity`` and ``storeIterationsAsEntity`` operation arguments
+  to allow the workload executor to retrieve errors, failures and operation
+  counts for the executed workload. The entity names for these options MUST
+  be as follows:
+  
+  - ``storeErrorsAsEntity``: ``errors``
+  - ``storeFailuresAsEntity``: ``failures``
+  - ``storeSuccessesAsEntity``: ``successes``
+  - ``storeIterationsAsEntity``: ``iterations``
+  
+  The scenario MUST use ``storeEventsAsEntities`` operation argument
+  when defining MongoClients to record CMAP and command events published
+  during maintenance. The entity name for ``storeEventsAsEntities`` argument
+  MUST be ``events``. When this option is used, ``astrolabe`` will retrieve
+  the collected events and store them as an Evergreen build artifact, and
+  will also calculate statistics for command execution time and connection
+  counts.
+
+.. note:: A previous version of this document specified a top-level
+  ``uriOptions`` for specifying URI options for the MongoClient under test.
+  In the current version, options can be specified using the ``uriOptions``
+  key of the unified test format when creating a client entity.
 
 -------
 Changes
