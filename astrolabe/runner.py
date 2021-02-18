@@ -268,6 +268,15 @@ class AtlasTestCase:
         return junit_test
         
     def wait_for_idle(self):
+        # Small delay to account for Atlas not updating cluster state
+        # synchronously potentially in all maintenance operations
+        # (https://jira.mongodb.org/browse/PRODTRIAGE-1232).
+        # VM restarts in sharded clusters require a much longer wait
+        # (30+ seconds in some circumstances); scenarios that perform
+        # VM restarts in sharded clusters should use explicit sleep operations
+        # after the restarts until this is fixed.
+        LOGGER.info("Waiting to wait for cluster %s to become idle" % self.cluster_name)
+        sleep(5)
         LOGGER.info("Waiting for cluster %s to become idle" % self.cluster_name)
         timer = Timer()
         timer.start()
