@@ -317,7 +317,7 @@ def get_logs(admin_client, project, cluster_name):
             ok = True
             break
         else:
-            raise Exception("Unexpected log collection job status %s" % data['status'])
+            raise Exception("Unexpected log collection job status: %s: %s" % (data['status'], data))
     if not ok:
         raise Exception("Timed out trying to collect logs from cluster %s" % cluster_name)
     
