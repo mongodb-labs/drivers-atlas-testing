@@ -282,6 +282,7 @@ class DriverWorkloadSubprocessRunner:
 
 
 def get_logs(admin_client, project, cluster_name):
+    LOGGER.info(f'Retrieving logs for {cluster_name}')
     data = admin_client.nds.groups[project.id].clusters[cluster_name].get(api_version='private').data
     
     if data['clusterType'] == 'SHARDED':
@@ -301,15 +302,24 @@ def get_logs(admin_client, project, cluster_name):
     data = admin_client.groups[project.id].logCollectionJobs.post(**params).data
     job_id = data['id']
     
-    while True:
-        LOGGER.debug('Poll job %s' % job_id)
+    timer = Timer()
+    timer.start()
+    ok = False
+    # Wait 10 minutes for logs to get collected - guess as to how long
+    # it might take
+    timeout = 600
+    while timer.elapsed < timeout:
+        LOGGER.info(f"Cluster %s: waiting for log collection job {job_id} for %.1f sec" % (cluster_name, timer.elapsed))
         data = admin_client.groups[project.id].logCollectionJobs[job_id].get().data
         if data['status'] == 'IN_PROGRESS':
             sleep(1)
         elif data['status'] == 'SUCCESS':
+            ok = True
             break
         else:
             raise Exception("Unexpected log collection job status %s" % data['status'])
+    if not ok:
+        raise Exception("Timed out trying to collect logs from cluster %s" % cluster_name)
     
     LOGGER.info('Log download URL: %s' % data['downloadUrl'])
     # Assume the URL uses the same host as the other API requests, and
