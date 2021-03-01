@@ -131,7 +131,7 @@ A Test Scenario File has the following keys:
   operation in the scenario.
 
   The scenario MUST use ``storeErrorsAsEntity``, ``storeFailuresAsEntity``,
-  ``storeSuccesesAsEntity`` and ``storeIterationsAsEntity`` operation arguments
+  ``storeSuccessesAsEntity`` and ``storeIterationsAsEntity`` operation arguments
   to allow the workload executor to retrieve errors, failures and operation
   counts for the executed workload. The entity names for these options MUST
   be as follows:
