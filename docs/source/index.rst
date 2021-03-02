@@ -1,8 +1,21 @@
-Welcome to astrolabe's documentation!
-=====================================
+Drivers Atlas Testing
+=====================
 
-**astrolabe** is a distribution containing tools for automating Atlas operations and running Atlas Planned Maintenance
-Tests.
+The Drivers Atlas Testing project validates the behavior of drivers against
+Atlas clusters. For example, a test could be to perform queries or writes
+in a loop while Atlas performs a maintenance operation, and assert that all
+queries and writes complete successfully.
+
+The project consists of the following principal components:
+
+- Astrolabe - the orchestration utility.
+- :doc:`Workload executors <spec-workload-executor>` - wrappers providing
+  a common interface to each driver's unified test runner.
+- Each driver's unified test runner.
+- :doc:`The test scenario specification <spec-test-format>`.
+
+Drivers Atlas Testing' architecture is described in more detail in the
+:doc:`architecture` page.
 
 Documentation Overview
 ----------------------
@@ -31,6 +44,7 @@ Table of Contents
 .. toctree::
    :maxdepth: 2
 
+   architecture
    installing-running-locally
    integration-guide
    spec-workload-executor
