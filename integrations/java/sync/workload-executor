@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -o errexit
+
+workloadExecutorFile="/tmp/java-driver-workload-executor.json"
+
+rm -f "$workloadExecutorFile"
+
+# cat the workload executor JSON to a file
+printf "%s" "$2" > "$workloadExecutorFile"
+
+OUTPUT_DIRECTORY=$PWD
+
+java -Xmx8g -jar -Dorg.mongodb.test.uri="$1" driver-workload-executor.jar $workloadExecutorFile $OUTPUT_DIRECTORY
+

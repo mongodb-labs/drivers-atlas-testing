@@ -1,9 +1,0 @@
-#!/bin/bash
-
-set -o errexit
-
-OUTPUT_DIRECTORY=$PWD
-
-cd mongo-java-driver || exit
-
-./gradlew --info  -Dorg.mongodb.workload.output.directory="$OUTPUT_DIRECTORY" -Dorg.mongodb.test.uri="$1" -Dorg.mongodb.workload.spec="$2" driver-workload-executor:run
