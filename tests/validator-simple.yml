@@ -3,7 +3,7 @@ operations: []
 driverWorkload:
   description: "Validator - simple"
 
-  schemaVersion: "1.0"
+  schemaVersion: "1.2"
 
   createEntities:
     - client:
