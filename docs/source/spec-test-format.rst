@@ -143,11 +143,10 @@ A Test Scenario File has the following keys:
   
   The scenario MUST use ``storeEventsAsEntities`` operation argument
   when defining MongoClients to record CMAP and command events published
-  during maintenance. The entity name for ``storeEventsAsEntities`` argument
-  MUST be ``events``. When this option is used, ``astrolabe`` will retrieve
-  the collected events and store them as an Evergreen build artifact, and
-  will also calculate statistics for command execution time and connection
-  counts.
+  during maintenance. All events MUST be stored in an entity named ``events``.
+  When this option is used, ``astrolabe`` will retrieve the collected events and
+  store them as an Evergreen build artifact, and will also calculate statistics
+  for command execution time and connection counts.
 
 .. note:: A previous version of this document specified a top-level
   ``uriOptions`` for specifying URI options for the MongoClient under test.
