@@ -27,6 +27,7 @@ from atlasclient import AtlasApiError, JSONObject
 from astrolabe.commands import (
     get_one_organization_by_name, ensure_project, ensure_admin_user,
     ensure_connect_from_anywhere)
+from astrolabe.exceptions import PollingTimeoutError
 from astrolabe.exceptions import AstrolabeTestCaseError
 from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
