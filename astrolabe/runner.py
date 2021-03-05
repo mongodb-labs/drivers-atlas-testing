@@ -187,8 +187,26 @@ class AtlasTestCase:
                 LOGGER.info("Cluster maintenance complete")
                 
             elif op_name == 'testFailover':
-                self.cluster_url['restartPrimaries'].post()
-                
+                timer = Timer()
+                timer.start()
+                timeout = 90
+
+                # DRIVERS-1585: failover may fail due to the cluster not being
+                # ready. Retry failover up to a timeout if the
+                # CLUSTER_RESTART_INVALID error is returned from the call
+                while True:
+                    try:
+                        self.cluster_url['restartPrimaries'].post()
+                        break
+                    except AtlasApiError as exc:
+                        if exc.error_code != 'CLUSTER_RESTART_INVALID':
+                            raise
+
+                    if timer.elapsed > timeout:
+                        raise Exception("Could not test failover as cluster wasn't ready")
+                    else:
+                        sleep(5)
+
                 self.wait_for_idle()
                 
             elif op_name == 'sleep':
