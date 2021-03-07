@@ -29,8 +29,9 @@ import junitparser
 from pymongo import MongoClient
 
 from .exceptions import (
-    WorkloadExecutorError, PollingTimeoutError, AstrolabeTestCaseError,
+    WorkloadExecutorError, AstrolabeTestCaseError,
 )
+from .poller import poll
 
 
 LOGGER = logging.getLogger(__name__)
@@ -304,25 +305,21 @@ def get_logs(admin_client, project, cluster_name):
     data = admin_client.groups[project.id].logCollectionJobs.post(**params).data
     job_id = data['id']
     
-    timer = Timer()
-    timer.start()
-    ok = False
     # Wait 10 minutes for logs to get collected.
     # This is a guess as to how long job collection might take, we haven't
     # investigated the actual times over a sufficiently large sample size.
     timeout = 600
-    while timer.elapsed < timeout:
-        LOGGER.info(f"Cluster %s: waiting for log collection job {job_id} for %.1f sec" % (cluster_name, timer.elapsed))
+    def check():
         data = admin_client.groups[project.id].logCollectionJobs[job_id].get().data
-        if data['status'] == 'IN_PROGRESS':
-            sleep(1)
-        elif data['status'] == 'SUCCESS':
-            ok = True
-            break
-        else:
+        if data['status'] == 'SUCCESS':
+            return True
+        elif data['status'] != 'IN_PROGRESS':
             raise AstrolabeTestCaseError("Unexpected log collection job status: %s: %s" % (data['status'], data))
-    if not ok:
-        raise PollingTimeoutError("Timed out trying to collect logs from cluster %s" % cluster_name)
+    poll(
+        check,
+        timeout=timeout,
+        subject="log collection job '%s' for cluster '%s'" % (job_id, cluster_name),
+    )
     
     LOGGER.info('Log download URL: %s' % data['downloadUrl'])
     # Assume the URL uses the same host as the other API requests, and

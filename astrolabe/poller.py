@@ -65,3 +65,20 @@ class BooleanCallablePoller(PollerBase):
         method of the `obj` object returns boolean True when called with
         the provided args and kwargs."""
         return bool(getattr(obj, attribute)(*args, **kwargs))
+
+def poll(check, timeout, subject):
+    timer = Timer()
+    timer.start()
+    ok = False
+    while timer.elapsed < timeout:
+        LOGGER.info('Waiting for %s; elapsed: %.1f sec' % (subject, timer.elapsed))
+        if check():
+            ok = True
+            break
+        else:
+            # Prevent unintentional busy loops, always sleep here even if
+            # the check function takes a non-trivial amount of time
+            # (e.g. if it performs network I/O).
+            sleep(1)
+    if not ok:
+        raise PollingTimeoutError("Timed out while waiting for %s" % subject)
