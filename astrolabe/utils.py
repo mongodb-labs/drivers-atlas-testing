@@ -307,6 +307,6 @@ def get_logs(admin_client, project, cluster_name):
     LOGGER.info('Retrieving %s' % url)
     resp = admin_client.request('GET', url)
     if resp.status_code != 200:
-        raise RuntimeError('Request to %s failed: %s' % url, resp.status_code)
+        raise AstrolabeTestCaseError('Request to %s failed: %s' % url, resp.status_code)
     with open('logs.tar.gz', 'wb') as f:
         f.write(resp.response.content)
