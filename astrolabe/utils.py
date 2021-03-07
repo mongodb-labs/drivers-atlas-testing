@@ -279,34 +279,64 @@ def get_logs(admin_client, project, cluster_name):
         logTypes=['FTDC','MONGODB'],#,'AUTOMATION_AGENT','MONITORING_AGENT','BACKUP_AGENT'],
         sizeRequestedPerFileBytes=100000000,
     )
-    data = admin_client.groups[project.id].logCollectionJobs.post(**params).data
-    job_id = data['id']
-    
+
     # Wait 10 minutes for logs to get collected.
     # This is a guess as to how long job collection might take, we haven't
     # investigated the actual times over a sufficiently large sample size.
+    # The same timeout is used for retrying collection jobs and waiting for
+    # any single collection job - if this turns out to be problematic,
+    # we'll need to do some analysis of actual times to refine the timeouts.
     timeout = 600
-    def check():
-        data = admin_client.groups[project.id].logCollectionJobs[job_id].get().data
-        if data['status'] == 'SUCCESS':
+    local = {}
+    
+    def collect():
+        try:
+            data = admin_client.groups[project.id].logCollectionJobs.post(**params).data
+            job_id = data['id']
+            
+            def check():
+                data = admin_client.groups[project.id].logCollectionJobs[job_id].get().data
+                if data['status'] == 'SUCCESS':
+                    local['data'] = data
+                    return True
+                elif data['status'] != 'IN_PROGRESS':
+                    raise AstrolabeTestCaseError("Unexpected log collection job status: %s: %s" % (data['status'], data))
+            poll(
+                check,
+                timeout=timeout,
+                subject="log collection job '%s' for cluster '%s'" % (job_id, cluster_name),
+            )
+            
+            if 'downloadUrl' not in local['data']:
+                msg = "Log collection job did not produce a download url: %s" % data
+                del local['data']
+                raise AstrolabeTestCaseError(msg)
+                            
+            data = local['data']
+            LOGGER.info('Log download URL: %s' % data['downloadUrl'])
+            # Assume the URL uses the same host as the other API requests, and
+            # remove it so that we just have the path.
+            url = re.sub(r'\w+://[^/]+', '', data['downloadUrl'])
+            if url.startswith('/api'):
+                url = url[4:]
+            LOGGER.info('Retrieving %s' % url)
+            resp = admin_client.request('GET', url)
+            if resp.status_code != 200:
+                raise AstrolabeTestCaseError('Request to %s failed: %s' % url, resp.status_code)
+            # Note that this reads the entire response into memory, which might
+            # fail for longer running workloads.
+            local['archive_content'] = resp.response.content
+            
             return True
-        elif data['status'] != 'IN_PROGRESS':
-            raise AstrolabeTestCaseError("Unexpected log collection job status: %s: %s" % (data['status'], data))
+        except Exception as e:
+            LOGGER.error("Error retrieving logs for '%s': %s" % (cluster_name, e))
+            # Poller will retry log collection.
+        
     poll(
-        check,
+        collect,
         timeout=timeout,
-        subject="log collection job '%s' for cluster '%s'" % (job_id, cluster_name),
+        subject="log collection for cluster '%s'" % cluster_name,
     )
     
-    LOGGER.info('Log download URL: %s' % data['downloadUrl'])
-    # Assume the URL uses the same host as the other API requests, and
-    # remove it so that we just have the path.
-    url = re.sub(r'\w+://[^/]+', '', data['downloadUrl'])
-    if url.startswith('/api'):
-        url = url[4:]
-    LOGGER.info('Retrieving %s' % url)
-    resp = admin_client.request('GET', url)
-    if resp.status_code != 200:
-        raise AstrolabeTestCaseError('Request to %s failed: %s' % url, resp.status_code)
     with open('logs.tar.gz', 'wb') as f:
-        f.write(resp.response.content)
+        f.write(local['archive_content'])
