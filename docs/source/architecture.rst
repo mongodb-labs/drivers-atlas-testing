@@ -10,7 +10,7 @@ The project consists of the following principal components:
 
 - Astrolabe - the orchestration utility.
 - :doc:`Workload executors <spec-workload-executor>` - wrappers providing
-  a common interface to each driver's unified test runner.
+  a common interface to each driver's `unified test runner <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
 - Each driver's unified test runner.
 - :doc:`The test scenario specification <spec-test-format>`.
 
@@ -61,7 +61,7 @@ up and running. The workload executor:
   from Astrolabe, and passes it to the unified test runner.
 - Sets up a termination signal handler.
 - Invokes the unified test runner to execute the workload, which ordinarily
-  contains a ``loop`` operation.
+  contains a `loop operation <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst#loop>`_.
 - When the termination signal is received from Astrolabe, instructs the
   unified test runner to stop looping.
 - Collects the number of iterations and successful operations performed by
