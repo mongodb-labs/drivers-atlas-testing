@@ -307,8 +307,9 @@ def get_logs(admin_client, project, cluster_name):
     timer = Timer()
     timer.start()
     ok = False
-    # Wait 10 minutes for logs to get collected - guess as to how long
-    # it might take
+    # Wait 10 minutes for logs to get collected.
+    # This is a guess as to how long job collection might take, we haven't
+    # investigated the actual times over a sufficiently large sample size.
     timeout = 600
     while timer.elapsed < timeout:
         LOGGER.info(f"Cluster %s: waiting for log collection job {job_id} for %.1f sec" % (cluster_name, timer.elapsed))
