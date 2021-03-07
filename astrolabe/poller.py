@@ -18,7 +18,7 @@ import logging
 from time import sleep
 
 from astrolabe.exceptions import PollingTimeoutError
-from astrolabe.utils import Timer
+from .timer import Timer
 
 
 LOGGER = logging.getLogger(__name__)

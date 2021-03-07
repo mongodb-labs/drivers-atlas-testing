@@ -21,7 +21,7 @@ import sys
 import re
 from hashlib import sha256
 from contextlib import closing
-from time import monotonic, sleep
+from time import sleep
 
 import click
 import junitparser
@@ -103,29 +103,6 @@ def assert_subset(dict1, dict2):
                     assert value1[i] == value2[i]
         else:
             assert value1 == value2, "Different values for '%s':\nexpected '%s'\nactual   '%s'" % (key, repr(dict2[key]), repr(dict1[key]))
-
-
-class Timer:
-    """Class to simplify timing operations."""
-    def __init__(self):
-        self._start = None
-        self._end = None
-
-    def reset(self):
-        self.__init__()
-
-    def start(self):
-        self._start = monotonic()
-        self._end = None
-
-    def stop(self):
-        self._end = monotonic()
-
-    @property
-    def elapsed(self):
-        if self._end is None:
-            return monotonic() - self._start
-        return self._end - self._start
 
 
 class SingleTestXUnitLogger:
