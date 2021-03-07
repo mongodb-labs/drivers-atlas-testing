@@ -28,7 +28,9 @@ import junitparser
 
 from pymongo import MongoClient
 
-from astrolabe.exceptions import WorkloadExecutorError
+from .exceptions import (
+    WorkloadExecutorError, PollingTimeoutError, AstrolabeTestCaseError,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -317,9 +319,9 @@ def get_logs(admin_client, project, cluster_name):
             ok = True
             break
         else:
-            raise Exception("Unexpected log collection job status: %s: %s" % (data['status'], data))
+            raise AstrolabeTestCaseError("Unexpected log collection job status: %s: %s" % (data['status'], data))
     if not ok:
-        raise Exception("Timed out trying to collect logs from cluster %s" % cluster_name)
+        raise PollingTimeoutError("Timed out trying to collect logs from cluster %s" % cluster_name)
     
     LOGGER.info('Log download URL: %s' % data['downloadUrl'])
     # Assume the URL uses the same host as the other API requests, and
