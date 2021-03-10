@@ -245,6 +245,21 @@ class ValidateWorkloadExecutor(TestCase):
                 "to be reported, got {} instead.".format(
                     num_reported_finds, stats['numIterations']))
 
+    def test_num_failures_not_captured(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numFailures-not-captured.yml').read())['driverWorkload']
+        )
+
+        stats = self.run_test_expecting_error(driver_workload)
+
+        num_reported_errors = stats['numFailures']
+        if num_reported_errors != -1:
+            self.fail(
+                "The workload executor reported unexpected execution "
+                "statistics. Expected -1 failures since failures were not captured, "
+                "got {} instead.".format(
+                    num_reported_errors))
+
     def test_num_failures_as_errors(self):
         driver_workload = JSONObject.from_dict(
             yaml.safe_load(open('tests/validator-numFailures-as-errors.yml').read())['driverWorkload']
