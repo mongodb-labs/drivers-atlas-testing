@@ -243,7 +243,9 @@ class DriverWorkloadSubprocessRunner:
 
         return self.workload_subprocess
 
-    def terminate(self):
+    def stop(self):
+        '''Stop the process, verifying it didn't already exit.'''
+        
         LOGGER.info("Stopping workload executor [PID: {}]".format(self.pid))
 
         if not self.is_windows:
@@ -266,7 +268,41 @@ class DriverWorkloadSubprocessRunner:
         # terminated earlier than they actually terminate on Windows.
         if self.is_windows:
             sleep(2)
+            
+        return self.read_stats()
+        
+    def terminate(self):
+        '''Ensure the process is terminated.'''
+        
+        LOGGER.info("Stopping workload executor [PID: {}]".format(self.pid))
 
+        try:
+            if not self.is_windows:
+                os.killpg(self.workload_subprocess.pid, signal.SIGINT)
+            else:
+                os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
+        except:
+            pass
+
+        # Since the default server selection timeout is 30 seconds,
+        # allow up to 60 seconds for the workload executor to terminate.
+        t_wait = 60
+        try:
+            self.workload_subprocess.wait(timeout=t_wait)
+            LOGGER.info("Stopped workload executor [PID: {}]".format(self.pid))
+        except subprocess.TimeoutExpired:
+            raise WorkloadExecutorError(
+                "The workload executor did not terminate {} seconds "
+                "after sending the termination signal".format(t_wait))
+
+        # Workload executors wrapped in shell scripts can report that they've
+        # terminated earlier than they actually terminate on Windows.
+        if self.is_windows:
+            sleep(2)
+            
+        return self.read_stats()
+        
+    def read_stats(self):
         try:
             LOGGER.info("Reading sentinel file {!r}".format(self.sentinel))
             with open(self.sentinel, 'r') as fp:

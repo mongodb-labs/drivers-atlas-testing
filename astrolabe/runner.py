@@ -234,7 +234,7 @@ class AtlasTestCase:
         sleep(10)
         
         # Step-5: interrupt driver workload and capture streams
-        stats = self.workload_runner.terminate()
+        stats = self.workload_runner.stop()
 
         # Stop the timer
         timer.stop()

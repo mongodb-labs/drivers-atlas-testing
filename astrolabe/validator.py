@@ -34,7 +34,7 @@ class ValidateWorkloadExecutor(TestCase):
     def setUp(self):
         self.client = MongoClient(self.CONNECTION_STRING, w='majority')
 
-    def run_test(self, driver_workload):
+    def set_collection_from_workload(self, driver_workload):
         # Set self.coll for future use of the validator, such that it can
         # read the data inserted into the collection.
         # Actual insertion of initial data isn't done via this object.
@@ -52,6 +52,9 @@ class ValidateWorkloadExecutor(TestCase):
             self.fail('Invalid scenario: executor validator test cases must provide database and collection entities')
 
         self.coll = self.client.get_database(dbname).get_collection(collname)
+    
+    def run_test(self, driver_workload):
+        self.set_collection_from_workload(driver_workload)
         
         subprocess = DriverWorkloadSubprocessRunner()
         try:
@@ -69,7 +72,7 @@ class ValidateWorkloadExecutor(TestCase):
         sleep(5)
 
         try:
-            stats = subprocess.terminate()
+            stats = subprocess.stop()
         except TimeoutExpired:
             self.fail("The workload executor did not terminate soon after "
                       "receiving the termination signal.")
@@ -83,6 +86,31 @@ class ValidateWorkloadExecutor(TestCase):
         if any(val < 0 for val in stats.values()):
             self.fail("The workload executor reported incorrect execution "
                       "statistics. Reported statistics MUST NOT be negative.")
+
+        return stats
+    
+    def run_test_expecting_error(self, driver_workload):
+        self.set_collection_from_workload(driver_workload)
+        
+        subprocess = DriverWorkloadSubprocessRunner()
+        try:
+            subprocess.spawn(workload_executor=self.WORKLOAD_EXECUTOR,
+                             connection_string=self.CONNECTION_STRING,
+                             driver_workload=driver_workload,
+                             startup_time=self.STARTUP_TIME)
+
+            # Run operations for 5 seconds.
+            sleep(5)
+        except WorkloadExecutorError:
+            # Accept premature workload executor exits when expecting the
+            # run to error.
+            pass
+
+        try:
+            stats = subprocess.terminate()
+        except TimeoutExpired:
+            self.fail("The workload executor did not terminate soon after "
+                      "receiving the termination signal.")
 
         return stats
 
@@ -178,6 +206,21 @@ class ValidateWorkloadExecutor(TestCase):
                 "statistics. Expected {} iterations "
                 "to be reported, got {} instead.".format(
                     update_count, stats['numIterations']))
+
+    def test_num_errors_not_captured(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numErrors-not-captured.yml').read())['driverWorkload']
+        )
+
+        stats = self.run_test_expecting_error(driver_workload)
+
+        num_reported_errors = stats['numErrors']
+        if num_reported_errors != -1:
+            self.fail(
+                "The workload executor reported unexpected execution "
+                "statistics. Expected -1 errors since errors were not captured, "
+                "got {} instead.".format(
+                    num_reported_errors))
 
     def test_num_failures(self):
         driver_workload = JSONObject.from_dict(
