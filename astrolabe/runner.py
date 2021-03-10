@@ -203,7 +203,7 @@ class AtlasTestCase:
                             raise
 
                     if timer.elapsed > timeout:
-                        raise Exception("Could not test failover as cluster wasn't ready")
+                        raise PollingTimeoutError("Could not test failover as cluster wasn't ready")
                     else:
                         sleep(5)
 
