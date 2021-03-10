@@ -96,15 +96,15 @@ class ValidateWorkloadExecutor(TestCase):
 
         stats = self.run_test(driver_workload)
 
-        num_reported_updates = stats['numSuccesses']
+        num_successes = stats['numSuccesses']
         update_count = self.coll.find_one(
             {'_id': 'validation_sentinel'})['count']
-        if abs(num_reported_updates - update_count) > 1:
+        if abs(num_successes/2 - update_count) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
-                "statistics. Expected {} successful "
-                "updates to be reported, got {} instead.".format(
-                    update_count, num_reported_updates))
+                "statistics. Expected 2*{} successful "
+                "operations to be reported, got {} instead.".format(
+                    update_count, num_successes))
         if abs(stats['numIterations'] - update_count) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
@@ -155,23 +155,23 @@ class ValidateWorkloadExecutor(TestCase):
 
         stats = self.run_test(driver_workload)
 
-        num_reported_updates = stats['numSuccesses']
+        num_successes = stats['numSuccesses']
         update_count = self.coll.find_one(
             {'_id': 'validation_sentinel'})['count']
-        if abs(num_reported_updates - update_count) > 1:
+        if abs(num_successes/2 - update_count) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
-                "statistics. Expected {} successful "
-                "updates to be reported, got {} instead.".format(
-                    update_count, num_reported_updates))
+                "statistics. Expected 2*{} successful "
+                "operations to be reported, got {} instead.".format(
+                    update_count, num_successes))
 
         num_reported_errors = stats['numErrors']
-        if abs(num_reported_errors - num_reported_updates) > 1:
+        if abs(num_reported_errors - num_successes/2) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
-                "statistics. Expected approximately {} errored operations "
+                "statistics. Expected approximately {}/2 errored operations "
                 "to be reported, got {} instead.".format(
-                    num_reported_updates, num_reported_errors))
+                    num_successes, num_reported_errors))
         if abs(stats['numIterations'] - update_count) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
@@ -189,13 +189,13 @@ class ValidateWorkloadExecutor(TestCase):
         num_reported_finds = stats['numSuccesses']
 
         num_reported_failures = stats['numFailures']
-        if abs(num_reported_failures - num_reported_finds) > 1:
+        if abs(num_reported_failures - num_reported_finds/2) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
-                "statistics. Expected approximately {} errored operations "
+                "statistics. Expected approximately {}/2 errored operations "
                 "to be reported, got {} instead.".format(
                     num_reported_finds, num_reported_failures))
-        if abs(stats['numIterations'] - num_reported_finds) > 1:
+        if abs(stats['numIterations'] - num_reported_finds/2) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
                 "statistics. Expected {} iterations "
@@ -213,10 +213,10 @@ class ValidateWorkloadExecutor(TestCase):
 
         num_reported_errors = stats['numErrors']
         num_reported_failures = stats['numFailures']
-        if abs(num_reported_errors - num_reported_finds) > 1:
+        if abs(num_reported_errors - num_reported_finds/2) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
-                "statistics. Expected approximately {} errored operations "
+                "statistics. Expected approximately {}/2 errored operations "
                 "to be reported, got {} instead.".format(
                     num_reported_finds, num_reported_failures))
         if num_reported_failures > 0:
@@ -225,7 +225,7 @@ class ValidateWorkloadExecutor(TestCase):
                 "statistics. Expected all failures to be reported as errors, "
                 "got {} failures instead.".format(
                     num_reported_failures))
-        if abs(stats['numIterations'] - num_reported_finds) > 1:
+        if abs(stats['numIterations'] - num_reported_finds/2) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
                 "statistics. Expected {} iterations "
