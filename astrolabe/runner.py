@@ -197,10 +197,11 @@ class AtlasTestCase:
                 while True:
                     try:
                         self.cluster_url['restartPrimaries'].post()
-                        break
                     except AtlasApiError as exc:
                         if exc.error_code != 'CLUSTER_RESTART_INVALID':
                             raise
+                    else:
+                        break
 
                     if timer.elapsed > timeout:
                         raise PollingTimeoutError("Could not test failover as cluster wasn't ready")
