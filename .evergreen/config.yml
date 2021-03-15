@@ -137,7 +137,7 @@ functions:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: astrolabe-src/logs.tar.gz
-        remote_file: ${UPLOAD_BUCKET}/${version_id}/${build_id}-${task_id}-${execution}/server-logs.tar.gz
+        remote_file: ${project}/${version_id}/${build_id}-${task_id}-${execution}/server-logs.tar.gz
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
@@ -149,18 +149,29 @@ functions:
         working_dir: astrolabe-src
         continue_on_err: true       # Because script may not exist OR platform may not be Windows.
         add_expansions_to_env: true
-        command: |
+        script: |
           gzip <events.json >events.json.gz
     - command: s3.put
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: astrolabe-src/events.json.gz
-        remote_file: ${UPLOAD_BUCKET}/${version_id}/${build_id}-${task_id}-${execution}/events.json.gz
+        remote_file: ${project}/${version_id}/${build_id}-${task_id}-${execution}/events.json.gz
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "events.json.gz"
+    # If gzip doesn't exist (Windows?) upload the uncompressed events also.
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: astrolabe-src/events.json
+        remote_file: ${project}/${version_id}/${build_id}-${task_id}-${execution}/events.json
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/json}
+        display_name: "events.json"
 
 # Functions to run before the test.
 pre:
