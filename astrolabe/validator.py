@@ -22,7 +22,7 @@ from pymongo import MongoClient
 import yaml
 
 from atlasclient import JSONObject
-from astrolabe.exceptions import WorkloadExecutorError
+from astrolabe.exceptions import WorkloadExecutorError, PrematureExitError
 from astrolabe.utils import DriverWorkloadSubprocessRunner
 
 
@@ -107,7 +107,11 @@ class ValidateWorkloadExecutor(TestCase):
             pass
 
         try:
-            stats = subprocess.terminate()
+            stats = subprocess.stop()
+        except PrematureExitError:
+            # OK for workload executor to exit prematurely when we expect
+            # it to fail with an error. We still need to return stats.
+            stats = subprocess.read_stats()
         except TimeoutExpired:
             self.fail("The workload executor did not terminate soon after "
                       "receiving the termination signal.")
