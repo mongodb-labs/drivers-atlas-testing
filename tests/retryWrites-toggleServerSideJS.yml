@@ -17,7 +17,7 @@ operations:
 driverWorkload:
   description: "Insert"
 
-  schemaVersion: "1.0"
+  schemaVersion: "1.2"
 
   createEntities:
     - client:
@@ -25,21 +25,22 @@ driverWorkload:
         uriOptions:
           retryWrites: true
         storeEventsAsEntities:
-          events:
-            - PoolCreatedEvent
-            - PoolReadyEvent
-            - PoolClearedEvent
-            - PoolClosedEvent
-            - ConnectionCreatedEvent
-            - ConnectionReadyEvent
-            - ConnectionClosedEvent
-            - ConnectionCheckOutStartedEvent
-            - ConnectionCheckOutFailedEvent
-            - ConnectionCheckedOutEvent
-            - ConnectionCheckedInEvent
-            - CommandStartedEvent
-            - CommandSucceededEvent
-            - CommandFailedEvent
+          - id: events
+            events:
+              - PoolCreatedEvent
+              - PoolReadyEvent
+              - PoolClearedEvent
+              - PoolClosedEvent
+              - ConnectionCreatedEvent
+              - ConnectionReadyEvent
+              - ConnectionClosedEvent
+              - ConnectionCheckOutStartedEvent
+              - ConnectionCheckOutFailedEvent
+              - ConnectionCheckedOutEvent
+              - ConnectionCheckedInEvent
+              - CommandStartedEvent
+              - CommandSucceededEvent
+              - CommandFailedEvent
     - database:
         id: &database0 database0
         client: *client0

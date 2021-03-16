@@ -27,6 +27,7 @@ from atlasclient import AtlasApiError, JSONObject
 from astrolabe.commands import (
     get_one_organization_by_name, ensure_project, ensure_admin_user,
     ensure_connect_from_anywhere)
+from astrolabe.exceptions import PollingTimeoutError
 from astrolabe.exceptions import AstrolabeTestCaseError
 from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
@@ -188,8 +189,27 @@ class AtlasTestCase:
                 LOGGER.info("Cluster maintenance complete")
                 
             elif op_name == 'testFailover':
-                self.cluster_url['restartPrimaries'].post()
-                
+                timer = Timer()
+                timer.start()
+                timeout = 90
+
+                # DRIVERS-1585: failover may fail due to the cluster not being
+                # ready. Retry failover up to a timeout if the
+                # CLUSTER_RESTART_INVALID error is returned from the call
+                while True:
+                    try:
+                        self.cluster_url['restartPrimaries'].post()
+                    except AtlasApiError as exc:
+                        if exc.error_code != 'CLUSTER_RESTART_INVALID':
+                            raise
+                    else:
+                        break
+
+                    if timer.elapsed > timeout:
+                        raise PollingTimeoutError("Could not test failover as cluster wasn't ready")
+                    else:
+                        sleep(5)
+
                 self.wait_for_idle()
                 
             elif op_name == 'sleep':
