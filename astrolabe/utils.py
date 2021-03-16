@@ -19,6 +19,8 @@ import signal
 import subprocess
 import sys
 import re
+import socket
+import requests.packages.urllib3.util.connection as urllib3_cn
 from hashlib import sha256
 from contextlib import closing
 from time import monotonic, sleep
@@ -330,10 +332,6 @@ def require_requests_ipv4():
     # instead of trying IPv6 and receiving a protocol error.
     # https://stackoverflow.com/questions/33046733/force-requests-to-use-ipv4-ipv6
     
-    import socket
-    import requests.packages.urllib3.util.connection as urllib3_cn
-
-
     def allowed_gai_family():
         """
          https://github.com/shazow/urllib3/blob/master/urllib3/util/connection.py
