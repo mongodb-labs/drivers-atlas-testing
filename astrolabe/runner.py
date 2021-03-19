@@ -33,7 +33,8 @@ from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
     assert_subset, get_cluster_name, get_test_name_from_spec_file,
     DriverWorkloadSubprocessRunner, SingleTestXUnitLogger,
-    get_logs, Timer)
+    get_logs)
+from .timer import Timer
 
 
 LOGGER = logging.getLogger(__name__)
