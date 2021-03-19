@@ -298,11 +298,15 @@ def get_logs(admin_client, project, cluster_name):
             
             def check():
                 data = admin_client.groups[project.id].logCollectionJobs[job_id].get().data
+                nonlocal local
                 if data['status'] == 'SUCCESS':
                     local['data'] = data
                     return True
                 elif data['status'] != 'IN_PROGRESS':
                     raise AstrolabeTestCaseError("Unexpected log collection job status: %s: %s" % (data['status'], data))
+                else:
+                    # status == 'IN_PROGRESS', continue polling for logs to be ready
+                    return False
             poll(
                 check,
                 timeout=timeout,
@@ -333,6 +337,7 @@ def get_logs(admin_client, project, cluster_name):
         except Exception as e:
             LOGGER.error("Error retrieving logs for '%s': %s" % (cluster_name, e))
             # Poller will retry log collection.
+            return False
         
     poll(
         collect,
