@@ -19,16 +19,21 @@ import signal
 import subprocess
 import sys
 import re
+import socket
+import requests.packages.urllib3.util.connection as urllib3_cn
 from hashlib import sha256
 from contextlib import closing
-from time import monotonic, sleep
+from time import sleep
 
 import click
 import junitparser
 
 from pymongo import MongoClient
 
-from astrolabe.exceptions import WorkloadExecutorError, PrematureExitError
+from .exceptions import (
+    WorkloadExecutorError, AstrolabeTestCaseError, PrematureExitError
+)
+from .poller import poll
 
 
 LOGGER = logging.getLogger(__name__)
@@ -100,29 +105,6 @@ def assert_subset(dict1, dict2):
                     assert value1[i] == value2[i]
         else:
             assert value1 == value2, "Different values for '%s':\nexpected '%s'\nactual   '%s'" % (key, repr(dict2[key]), repr(dict1[key]))
-
-
-class Timer:
-    """Class to simplify timing operations."""
-    def __init__(self):
-        self._start = None
-        self._end = None
-
-    def reset(self):
-        self.__init__()
-
-    def start(self):
-        self._start = monotonic()
-        self._end = None
-
-    def stop(self):
-        self._end = monotonic()
-
-    @property
-    def elapsed(self):
-        if self._end is None:
-            return monotonic() - self._start
-        return self._end - self._start
 
 
 class SingleTestXUnitLogger:
@@ -290,6 +272,7 @@ class DriverWorkloadSubprocessRunner:
 
 
 def get_logs(admin_client, project, cluster_name):
+    LOGGER.info(f'Retrieving logs for {cluster_name}')
     data = admin_client.nds.groups[project.id].clusters[cluster_name].get(api_version='private').data
     
     if data['clusterType'] == 'SHARDED':
@@ -306,28 +289,83 @@ def get_logs(admin_client, project, cluster_name):
         logTypes=['FTDC','MONGODB'],#,'AUTOMATION_AGENT','MONITORING_AGENT','BACKUP_AGENT'],
         sizeRequestedPerFileBytes=100000000,
     )
-    data = admin_client.groups[project.id].logCollectionJobs.post(**params).data
-    job_id = data['id']
+
+    # Wait 10 minutes for logs to get collected.
+    # This is a guess as to how long job collection might take, we haven't
+    # investigated the actual times over a sufficiently large sample size.
+    # The same timeout is used for retrying collection jobs and waiting for
+    # any single collection job - if this turns out to be problematic,
+    # we'll need to do some analysis of actual times to refine the timeouts.
+    timeout = 600
+    local = {}
     
-    while True:
-        LOGGER.debug('Poll job %s' % job_id)
-        data = admin_client.groups[project.id].logCollectionJobs[job_id].get().data
-        if data['status'] == 'IN_PROGRESS':
-            sleep(1)
-        elif data['status'] == 'SUCCESS':
-            break
-        else:
-            raise Exception("Unexpected log collection job status %s" % data['status'])
+    def collect():
+        try:
+            data = admin_client.groups[project.id].logCollectionJobs.post(**params).data
+            job_id = data['id']
+            
+            def check():
+                data = admin_client.groups[project.id].logCollectionJobs[job_id].get().data
+                nonlocal local
+                if data['status'] == 'SUCCESS':
+                    local['data'] = data
+                    return True
+                elif data['status'] != 'IN_PROGRESS':
+                    raise AstrolabeTestCaseError("Unexpected log collection job status: %s: %s" % (data['status'], data))
+                else:
+                    # status == 'IN_PROGRESS', continue polling for logs to be ready
+                    return False
+            poll(
+                check,
+                timeout=timeout,
+                subject="log collection job '%s' for cluster '%s'" % (job_id, cluster_name),
+            )
+            
+            if 'downloadUrl' not in local['data']:
+                msg = "Log collection job did not produce a download url: %s" % data
+                del local['data']
+                raise AstrolabeTestCaseError(msg)
+                            
+            data = local['data']
+            LOGGER.info('Log download URL: %s' % data['downloadUrl'])
+            # Assume the URL uses the same host as the other API requests, and
+            # remove it so that we just have the path.
+            url = re.sub(r'\w+://[^/]+', '', data['downloadUrl'])
+            if url.startswith('/api'):
+                url = url[4:]
+            LOGGER.info('Retrieving %s' % url)
+            resp = admin_client.request('GET', url)
+            if resp.status_code != 200:
+                raise AstrolabeTestCaseError('Request to %s failed: %s' % url, resp.status_code)
+            # Note that this reads the entire response into memory, which might
+            # fail for longer running workloads.
+            local['archive_content'] = resp.response.content
+            
+            return True
+        except Exception as e:
+            LOGGER.error("Error retrieving logs for '%s': %s" % (cluster_name, e))
+            # Poller will retry log collection.
+            return False
+        
+    poll(
+        collect,
+        timeout=timeout,
+        subject="log collection for cluster '%s'" % cluster_name,
+    )
     
-    LOGGER.info('Log download URL: %s' % data['downloadUrl'])
-    # Assume the URL uses the same host as the other API requests, and
-    # remove it so that we just have the path.
-    url = re.sub(r'\w+://[^/]+', '', data['downloadUrl'])
-    if url.startswith('/api'):
-        url = url[4:]
-    LOGGER.info('Retrieving %s' % url)
-    resp = admin_client.request('GET', url)
-    if resp.status_code != 200:
-        raise RuntimeError('Request to %s failed: %s' % url, resp.status_code)
     with open('logs.tar.gz', 'wb') as f:
-        f.write(resp.response.content)
+        f.write(local['archive_content'])
+
+def require_requests_ipv4():
+    # Force requests to use IPv4.
+    # If IPv4 endpoint times out, get that as the error
+    # instead of trying IPv6 and receiving a protocol error.
+    # https://stackoverflow.com/questions/33046733/force-requests-to-use-ipv4-ipv6
+    
+    def allowed_gai_family():
+        """
+         https://github.com/shazow/urllib3/blob/master/urllib3/util/connection.py
+        """
+        return socket.AF_INET
+
+    urllib3_cn.allowed_gai_family = allowed_gai_family

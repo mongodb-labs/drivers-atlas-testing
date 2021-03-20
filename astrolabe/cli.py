@@ -28,7 +28,7 @@ from astrolabe.runner import MultiTestRunner, SingleTestRunner
 from astrolabe.configuration import (
     CONFIGURATION_OPTIONS as CONFIGOPTS, TestCaseConfiguration)
 from astrolabe.utils import (
-    get_logs,
+    require_requests_ipv4, get_logs,
     create_click_option, get_cluster_name, get_test_name_from_spec_file,
     ClickLogHandler)
 from astrolabe.validator import validator_factory
@@ -575,4 +575,5 @@ def stats(ctx):
 
 
 if __name__ == '__main__':
+    require_requests_ipv4()
     cli()
