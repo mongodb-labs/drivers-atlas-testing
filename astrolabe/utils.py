@@ -251,8 +251,9 @@ class DriverWorkloadSubprocessRunner:
 
         # Workload executors wrapped in shell scripts can report that they've
         # terminated earlier than they actually terminate on Windows.
+        # One of the reasons for this that sometimes we need to write more than N milliones log lines to the file
         if self.is_windows:
-            sleep(2)
+            sleep(60)
             
         return self.read_stats()
         
@@ -285,7 +286,7 @@ def get_logs(admin_client, project, cluster_name):
     params = dict(
         resourceName=rname,
         resourceType=rtype,
-        redacted=True,
+        redacted=False,
         logTypes=['FTDC','MONGODB'],#,'AUTOMATION_AGENT','MONITORING_AGENT','BACKUP_AGENT'],
         sizeRequestedPerFileBytes=100000000,
     )

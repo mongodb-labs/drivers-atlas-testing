@@ -3,8 +3,7 @@
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Environment variables used as input:
-#   FRAMEWORK                       Set to specify .NET framework to test against. Values: "net452", "netcoreapp1.1",
-#                                   "netcoreapp2.1"
+#   FRAMEWORK                       Set to specify .NET framework to test against. Values: "netcoreapp2.1"
 #   ASYNC                           Whether or not to use async operations (which may be run synchronously). Values: true, false
 # Environment variables produced as output:
 #   RESULTS_DIR                     Where to output results.json
@@ -42,11 +41,7 @@ export PLATFORM
 #     We can't use dotnet run --no-build --no-restore due to https://github.com/dotnet/runtime/issues/38274
 #     Addditionally, we must use the published version to bypass a dependency resolution issue with .NET Core 1.1
 set +x # hide connection string in test output
-if [[ "$FRAMEWORK" == "net452" ]]; then
-    ./mongo-csharp-driver/tests/AstrolabeWorkloadExecutor/bin/Debug/"${FRAMEWORK}"/publish/workload-executor.exe \
-        "${CONNECTION_STRING}" "${WORKLOAD_SPEC}"
-else
-    dotnet mongo-csharp-driver/tests/AstrolabeWorkloadExecutor/bin/Debug/"${FRAMEWORK}"/publish/workload-executor.dll \
-        "${CONNECTION_STRING}" "${WORKLOAD_SPEC}"
-fi
+
+dotnet mongo-csharp-driver/tests/AstrolabeWorkloadExecutor/bin/Debug/"${FRAMEWORK}"/publish/workload-executor.dll "${CONNECTION_STRING}" "${WORKLOAD_SPEC}"
+
 set -x
