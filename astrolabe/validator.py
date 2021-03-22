@@ -22,7 +22,7 @@ from pymongo import MongoClient
 import yaml
 
 from atlasclient import JSONObject
-from astrolabe.exceptions import WorkloadExecutorError
+from astrolabe.exceptions import WorkloadExecutorError, PrematureExitError
 from astrolabe.utils import DriverWorkloadSubprocessRunner
 
 
@@ -34,7 +34,7 @@ class ValidateWorkloadExecutor(TestCase):
     def setUp(self):
         self.client = MongoClient(self.CONNECTION_STRING, w='majority')
 
-    def run_test(self, driver_workload):
+    def set_collection_from_workload(self, driver_workload):
         # Set self.coll for future use of the validator, such that it can
         # read the data inserted into the collection.
         # Actual insertion of initial data isn't done via this object.
@@ -52,6 +52,9 @@ class ValidateWorkloadExecutor(TestCase):
             self.fail('Invalid scenario: executor validator test cases must provide database and collection entities')
 
         self.coll = self.client.get_database(dbname).get_collection(collname)
+    
+    def run_test(self, driver_workload):
+        self.set_collection_from_workload(driver_workload)
         
         subprocess = DriverWorkloadSubprocessRunner()
         try:
@@ -69,7 +72,7 @@ class ValidateWorkloadExecutor(TestCase):
         sleep(5)
 
         try:
-            stats = subprocess.terminate()
+            stats = subprocess.stop()
         except TimeoutExpired:
             self.fail("The workload executor did not terminate soon after "
                       "receiving the termination signal.")
@@ -85,6 +88,35 @@ class ValidateWorkloadExecutor(TestCase):
                       "statistics. Reported statistics MUST NOT be negative.")
 
         return stats
+    
+    def run_test_expecting_error(self, driver_workload):
+        self.set_collection_from_workload(driver_workload)
+        
+        subprocess = DriverWorkloadSubprocessRunner()
+        try:
+            subprocess.spawn(workload_executor=self.WORKLOAD_EXECUTOR,
+                             connection_string=self.CONNECTION_STRING,
+                             driver_workload=driver_workload,
+                             startup_time=self.STARTUP_TIME)
+
+            # Run operations for 5 seconds.
+            sleep(5)
+        except WorkloadExecutorError:
+            # Accept premature workload executor exits when expecting the
+            # run to error.
+            pass
+
+        try:
+            stats = subprocess.stop()
+        except PrematureExitError:
+            # OK for workload executor to exit prematurely when we expect
+            # it to fail with an error. We still need to return stats.
+            stats = subprocess.read_stats()
+        except TimeoutExpired:
+            self.fail("The workload executor did not terminate soon after "
+                      "receiving the termination signal.")
+
+        return stats
 
     def test_simple(self):
         driver_workload = JSONObject.from_dict(
@@ -96,15 +128,15 @@ class ValidateWorkloadExecutor(TestCase):
 
         stats = self.run_test(driver_workload)
 
-        num_reported_updates = stats['numSuccesses']
+        num_successes = stats['numSuccesses']
         update_count = self.coll.find_one(
             {'_id': 'validation_sentinel'})['count']
-        if abs(num_reported_updates - update_count) > 1:
+        if abs(num_successes/2 - update_count) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
-                "statistics. Expected {} successful "
-                "updates to be reported, got {} instead.".format(
-                    update_count, num_reported_updates))
+                "statistics. Expected 2*{} successful "
+                "operations to be reported, got {} instead.".format(
+                    update_count, num_successes))
         if abs(stats['numIterations'] - update_count) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
@@ -155,29 +187,44 @@ class ValidateWorkloadExecutor(TestCase):
 
         stats = self.run_test(driver_workload)
 
-        num_reported_updates = stats['numSuccesses']
+        num_successes = stats['numSuccesses']
         update_count = self.coll.find_one(
             {'_id': 'validation_sentinel'})['count']
-        if abs(num_reported_updates - update_count) > 1:
+        if abs(num_successes/2 - update_count) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
-                "statistics. Expected {} successful "
-                "updates to be reported, got {} instead.".format(
-                    update_count, num_reported_updates))
+                "statistics. Expected 2*{} successful "
+                "operations to be reported, got {} instead.".format(
+                    update_count, num_successes))
 
         num_reported_errors = stats['numErrors']
-        if abs(num_reported_errors - num_reported_updates) > 1:
+        if abs(num_reported_errors - num_successes/2) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
-                "statistics. Expected approximately {} errored operations "
+                "statistics. Expected approximately {}/2 errored operations "
                 "to be reported, got {} instead.".format(
-                    num_reported_updates, num_reported_errors))
+                    num_successes, num_reported_errors))
         if abs(stats['numIterations'] - update_count) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
                 "statistics. Expected {} iterations "
                 "to be reported, got {} instead.".format(
                     update_count, stats['numIterations']))
+
+    def test_num_errors_not_captured(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numErrors-not-captured.yml').read())['driverWorkload']
+        )
+
+        stats = self.run_test_expecting_error(driver_workload)
+
+        num_reported_errors = stats['numErrors']
+        if num_reported_errors != -1:
+            self.fail(
+                "The workload executor reported unexpected execution "
+                "statistics. Expected -1 errors since errors were not captured, "
+                "got {} instead.".format(
+                    num_reported_errors))
 
     def test_num_failures(self):
         driver_workload = JSONObject.from_dict(
@@ -189,18 +236,33 @@ class ValidateWorkloadExecutor(TestCase):
         num_reported_finds = stats['numSuccesses']
 
         num_reported_failures = stats['numFailures']
-        if abs(num_reported_failures - num_reported_finds) > 1:
+        if abs(num_reported_failures - num_reported_finds/2) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
-                "statistics. Expected approximately {} errored operations "
+                "statistics. Expected approximately {}/2 errored operations "
                 "to be reported, got {} instead.".format(
                     num_reported_finds, num_reported_failures))
-        if abs(stats['numIterations'] - num_reported_finds) > 1:
+        if abs(stats['numIterations'] - num_reported_finds/2) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
                 "statistics. Expected {} iterations "
                 "to be reported, got {} instead.".format(
                     num_reported_finds, stats['numIterations']))
+
+    def test_num_failures_not_captured(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numFailures-not-captured.yml').read())['driverWorkload']
+        )
+
+        stats = self.run_test_expecting_error(driver_workload)
+
+        num_reported_errors = stats['numFailures']
+        if num_reported_errors != -1:
+            self.fail(
+                "The workload executor reported unexpected execution "
+                "statistics. Expected -1 failures since failures were not captured, "
+                "got {} instead.".format(
+                    num_reported_errors))
 
     def test_num_failures_as_errors(self):
         driver_workload = JSONObject.from_dict(
@@ -213,10 +275,10 @@ class ValidateWorkloadExecutor(TestCase):
 
         num_reported_errors = stats['numErrors']
         num_reported_failures = stats['numFailures']
-        if abs(num_reported_errors - num_reported_finds) > 1:
+        if abs(num_reported_errors - num_reported_finds/2) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
-                "statistics. Expected approximately {} errored operations "
+                "statistics. Expected approximately {}/2 errored operations "
                 "to be reported, got {} instead.".format(
                     num_reported_finds, num_reported_failures))
         if num_reported_failures > 0:
@@ -225,7 +287,7 @@ class ValidateWorkloadExecutor(TestCase):
                 "statistics. Expected all failures to be reported as errors, "
                 "got {} failures instead.".format(
                     num_reported_failures))
-        if abs(stats['numIterations'] - num_reported_finds) > 1:
+        if abs(stats['numIterations'] - num_reported_finds/2) > 1:
             self.fail(
                 "The workload executor reported inconsistent execution "
                 "statistics. Expected {} iterations "

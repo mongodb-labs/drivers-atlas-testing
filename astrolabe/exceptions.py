@@ -26,3 +26,7 @@ class PollingTimeoutError(AstrolabeBaseError):
 
 class WorkloadExecutorError(AstrolabeBaseError):
     pass
+
+
+class PrematureExitError(WorkloadExecutorError):
+    pass

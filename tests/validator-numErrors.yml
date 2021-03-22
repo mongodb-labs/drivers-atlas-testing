@@ -38,6 +38,12 @@ driverWorkload:
             storeSuccessesAsEntity: successes
             storeErrorsAsEntity: errors
             operations:
+              # Reduce log spam
+              - name: find
+                object: *collection0
+                arguments:
+                  filter: { $where: 'sleep(250)' }
+              
               - name: updateOne
                 object: *collection0
                 arguments:

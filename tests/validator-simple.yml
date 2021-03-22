@@ -51,6 +51,12 @@ driverWorkload:
             storeIterationsAsEntity: iterations
             storeSuccessesAsEntity: successes
             operations:
+              # Reduce number of events produced
+              - name: find
+                object: *collection0
+                arguments:
+                  filter: { $where: 'sleep(250)' }
+              
               - name: updateOne
                 object: *collection0
                 arguments:

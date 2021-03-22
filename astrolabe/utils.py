@@ -31,7 +31,7 @@ import junitparser
 from pymongo import MongoClient
 
 from .exceptions import (
-    WorkloadExecutorError, AstrolabeTestCaseError,
+    WorkloadExecutorError, AstrolabeTestCaseError, PrematureExitError
 )
 from .poller import poll
 
@@ -225,14 +225,19 @@ class DriverWorkloadSubprocessRunner:
 
         return self.workload_subprocess
 
-    def terminate(self):
+    def stop(self):
+        '''Stop the process, verifying it didn't already exit.'''
+        
         LOGGER.info("Stopping workload executor [PID: {}]".format(self.pid))
-
-        if not self.is_windows:
-            os.killpg(self.workload_subprocess.pid, signal.SIGINT)
-        else:
-            os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
-
+        
+        try:
+            if not self.is_windows:
+                os.killpg(self.workload_subprocess.pid, signal.SIGINT)
+            else:
+                os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
+        except ProcessLookupError as exc:
+            raise PrematureExitError("Could not request termination of workload executor, possibly because the workload executor exited prematurely: %s" % exc)
+        
         # Since the default server selection timeout is 30 seconds,
         # allow up to 60 seconds for the workload executor to terminate.
         t_wait = 60
@@ -248,7 +253,10 @@ class DriverWorkloadSubprocessRunner:
         # terminated earlier than they actually terminate on Windows.
         if self.is_windows:
             sleep(2)
-
+            
+        return self.read_stats()
+        
+    def read_stats(self):
         try:
             LOGGER.info("Reading sentinel file {!r}".format(self.sentinel))
             with open(self.sentinel, 'r') as fp:
