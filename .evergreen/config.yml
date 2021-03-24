@@ -141,24 +141,28 @@ tasks:
       - func: "validate executor"
   # One test-case per task.
   - name: retryReads-resizeCluster
+    cron: '@weekly'
     tags: ["all", "retryReads", "resizeCluster"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-resizeCluster
   - name: retryReads-toggleServerSideJS
+    cron: '@weekly'
     tags: ["all", "retryReads", "toggleServerSideJS"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-toggleServerSideJS
   - name: retryWrites-resizeCluster
+    cron: '@weekly'
     tags: ["all", "retryWrites", "resizeCluster"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryWrites-resizeCluster
   - name: retryWrites-toggleServerSideJS
+    cron: '@weekly'
     tags: ["all", "retryWrites", "toggleServerSideJS"]
     commands:
       - func: "run test"
@@ -373,4 +377,4 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
-  
+
