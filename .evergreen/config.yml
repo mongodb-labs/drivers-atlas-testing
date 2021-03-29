@@ -117,7 +117,7 @@ functions:
           CLUSTER_NAME_SALT: ${build_id}
           ATLAS_API_USERNAME: ${atlas_key}
           ATLAS_API_PASSWORD: ${atlas_secret}
-          ATLAS_API_BASE_URL: https://cloud-dev.mongodb.com/api
+          ATLAS_API_BASE_URL: ${atlas_url}
           ATLAS_ORGANIZATION_NAME: ${atlas_organization}
           ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
