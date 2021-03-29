@@ -54,7 +54,7 @@ functions:
       params:
         working_dir: astrolabe-src
         command: |
-          git clone --recursive --branch ${DRIVER_REVISION} ${DRIVER_REPOSITORY}
+          git clone --depth 1 --recurse-submodules --shallow-submodules --branch ${DRIVER_REVISION} ${DRIVER_REPOSITORY}
     # Install driver on *nix platforms.
     - command: subprocess.exec
       params:
