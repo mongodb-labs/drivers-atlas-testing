@@ -348,7 +348,7 @@ def get_logs(admin_client, project, cluster_name):
             
             return True
         except Exception as e:
-            LOGGER.error("Error retrieving logs for '%s': %s" % (cluster_name, e))
+            LOGGER.warn("Error retrieving logs for '%s': %s" % (cluster_name, e))
             # Poller will retry log collection.
             return False
         
