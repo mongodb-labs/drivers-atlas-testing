@@ -1,10 +1,10 @@
-# This file intentionally causes the workload executor to produce a failure
+# This file intentionally causes the workload executor to produce an error
 # on each execution.
 
 operations: []
 
 driverWorkload:
-  description: "Validator - numFailures not captured"
+  description: "Validator - numErrors as failures"
 
   schemaVersion: "1.2"
 
@@ -25,17 +25,18 @@ driverWorkload:
       databaseName: *database0Name
       documents:
         -
-          _id: 2
-          x: 2
+          _id: validation_sentinel
+          count: 0
 
   tests:
-    - description: "Find one & failure"
+    - description: "updateOne & error"
       operations:
         - name: loop
           object: testRunner
           arguments:
             storeIterationsAsEntity: iterations
             storeSuccessesAsEntity: successes
+            storeFailuresAsEntity: failures
             operations:
               # Reduce log spam
               - name: find
@@ -43,21 +44,14 @@ driverWorkload:
                 arguments:
                   filter: { $where: 'sleep(250)' }
               
-              - name: find
+              - name: updateOne
                 object: *collection0
                 arguments:
-                  filter: { _id: { $gt: 1 }}
-                  sort: { _id: 1 }
-                expectResult:
-                  -
-                    _id: 2
-                    x: 2
-              - name: find
+                  filter: { _id: validation_sentinel}
+                  update: 
+                    $inc:
+                      count: 1
+              - name: doesNotExist
                 object: *collection0
                 arguments:
-                  filter: { _id: { $gt: 1 }}
-                  sort: { _id: 1 }
-                expectResult:
-                  -
-                    _id: 2
-                    x: 42
+                  foo: bar

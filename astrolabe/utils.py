@@ -166,8 +166,6 @@ def mongo_client(connection_string):
 
 class DriverWorkloadSubprocessRunner:
     """Convenience wrapper to run a workload executor in a subprocess."""
-    _PLACEHOLDER_EXECUTION_STATISTICS = {
-        'numErrors': -1, 'numFailures': -1, 'numSuccesses': -1}
 
     def __init__(self):
         self.is_windows = False
@@ -261,14 +259,14 @@ class DriverWorkloadSubprocessRunner:
             LOGGER.info("Reading sentinel file {!r}".format(self.sentinel))
             with open(self.sentinel, 'r') as fp:
                 stats = json.load(fp)
+                LOGGER.info("Sentinel contains: %s" % json.dumps(stats))
+                return stats
         except FileNotFoundError:
             LOGGER.error("Sentinel file not found")
-            stats = self._PLACEHOLDER_EXECUTION_STATISTICS
+            raise WorkloadExecutorError("The workload executor did not write a results.json file in the expected location")
         except json.JSONDecodeError:
             LOGGER.error("Sentinel file contains malformed JSON")
-            stats = self._PLACEHOLDER_EXECUTION_STATISTICS
-
-        return stats
+            raise WorkloadExecutorError("The workload executor wrote a results.json that contained malformed JSON.")
 
 
 def get_logs(admin_client, project, cluster_name):
