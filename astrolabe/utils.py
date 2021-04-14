@@ -172,8 +172,8 @@ class DriverWorkloadSubprocessRunner:
         if sys.platform in ("win32", "cygwin"):
             self.is_windows = True
         self.workload_subprocess = None
-        self.sentinel = os.path.join(
-            os.path.abspath(os.curdir), 'results.json')
+        self.sentinel = os.path.join(os.path.abspath(os.curdir), 'results.json')
+        self.events = os.path.join(os.path.abspath(os.curdir), 'events.json')
 
     @property
     def pid(self):
@@ -189,8 +189,13 @@ class DriverWorkloadSubprocessRunner:
 
         try:
             os.remove(self.sentinel)
-            LOGGER.debug("Cleaned up sentinel file at {}".format(
-                self.sentinel))
+            LOGGER.debug("Cleaned up sentinel file at {}".format(self.sentinel))
+        except FileNotFoundError:
+            pass
+
+        try:
+            os.remove(self.events)
+            LOGGER.debug("Cleaned up events file at {}".format(self.events))
         except FileNotFoundError:
             pass
 

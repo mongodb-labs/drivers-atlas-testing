@@ -253,9 +253,6 @@ class ValidateWorkloadExecutor(TestCase):
         driver_workload = JSONObject.from_dict(
             yaml.safe_load(open('tests/validator-simple.yml').read())['driverWorkload']
         )
-        
-        if os.path.exists('events.json'):
-            os.unlink('events.json')
 
         stats = self.run_test(driver_workload)
         self.assert_basic_stats(stats)
