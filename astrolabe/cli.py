@@ -361,6 +361,21 @@ def delete_cluster(ctx, project_name, cluster_name):
     click.echo("DONE!")
 
 
+@atlas_clusters.command('delete-all')
+@ATLASPROJECTNAME_OPTION
+@click.pass_context
+def delete_all_clusters(ctx, project_name):
+    """Delete all Atlas Clusters in the given Atlas Project."""
+    click.confirm("This will delete all clusters under the project {}. "
+                  "Do you want to continue?".format(project_name), abort=True)
+    project = ctx.obj.client.groups.byName[project_name].get().data
+    clusters = ctx.obj.client.groups[project.id].clusters.get()
+    for cluster in clusters.data['results']:
+        click.echo("Deleting cluster {}".format(cluster['name']))
+        ctx.obj.client.groups[project.id].clusters[cluster['name']].delete().data
+    click.echo("DONE!")
+
+
 @cli.group('info')
 def help_topics():
     """Help topics for astrolabe users."""
