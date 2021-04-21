@@ -130,17 +130,21 @@ A Test Scenario File has the following keys:
   be exactly one ``loop`` operation per scenario, and it SHOULD be the last
   operation in the scenario.
 
-  The scenario MUST use ``storeErrorsAsEntity``, ``storeFailuresAsEntity``,
-  ``storeSuccessesAsEntity`` and ``storeIterationsAsEntity`` operation arguments
-  to allow the workload executor to retrieve errors, failures and operation
-  counts for the executed workload. The entity names for these options MUST
-  be as follows:
-  
+  The scenario MUST use ``storeErrorsAsEntity``, ``storeSuccessesAsEntity``,
+  and ``storeIterationsAsEntity`` operation arguments to allow the workload
+  executor to retrieve errors, failures, and operation and iteration counts for
+  the executed workload. The entity names for these options MUST be as follows:
+
   - ``storeErrorsAsEntity``: ``errors``
-  - ``storeFailuresAsEntity``: ``failures``
   - ``storeSuccessesAsEntity``: ``successes``
   - ``storeIterationsAsEntity``: ``iterations``
-  
+
+  The scenario MUST NOT use ``storeFailuresAsEntity`` to ensure that all errors
+  and failures are reported under a single ``errors`` entity irrespective of how
+  a test runner might distinguish errors and failures (if at all). Note that
+  some ValidateWorkloadExecutor tests may still use ``storeFailuresAsEntity``
+  with the entity name ``failures`` to assert workload executor correctness.
+
   The scenario MUST use ``storeEventsAsEntities`` operation argument
   when defining MongoClients to record CMAP and command events published
   during maintenance. All events MUST be stored in an entity named ``events``.

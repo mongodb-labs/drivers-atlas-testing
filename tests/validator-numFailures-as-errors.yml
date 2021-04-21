@@ -4,7 +4,7 @@
 operations: []
 
 driverWorkload:
-  description: "Validator - num failures"
+  description: "Validator - numFailures as errors"
 
   schemaVersion: "1.2"
 

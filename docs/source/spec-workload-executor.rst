@@ -46,9 +46,9 @@ After accepting the inputs, the workload executor:
 
 #. MUST parse the incoming ``driverWorkload`` document and set up
     the driver's unified test runner to execute the provided workload.
-    
+
    .. note::
-    
+
       The workload SHOULD include a ``loop`` operation, as described in the
       unified test format, but the workload executor SHOULD NOT validate that
       this is the case.
@@ -58,6 +58,22 @@ After accepting the inputs, the workload executor:
    to communicate to the workload executor, and ultimately the unified test
    runner, that they should stop running operations.
 
+#. MUST initialize the following variables, which will later be used to generate
+   the ``results.json`` and ``events.json`` output files:
+
+   * ``events``: Empty array of objects.
+
+   * ``errors``: Empty array of objects.
+
+   * ``failures``: Empty array of objects.
+
+   * ``numIterations``: Integer with value -1.
+
+   * ``numSuccesses``: Integer with value -1.
+
+   Note: ``numErrors`` and ``numFailures`` are intentionally omitted here as
+   they will be derived directly from ``errors`` and ``failures``.
+
 #. MUST invoke the unified test runner to execute the workload.
    If the workload includes a ``loop`` operation, the workload will run until
    terminated by the workload executor; otherwise, the workload will terminate
@@ -65,54 +81,80 @@ After accepting the inputs, the workload executor:
    The workload executor MUST handle the case of a non-looping workload and
    it MUST terminate if the unified test runner completely executes the
    specified workload.
-   
+
    If the unified test runner raises an error while executing the workload,
    the error MUST be reported using the same format as errors handled by the
    unified test runner, as described in the unified test runner specification
-   under the ``loop`` operation. Errors handled by the workload
-   executor MUST be included in the calculated (and reported) error count.
-   
+   under the ``loop`` operation. The error MUST be appended to the ``errors``
+   array.
+
    If the unified test runner reports a failure while executing the workload,
    the failure MUST be reported using the same format as failures handled by the
    unified test runner, as described in the unified test runner specification
-   under the ``loop`` operation. Failures handled by the workload
-   executor MUST be included in the calculated (and reported) failure count.
-   If the driver's unified test runner is intended to handle all failures
-   internally, failures that propagate out of the unified test runner MAY
-   be treated as errors by the workload executor.
+   under the ``loop`` operation. The failure MUST be appended to either the
+   ``failures`` array or, if the workload executor cannot distinguish between
+   errors and failures, the ``errors`` array.
 
 #. Upon receipt of the termination signal, MUST instruct the
    unified test runner to stop looping, as defined in the unified test format.
 
 #. MUST wait for the unified test runner to finish executing.
-   
+
 #. MUST use the unified test runner to retrieve the following
    entities by name from the entity map, if they are set:
-   
-   * ``iterations``: the number of iterations that the workload executor
-     performed over the looped operations. If the iteration count was not
-     reported by the test runner, such as because the respective option was
-     not specified in the test scenario, the workload executor MUST use
-     ``-1`` as the number of iterations.
-   
-   * ``successes``: the number of successful operations that the workload
-     executor performed over the looped operations. If the iteration count
-     was not reported by the test runner, such as because the respective
-     option was not specified in the test scenario, the workload executor
-     MUST use ``-1`` as the number of successes.
-   
-   * ``errors``: array of documents describing the errors that occurred
-     while the workload executor was executing the operations.
-   
-   * ``failures``: array of documents describing the failures that occurred
-     while the workload executor was executing the operations.
-   
-   * ``events``: array of documents describing the command and CMAP events
-     that occurred while the workload executor was executing the operations.
 
-   If the driver's unified test format does not distinguish between errors
-   and failures, and reports one but not the other, the workload executor MUST
-   set the non-reported entry to the empty array.
+   * ``iterations``: The number of iterations that the workload executor
+     performed over the looped operations. If set, this value MUST be assigned
+     to the workload executor's ``numIterations`` variable. Note that this
+     entity may be unset if the workload's ``loop`` operation did not specify
+     ``storeIterationsAsEntity``.
+
+   * ``successes``: The number of successful operations that the workload
+     executor performed over the looped operations. If set, this value MUST be
+     assigned to the workload executor's ``numSuccesses`` variable. Note that
+     this entity may be unset if the workload's ``loop`` operation did not
+     specify ``storeSuccessesAsEntity``.
+
+   * ``errors``: Array of documents describing the errors that occurred
+     while the workload executor was executing the operations. If set, any
+     documents in this array MUST be appended to the workload executor's
+     ``errors`` array. Note that this entity may be unset if the workload's
+     ``loop`` operation did not specify ``storeErrorsAsEntity``.
+
+   * ``failures``: Array of documents describing the failures that occurred
+     while the workload executor was executing the operations. If set, any
+     documents in this array MUST be appended to the workload executor's
+     ``failures`` array. Note that this entity may be unset if the workload's
+     ``loop`` operation did not specify ``storeFailuresAsEntity``.
+
+   * ``events``: Array of documents describing the command and CMAP events
+     that occurred while the workload executor was executing the operations. If
+     set, and documents in this array MUST be appended to the workload
+     executor's ``events`` array. Note that this entity may be unset if the
+     workload's client entity did not specify ``storeEventsAsEntities``.
+
+#. MUST write the ``events``, ``errors``, and ``failures`` variables to a JSON
+   file named ``events.json`` in the current working directory (i.e. directory
+   from where the workload executor is being executed). The data written MUST
+   be an object with the following fields:
+
+   - ``events``: Array of event objects (e.g. observed command or CMAP events).
+     Per the unified test format, each object is expected to have a ``name``
+     string field and an ``observedAt`` numeric field, in addition to any other
+     fields specific to the event's type.
+
+   - ``errors``: Array of error objects. Per the unified test format, each
+     object is expected to have an ``error`` string field and a ``time`` numeric
+     field.
+
+   - ``failures``: Array of failure objects. Per the unified test format, each
+     object is expected to have an ``error`` string field and a ``time`` numeric
+     field.
+
+   Note that is possible for some or all of these arrays to be empty if the
+   corresponding data was not reported by the unified test runner and the test
+   runner did not propagate an error or failure (which would then be reported by
+   the workload executor).
 
 #. MUST calculate the aggregate counts of errors (``numErrors``) and failures
    (``numFailures``) from the error and failure lists. If the errors or
@@ -120,48 +162,44 @@ After accepting the inputs, the workload executor:
    respective options were not specified in the test scenario, the workload
    executor MUST use ``-1`` as the value for the respective counts.
 
-#. MUST write the collected events, errors and failures into a JSON file named
-   ``events.json`` in the current directory
-   (i.e. the directory from where the workload executor is being executed). 
-   The data written MUST be a map with the following fields:
-   
-   - ``events``: the collected command and CMAP events.
-   
-   - ``errors``: the reported errors.
-   
-   - ``failures``: the reported errors.
-   
-   If events, errors or failures were not reported by the unified test runner,
-   such as because the scenario did not specify the corresponding options,
-   the workload executor MUST write empty arrays into ``events.json``.
-
 #. MUST write the collected workload statistics into a JSON file named
    ``results.json`` in the current working directory (i.e. the directory
    from where the workload executor is being executed). Workload statistics
    MUST contain the following fields (drivers MAY report additional statistics
    using field names of their choice):
 
-   * ``numErrors``: the number of operation errors that were encountered
-     during the test. This includes errors handled by the workload executor
-     and errors handled by the unified test runner.
-   * ``numFailures``: the number of operation failures that were encountered
-     during the test. This includes failures handled by the workload executor
-     and failures handled by the unified test runner.
-   * ``numSuccesses``: the number of successful operations executed
-     during the test.
-   * ``numIterations``: the number of loop iterations executed during the test.
+   * ``numErrors``: The number of errors that were encountered during the test.
+     This includes errors handled by either the unified test runner or the
+     workload executor. The reported value MUST equal the size of the ``errors``
+     array reported in ``events.json``.
 
- .. note:: The values of ``numErrors`` and ``numFailures`` are used by ``astrolabe`` to determine the overall
-    success or failure of a driver workload execution. A non-zero value for either of these fields is construed
-    as a sign that something went wrong while executing the workload and the test is marked as a failure.
-    The workload executor's exit code is **not** used for determining success/failure and is ignored.
+   * ``numFailures``: The number of failures that were encountered during the
+     test. This includes failures handled by either the unified test runner or
+     the workload executor. The reported value MUST equal the size of the
+     ``failures`` array reported in ``events.json``.
 
-.. note:: If ``astrolabe`` encounters an error in parsing the workload statistics dumped to ``results.json``
-  (caused, for example, by malformed JSON), ``numErrors``, ``numFailures``, and ``numSuccesses``
-  will be set to ``-1`` and the test run will be assumed to have failed.
+   * ``numSuccesses``: The number of successful operations executed during the
+     test. This MAY be -1 if a ``successes`` entity was never reported by the
+     unified test runner.
 
-.. note:: The choice of termination signal used by ``astrolabe`` varies by platform. ``SIGINT`` [#f1]_ is used as
-  the termination signal on Linux and OSX, while ``CTRL_BREAK_EVENT`` [#f2]_ is used on Windows.
+   * ``numIterations``: The number of loop iterations executed during the test.
+     This MAY be -1 if an ``iterations`` entity was never reported by the
+     unified test runner.
+
+.. note:: The values of ``numErrors`` and ``numFailures`` are used by
+   ``astrolabe`` to determine the overall success or failure of a driver
+   workload execution. A non-zero value for either of these fields is construed
+   as a sign that something went wrong while executing the workload and the test
+   is marked as a failure. The workload executor's exit code is **not** used for
+   determining success/failure and is ignored.
+
+.. note:: If ``astrolabe`` encounters an error attempting to parse the workload
+   statistics written to ``results.json`` (caused, for example, by malformed
+   JSON or a nonexistent file), the test will be assumed to have failed.
+
+.. note:: The choice of termination signal used by ``astrolabe`` varies by
+   platform. ``SIGINT`` [#f1]_ is used as the termination signal on Linux and
+   OSX, while ``CTRL_BREAK_EVENT`` [#f2]_ is used on Windows.
 
 .. note:: On Windows systems, the workload executor is invoked via Cygwin Bash.
 
@@ -169,68 +207,78 @@ After accepting the inputs, the workload executor:
 Pseudocode Implementation
 -------------------------
 
-.. code::
+.. code-block:: javascript
 
-    # targetDriver is the driver to be tested.
-    import { MongoClient } from "targetDriver"
-
-    # The workloadRunner function accepts a connection string and a
-    # stringified JSON blob describing the driver workload.
-    # This function will be invoked with arguments parsed from the
-    # command-line invocation of the workload executor script.
+    /* The workloadRunner function accepts a connection string and a stringified
+     * JSON blob describing the driver workload. This function will be invoked
+     * with arguments parsed from the command-line invocation of the workload
+     * executor script. */
     function workloadRunner(connectionString: string, driverWorkload: object): void {
 
-        # Use the driver's unified test runner to run the workload.
+        # Use the driver's unified test runner to run the workload
         const runner = UnifiedTestRunner(connectionString);
-        
+
+        var events = []
+        var errors = []
+        var failures = []
+        var numIterations = -1
+        var numSuccesses = -1
+
+        /* The workload executor MUST handle the termination signal gracefully
+         * and instruct the unified test runner to stop looping. The termination
+         * signal will be used by astrolabe to terminate tests that would
+         * otherwise run ad infinitum.
+        process.once('SIGINT', function (code) { ... });
+
         try {
             runner.executeScenario();
-        } catch (terminationSignal) {
-            # The workloadExecutor MUST handle the termination signal gracefully.
-            # The termination signal will be used by astrolabe to terminate drivers operations that otherwise run ad infinitum.
-            # The workload statistics must be written to a file named results.json in the current working directory.
-        }
-        
-        let results = {};
-        try {
-          numIterations = runner.entityMap.get('iterations');
-        } catch {
-          numIterations = -1;
-        }
-        try {
-          numSuccesses = runner.entityMap.get('successes');
-        } catch {
-          numSuccesses = -1;
-        }
-        try {
-          errors = runner.entityMap.get('errors');
-          numErrors = errors.length;
-        } catch {
-          errors = [];
-          numErrors = -1;
-        }
-        try {
-          failures = runner.entityMap.get('failures');
-          numFailures = failures.length;
-        } catch {
-          failures = [];
-          numFailures = -1;
-        }
-        try {
-          events = runner.entityMap.get('events');
-        } catch {
-          events = [];
+        } catch (propagatedError) {
+            /* If the test runner propagates an error or failure (e.g. it is not
+             * captured by the loop or occurs outside of the loop), it MUST be
+             * reported by the workload executor. */
+             errors.push({
+               error: propagatedError.message,
+               time: Date.now() / 1000
+             });
         }
 
+        if (runner.entityMap.has('events')) {
+            events = events.concat(runner.entityMap.get('events');
+        }
+
+        if (runner.entityMap.has('errors')) {
+            errors = errors.concat(runner.entityMap.get('errors');
+        }
+
+        if (runner.entityMap.has('failures')) {
+            failures = failures.concat(runner.entityMap.get('failures');
+        }
+
+        if (runner.entityMap.has('iterations')) {
+            numIterations = runner.entityMap.get('iterations');
+        }
+
+        if (runner.entityMap.has('successes')) {
+            numSuccesses = runner.entityMap.get('successes');
+        }
+
+        numErrors = errors.length
+        numFailures = failures.length
+
+        /* The events.json and results.json files MUST be written to the current
+         * working directory from which this script is executed, which is not
+         * necessarily the same directory where the script itself resides. */
         fs.writeFile('events.json', JSON.stringify({
             events: events,
             errors: errors,
             failures: failures,
         }));
+
         fs.writeFile('results.json', JSON.stringify({
-            ‘numErrors’: numErrors,
-            'numFailures': numFailures,
-            'numSuccesses': numSuccesses,
+            numErrors: numErrors,
+            numFailures: numFailures,
+            numSuccesses: numSuccesses,
+            numIterations: numIterations,
         }));
     }
 
