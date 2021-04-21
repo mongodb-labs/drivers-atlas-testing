@@ -252,6 +252,7 @@ class DriverWorkloadSubprocessRunner:
         # Workload executors wrapped in shell scripts can report that they've
         # terminated earlier than they actually terminate on Windows.
         # One of the reasons for this that sometimes we need to write more than N milliones log lines to the file
+        # In most cases, it's enough to have like 5-10 seconds delay here, but very rarely even 30 seconds was not enough, so set the safest value
         if self.is_windows:
             sleep(60)
             
@@ -286,7 +287,7 @@ def get_logs(admin_client, project, cluster_name):
     params = dict(
         resourceName=rname,
         resourceType=rtype,
-        redacted=False,
+        redacted=False,  # this needs to workaround the server bug https://jira.mongodb.org/browse/CLOUDP-87748 where logs written with "redacted=True" settings have unclear format
         logTypes=['FTDC','MONGODB'],#,'AUTOMATION_AGENT','MONITORING_AGENT','BACKUP_AGENT'],
         sizeRequestedPerFileBytes=100000000,
     )
