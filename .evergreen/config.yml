@@ -141,24 +141,28 @@ tasks:
       - func: "validate executor"
   # One test-case per task.
   - name: retryReads-resizeCluster
+    cron: '@weekly'
     tags: ["all", "retryReads", "resizeCluster"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-resizeCluster
   - name: retryReads-toggleServerSideJS
+    cron: '@weekly'
     tags: ["all", "retryReads", "toggleServerSideJS"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-toggleServerSideJS
   - name: retryWrites-resizeCluster
+    cron: '@weekly'
     tags: ["all", "retryWrites", "resizeCluster"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryWrites-resizeCluster
   - name: retryWrites-toggleServerSideJS
+    cron: '@weekly'
     tags: ["all", "retryWrites", "toggleServerSideJS"]
     commands:
       - func: "run test"
@@ -191,13 +195,6 @@ axes:
           DRIVER_DIRNAME: "node"
           DRIVER_REPOSITORY: "https://github.com/mongodb/node-mongodb-native"
           DRIVER_REVISION: "master"
-      - id: java-master
-        display_name: "Java (master)"
-        variables:
-          DRIVER_DIRNAME: "java"
-          DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-java-driver"
-          DRIVER_REVISION: "master"
-          ASTROLABE_EXECUTOR_STARTUP_TIME: 15
       - id: dotnet-master
         display_name: "dotnet (master)"
         variables:
@@ -266,10 +263,6 @@ axes:
         display_name: Node v12 Erbium
         variables:
           NODE_LTS_NAME: "erbium"
-      - id: java11
-        display_name: Java 11
-        variables:
-          JAVA_HOME: "/opt/java/jdk11"
       - id: dotnet-async-netcoreapp2.1
         display_name: dotnet-async-netcoreapp2.1
         variables:
@@ -343,14 +336,6 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - .all
-- matrix_name: "tests-java"
-  matrix_spec:
-    driver: ["java-master"]
-    platform: ["ubuntu-18.04"]
-    runtime: ["java11"]
-  display_name: "${driver} ${platform} ${runtime}"
-  tasks:
-    - ".all"
 - matrix_name: "tests-dotnet-windows"
   matrix_spec:
     driver: ["dotnet-master"]
@@ -373,4 +358,4 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
-  
+
