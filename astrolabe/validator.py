@@ -93,7 +93,7 @@ class ValidateWorkloadExecutor(TestCase):
             # run to error.
             pass
 
-        # The workload executor to permitted to exit prematurely when expecting
+        # The workload executor is permitted to exit prematurely when expecting
         # an error, but it should still report stats via results.json
         try:
             try:
