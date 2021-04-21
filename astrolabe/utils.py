@@ -287,7 +287,7 @@ def get_logs(admin_client, project, cluster_name):
     params = dict(
         resourceName=rname,
         resourceType=rtype,
-        redacted=False,  # this needs to workaround the server bug https://jira.mongodb.org/browse/CLOUDP-87748 where logs written with "redacted=True" settings have unclear format
+        redacted=False,  # redaction on 4.4 servers in Atlas produces garbled log files. See https://jira.mongodb.org/browse/CLOUDP-87748 and https://jira.mongodb.org/projects/HELP/queues/issue/HELP-23629 
         logTypes=['FTDC','MONGODB'],#,'AUTOMATION_AGENT','MONITORING_AGENT','BACKUP_AGENT'],
         sizeRequestedPerFileBytes=100000000,
     )
