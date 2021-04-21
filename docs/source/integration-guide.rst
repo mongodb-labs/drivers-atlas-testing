@@ -53,7 +53,7 @@ The executable permission bit MUST be set for the workload executor file *before
    leak the Atlas API credentials and MongoDB user credentials. See :ref:`evg-defining-environment-variables` for
    details.
 
-.. note:: The workload executor be invoked with the working directory set to the ``astrolabe`` project root.
+.. note:: The workload executor will be invoked with the working directory set to the ``astrolabe`` project root.
 
 .. _wrapping-workload-executor-shell-script:
 
