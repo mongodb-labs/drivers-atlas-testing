@@ -1,0 +1,14 @@
+{
+    "repositories": [
+        { "type": "path", "url": "$PHPLIB_PATH" }
+    ],
+    "require": {
+        "php": "^7.3 || ^8.0",
+        "mongodb/mongodb": "@dev",
+        "symfony/phpunit-bridge": "^5.2"
+    },
+    "autoload": {
+        "psr-4": { "MongoDB\\Tests\\": "vendor/mongodb/mongodb/tests" },
+        "files": [ "vendor/mongodb/mongodb/tests/PHPUnit/Functions.php" ]
+    }
+}
