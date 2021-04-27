@@ -3,8 +3,7 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Environment variables used as input:
-#   FRAMEWORK                       Set to specify .NET framework to test against. Values: "net452", "netcoreapp1.1",
-#                                   "netcoreapp2.1"
+#   FRAMEWORK                       Set to specify .NET framework to test against. Values: "netcoreapp2.1"
 
 dotnet --version
 dotnet --list-sdks
