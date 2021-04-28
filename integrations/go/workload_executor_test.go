@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -29,22 +28,35 @@ func hasLoop(tc *unified.TestCase) bool {
 	return false
 }
 
+// marshalStructToFile marshals the given object and writes to filePath
+func marshalStructToFile(t *testing.T, obj interface{}, filePath string) {
+	// MarshalExtJSON is used to print out bson.Raw properly
+	marshaled, err := bson.MarshalExtJSON(obj, false, false)
+	if err != nil {
+		t.Fatalf("marshal results failed: %v", err)
+	}
+	err = ioutil.WriteFile(filePath, marshaled, 0644)
+	if err != nil {
+		t.Fatalf("write to file failed: %v", err)
+	}
+}
+
 func TestAtlasPlannedMaintenance(t *testing.T) {
 	connstring := os.Args[1]
 	workloadSpec := []byte(os.Args[2])
 
 	setupOpts := mtest.NewSetupOptions().SetURI(connstring)
 	if err := mtest.Setup(setupOpts); err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	defer func() {
 		if err := mtest.Teardown(); err != nil {
-			panic(err)
+			t.Fatal(err)
 		}
 	}()
 
 	// killAllSessions will return an auth error if it's run
-	fileReqs, runners := unified.ParseTestFile(t, workloadSpec, unified.NewOptions().SetRunKillAllSessions(false))
+	fileReqs, testCases := unified.ParseTestFile(t, workloadSpec, unified.NewOptions().SetRunKillAllSessions(false))
 
 	mtOpts := mtest.NewOptions().
 		RunOn(fileReqs...).
@@ -52,59 +64,45 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 	mt := mtest.New(t, mtOpts)
 	defer mt.Close()
 
-	// a testfile can parse to multiple runners, though we only expect to get one per file
-	for _, runner := range runners {
+	// a testfile can parse to multiple testCases, though we only expect to get one per file
+	for _, testCase := range testCases {
 		mtOpts := mtest.NewOptions().
-			RunOn(runner.RunOnRequirements...).
+			RunOn(testCase.RunOnRequirements...).
 			CreateClient(false)
 
-		mt.RunOpts(runner.Description, mtOpts, func(mt *mtest.T) {
+		mt.RunOpts(testCase.Description, mtOpts, func(mt *mtest.T) {
 			// the workload executor should be able to run non-looping tests and EndLoop() will panic
 			// if the test has already finished
-			if hasLoop(runner) {
+			if hasLoop(testCase) {
 				// Waits for the termination signal from astrolabe and terminates the loop operation
 				go func() {
 					c := make(chan os.Signal, 1)
 					signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 					<-c
-					runner.EndLoop()
+					testCase.EndLoop()
 				}()
 			}
 
-			testErr := runner.Run(mt)
+			testErr := testCase.Run(mt)
+			entityMap := testCase.GetEntities()
 
-			em := runner.GetEntities()
-
-			// structs for marshaling json results
-			results := struct {
-				NumErrors     int   `bson:"numErrors"`
-				NumFailures   int   `bson:"numFailures"`
-				NumSuccesses  int32 `bson:"numSuccesses"`
-				NumIterations int32 `bson:"numIterations"`
-			}{}
+			// store resulting bson documents in events.json
 			allEvents := struct {
 				Events   []bson.Raw `bson:"events"`
 				Errors   []bson.Raw `bson:"errors"`
 				Failures []bson.Raw `bson:"failures"`
 			}{}
 
-			var err error
-			if results.NumIterations, err = em.Iterations("iterations"); err != nil {
-				results.NumIterations = -1
-			}
-			if results.NumSuccesses, err = em.Successes("successes"); err != nil {
-				results.NumSuccesses = -1
-			}
+			allEvents.Failures, _ = entityMap.BSONArray("failures")
+			allEvents.Errors, _ = entityMap.BSONArray("errors")
+			allEvents.Events, _ = entityMap.EventList("events")
 
-			allEvents.Failures, _ = em.BSONArray("failures")
-			allEvents.Errors, _ = em.BSONArray("errors")
-			allEvents.Events, _ = em.EventList("events")
 			// a non-nil testErr should be added to the appropriate slice
 			if testErr != nil {
 				errDoc := bson.Raw(bsoncore.NewDocumentBuilder().
 					AppendString("error", testErr.Error()).
-					AppendInt64("time", time.Now().Unix()).
+					AppendDouble("time", float64(time.Now().Unix())).
 					Build())
 				switch {
 				// check for the failure substring
@@ -115,44 +113,41 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 				}
 			}
 
-			results.NumErrors = len(allEvents.Errors)
-			results.NumFailures = len(allEvents.Failures)
-
 			// make sure that empty slices marshal as slices instead of null
 			if len(allEvents.Events) == 0 {
 				allEvents.Events = make([]bson.Raw, 0)
 			}
-			if results.NumErrors == 0 {
+			if len(allEvents.Errors) == 0 {
 				allEvents.Errors = make([]bson.Raw, 0)
 			}
-			if results.NumFailures == 0 {
+			if len(allEvents.Failures) == 0 {
 				allEvents.Failures = make([]bson.Raw, 0)
 			}
 
-			path, _ := os.Getwd()
+			path, err := os.Getwd()
+			if err != nil {
+				t.Fatalf("error getting path: %v", err)
+			}
+			marshalStructToFile(t, allEvents, path+"/events.json")
 
-			resultJSON, err := bson.MarshalExtJSON(&results, false, false)
-			if err != nil {
-				str := fmt.Sprintf("marshal results failed: %v", err)
-				panic(str)
-			}
-			err = ioutil.WriteFile(path+"/results.json", resultJSON, 0644)
-			if err != nil {
-				str := fmt.Sprintf("write to file failed: %v", err)
-				panic(str)
-			}
+			// store results.json
+			results := struct {
+				NumErrors     int   `bson:"numErrors"`
+				NumFailures   int   `bson:"numFailures"`
+				NumSuccesses  int32 `bson:"numSuccesses"`
+				NumIterations int32 `bson:"numIterations"`
+			}{}
 
-			// MarshalExtJSON is used to print out bson.Raw properly
-			eventJSON, err := bson.MarshalExtJSON(&allEvents, false, false)
-			if err != nil {
-				str := fmt.Sprintf("marshal results failed: %v", err)
-				panic(str)
+			if results.NumIterations, err = entityMap.Iterations("iterations"); err != nil {
+				results.NumIterations = -1
 			}
-			err = ioutil.WriteFile(path+"/events.json", eventJSON, 0644)
-			if err != nil {
-				str := fmt.Sprintf("write to file failed: %v", err)
-				panic(str)
+			if results.NumSuccesses, err = entityMap.Successes("successes"); err != nil {
+				results.NumSuccesses = -1
 			}
+			results.NumErrors = len(allEvents.Errors)
+			results.NumFailures = len(allEvents.Failures)
+
+			marshalStructToFile(t, results, path+"/results.json")
 		})
 	}
 }
