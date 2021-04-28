@@ -191,7 +191,7 @@ class AtlasTestCase:
             elif op_name == 'testFailover':
                 timer = Timer()
                 timer.start()
-                timeout = 90
+                timeout = 300
 
                 # DRIVERS-1585: failover may fail due to the cluster not being
                 # ready. Retry failover up to a timeout if the
