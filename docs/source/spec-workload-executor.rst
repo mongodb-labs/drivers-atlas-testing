@@ -156,9 +156,6 @@ After accepting the inputs, the workload executor:
    runner did not propagate an error or failure (which would then be reported by
    the workload executor).
 
-#. MUST calculate the aggregate counts of errors (``numErrors``) and failures
-   (``numFailures``) from the error and failure lists.
-
 #. MUST write the collected workload statistics into a JSON file named
    ``results.json`` in the current working directory (i.e. the directory
    from where the workload executor is being executed). Workload statistics
