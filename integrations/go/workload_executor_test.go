@@ -58,6 +58,10 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 
 	// killAllSessions will return an auth error if it's run
 	fileReqs, testCases := unified.ParseTestFile(t, workloadSpec, unified.NewOptions().SetRunKillAllSessions(false))
+	// a workload must use a single test
+	if len(testCases) != 1 {
+		t.Fatalf("expected 1 test case, got %v", len(testCases))
+	}
 
 	mtOpts := mtest.NewOptions().
 		RunOn(fileReqs...).
@@ -65,10 +69,6 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 	mt := mtest.New(t, mtOpts)
 	defer mt.Close()
 
-	// a workload must use a single test
-	if len(testCases) != 1 {
-		t.Fatalf("expected 1 test case, got %v", len(testCases))
-	}
 	testCase := testCases[0]
 	testOpts := mtest.NewOptions().
 		RunOn(testCase.RunOnRequirements...).
@@ -92,11 +92,11 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 		entityMap := testCase.GetEntities()
 
 		// store resulting bson documents in events.json
-		allEvents := struct {
+		var allEvents struct {
 			Events   []bson.Raw `bson:"events"`
 			Errors   []bson.Raw `bson:"errors"`
 			Failures []bson.Raw `bson:"failures"`
-		}{}
+		}
 
 		allEvents.Failures, _ = entityMap.BSONArray("failures")
 		allEvents.Errors, _ = entityMap.BSONArray("errors")
@@ -135,12 +135,12 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 		marshalStructToFile(t, allEvents, path+"/events.json")
 
 		// store results.json
-		results := struct {
+		var results struct {
 			NumErrors     int   `bson:"numErrors"`
 			NumFailures   int   `bson:"numFailures"`
 			NumSuccesses  int32 `bson:"numSuccesses"`
 			NumIterations int32 `bson:"numIterations"`
-		}{}
+		}
 
 		if results.NumIterations, err = entityMap.Iterations("iterations"); err != nil {
 			results.NumIterations = -1
