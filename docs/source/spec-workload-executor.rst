@@ -157,10 +157,7 @@ After accepting the inputs, the workload executor:
    the workload executor).
 
 #. MUST calculate the aggregate counts of errors (``numErrors``) and failures
-   (``numFailures``) from the error and failure lists. If the errors or
-   failures were not reported by the test runner, such as because the
-   respective options were not specified in the test scenario, the workload
-   executor MUST use ``0`` as the value for the respective counts.
+   (``numFailures``) from the error and failure lists.
 
 #. MUST write the collected workload statistics into a JSON file named
    ``results.json`` in the current working directory (i.e. the directory
