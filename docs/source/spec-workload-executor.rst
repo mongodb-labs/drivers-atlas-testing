@@ -160,7 +160,7 @@ After accepting the inputs, the workload executor:
    (``numFailures``) from the error and failure lists. If the errors or
    failures were not reported by the test runner, such as because the
    respective options were not specified in the test scenario, the workload
-   executor MUST use ``-1`` as the value for the respective counts.
+   executor MUST use ``0`` as the value for the respective counts.
 
 #. MUST write the collected workload statistics into a JSON file named
    ``results.json`` in the current working directory (i.e. the directory
