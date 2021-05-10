@@ -110,6 +110,7 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 				Build())
 			switch {
 			// check for the failure substring
+			// GODRIVER-1950: use error types to distinguish errors instead of error contents
 			case strings.Contains(testErr.Error(), " verification failed:"):
 				allEvents.Failures = append(allEvents.Failures, errDoc)
 			default:
