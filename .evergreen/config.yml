@@ -195,98 +195,98 @@ tasks:
   # One test-case per task.
   # Use .evergreen/generate-tasks.sh to generate this list.
   - name: retryReads-move-sharded
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-move-sharded
   - name: retryReads-move
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-move
   - name: retryReads-primaryRemoval
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-primaryRemoval
   - name: retryReads-primaryTakeover
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-primaryTakeover
   - name: retryReads-processRestart-sharded
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-processRestart-sharded
   - name: retryReads-processRestart
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-processRestart
   - name: retryReads-resizeCluster
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-resizeCluster
   - name: retryReads-testFailover-sharded
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-testFailover-sharded
   - name: retryReads-testFailover
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-testFailover
   - name: retryReads-toggleServerSideJS
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-toggleServerSideJS
   - name: retryReads-vmRestart-sharded
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-vmRestart-sharded
   - name: retryReads-vmRestart
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryReads-vmRestart
   - name: retryWrites-resizeCluster
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
         vars:
           TEST_NAME: retryWrites-resizeCluster
   - name: retryWrites-toggleServerSideJS
-    cron: '@weekly'
+    cron: '@daily'
     tags: ["all"]
     commands:
       - func: "run test"
