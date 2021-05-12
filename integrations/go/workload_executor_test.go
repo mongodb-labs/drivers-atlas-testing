@@ -57,7 +57,7 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 	}()
 
 	// killAllSessions will return an auth error if it's run
-	fileReqs, testCases := unified.ParseTestFile(t, workloadSpec, unified.NewOptions().SetRunKillAllSessions(false))
+	fileReqs, testCases := unified.ParseTestFile(t, workloadSpec)
 	// a workload must use a single test
 	if len(testCases) != 1 {
 		t.Fatalf("expected 1 test case, got %v", len(testCases))
@@ -106,7 +106,7 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 		if testErr != nil {
 			errDoc := bson.Raw(bsoncore.NewDocumentBuilder().
 				AppendString("error", testErr.Error()).
-				AppendDouble("time", float64(time.Now().Unix())).
+				AppendDouble("time", float64(time.Now().UnixNano())/float64(time.Second/time.Nanosecond)).
 				Build())
 			switch {
 			// check for the failure substring
