@@ -1,0 +1,402 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Integration Guide &#8212; astrolabe  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Workload Executor Specification" href="spec-workload-executor.html" />
+    <link rel="prev" title="Installing and Running Locally" href="installing-running-locally.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="integration-guide">
+<span id="id1"></span><h1>Integration Guide<a class="headerlink" href="#integration-guide" title="Permalink to this headline">¶</a></h1>
+<p>This guide explains how to use <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code> to add Atlas Planned Maintenance testing to your driver.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Driver projects looking to integrate this framework into their project codebase should follow the following steps:</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#integration-step-workload-executor"><span class="std std-ref">Implementing a Workload Executor Script</span></a> for their driver project.</p></li>
+<li><p><a class="reference internal" href="#integration-step-driver-installer"><span class="std std-ref">Implementing a Driver Installer Script</span></a> for their driver project.</p></li>
+<li><p><a class="reference internal" href="#integration-step-evergreen-configuration"><span class="std std-ref">Updating the Evergreen Configuration</span></a> of the <code class="docutils literal notranslate"><span class="pre">drivers-atlas-testing</span></code> project.</p></li>
+</ol>
+<p>We will walk through each of these steps in detail in the following sections.</p>
+<section id="setting-up">
+<h3>Setting up<a class="headerlink" href="#setting-up" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p>Start by forking the <a class="reference external" href="https://github.com/mongodb-labs/drivers-atlas-testing">drivers-atlas-testing</a>
+repository and creating a new branch on your fork:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone git@github.com:&lt;your-github-username&gt;/drivers-atlas-testing.git
+$ cd drivers-atlas-testing &amp;&amp; git checkout -b add-driver-integration
+</pre></div>
+</div>
+</li>
+<li><p>Create a new directory for your driver under the <code class="docutils literal notranslate"><span class="pre">drivers-atlas-testing/integrations</span></code> directory.
+It is recommended that drivers use the name of their language to name their folder.
+Languages that have multiple drivers should use subdirectories named after the driver (e.g. for Python,
+we could create <code class="docutils literal notranslate"><span class="pre">integrations/python/pymongo</span></code> and <code class="docutils literal notranslate"><span class="pre">integrations/python/motor</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mkdir -p integrations/&lt;driver-language&gt;/&lt;project-name&gt;
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The path to the newly created folder(s) will henceforth be referred to in this guide as <code class="docutils literal notranslate"><span class="pre">DRIVER_DIRNAME</span></code>.</p>
+</div>
+</section>
+</section>
+<section id="implementing-a-workload-executor-script">
+<span id="integration-step-workload-executor"></span><h2>Implementing a Workload Executor Script<a class="headerlink" href="#implementing-a-workload-executor-script" title="Permalink to this headline">¶</a></h2>
+<p>Drivers must implement this script in accordance with the specification - see <a class="reference internal" href="spec-workload-executor.html#workload-executor-specification"><span class="std std-ref">Workload Executor Specification</span></a>.
+The workload executor MUST be saved in the <code class="docutils literal notranslate"><span class="pre">DRIVER_DIRNAME</span></code> directory under the name <code class="docutils literal notranslate"><span class="pre">workload-executor</span></code>.
+The executable permission bit MUST be set for the workload executor file <em>before</em> it is committed to git.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All <a class="reference external" href="https://github.com/evergreen-ci/evergreen/wiki/Project-Files#expansions">Evergreen expansions</a>
+for a given build variant are available to the workload executor script at runtime as environment variables.
+The script can make use of any of these environment variables but should ensure that it does not accidentally
+leak the Atlas API credentials and MongoDB user credentials. See <a class="reference internal" href="#evg-defining-environment-variables"><span class="std std-ref">Defining Environment Variables</span></a> for
+details.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The workload executor will be invoked with the working directory set to the <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code> project root.</p>
+</div>
+<section id="wrapping-native-workload-executors-with-a-shell-script">
+<span id="wrapping-workload-executor-shell-script"></span><h3>Wrapping native workload executors with a shell script<a class="headerlink" href="#wrapping-native-workload-executors-with-a-shell-script" title="Permalink to this headline">¶</a></h3>
+<p>Different languages will have different kinds of workload executors. Compiled languages, for example, might have
+as their workload executor a standalone binary whereas interpreted languages would likely use a script that
+needs to be invoked using an interpreter. Furthermore, drivers may need to employ different
+workload executor scripts on different platforms. To support these various usage scenarios, users can
+wrap the actual call to a natively implemented workload executor in a shell script such that exposes the
+API desired by the <a class="reference internal" href="spec-workload-executor.html#workload-executor-specification"><span class="std std-ref">Workload Executor Specification</span></a> specification.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For example, PyMongo’s <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code> integration uses this pattern to implement its
+<a class="reference external" href="https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/integrations/python/pymongo/workload-executor">workload executor</a>.</p>
+</div>
+</section>
+<section id="testing-validating-a-workload-executor-script">
+<h3>Testing/validating a workload executor script<a class="headerlink" href="#testing-validating-a-workload-executor-script" title="Permalink to this headline">¶</a></h3>
+<p>Workload executor scripts are cumbersome to test due to the amount of setup required before they can be
+invoked. In order to test a workload executor, at a minimum, you need:</p>
+<ul class="simple">
+<li><p>an <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code> installation,</p></li>
+<li><p>an installation of the driver whose workload executor is to be tested,</p></li>
+<li><p>a connection string to the MongoDB instance against which the workload executor will run operations, and</p></li>
+<li><p>a test YAML file containing a driver workload that can be used to run the test.</p></li>
+</ul>
+<p>While you can always run a patch build with the workload executor (having first updated the evergreen configuration
+as outlined in <a class="reference internal" href="#integration-step-evergreen-configuration"><span class="std std-ref">Updating the Evergreen Configuration</span></a> of course), your builds will take a while
+to complete (provisioning Atlas clusters takes time) resulting in a large wait before you can check whether
+the workload executor behaved as expected.</p>
+<p>To streamline the process of testing your workload executor implementation, the <code class="docutils literal notranslate"><span class="pre">drivers-atlas-testing</span></code> Evergreen
+project offers a special task called <code class="docutils literal notranslate"><span class="pre">validate-workload-executor</span></code>. This task spins up a MongoDB cluster on the
+Evergreen test instance and runs a series of checks against the workload executor that has been provided. It may
+be used during the implementation of workload executors as a convenient way to test script functionality.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">validate-workload-executor</span></code> task only appears on patch builds.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If your workload executor takes a while to start, validation may fail due to <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code> terminating
+the workload executor before any driver operations have been run (see <a class="reference internal" href="faq.html#faq-why-startup-time"><span class="std std-ref">What is the purpose of the ASTROLABE_EXECUTOR_STARTUP_TIME environment variable?</span></a> for details).
+You can workaround this issue by declaring the <code class="docutils literal notranslate"><span class="pre">ASTROLABE_EXECUTOR_STARTUP_TIME</span></code> environment variable (see
+<a class="reference internal" href="#evg-adding-a-driver"><span class="std std-ref">Adding a Driver</span></a>).</p>
+</div>
+</section>
+</section>
+<section id="implementing-a-driver-installer-script">
+<span id="integration-step-driver-installer"></span><h2>Implementing a Driver Installer Script<a class="headerlink" href="#implementing-a-driver-installer-script" title="Permalink to this headline">¶</a></h2>
+<p>Drivers must implement this standalone script to perform all setup/installation-related tasks for their driver.
+The installer script MUST be saved in the <code class="docutils literal notranslate"><span class="pre">DRIVER_DIRNAME</span></code> directory under the name <code class="docutils literal notranslate"><span class="pre">install-driver.sh</span></code>.
+The executable permission bit MUST be set for the install script file before it is committed to git.</p>
+<p>This script can be used to perform any number of arbitrary tasks related to setting up the environment for
+the workload executor to be executed within. It MUST NOT however, clone the driver source repository as this
+is done by one of the shared Evergreen tasks.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All <a class="reference external" href="https://github.com/evergreen-ci/evergreen/wiki/Project-Files#expansions">Evergreen expansions</a>
+for a given build variant are available to the driver installer script at runtime as environment variables.
+The script can make use of any of these environment variables but must ensure that they are written in a way that
+prevents accidentally leaking Atlas API credentials and MongoDB user credentials. See
+<a class="reference internal" href="#evg-defining-environment-variables"><span class="std std-ref">Defining Environment Variables</span></a> for details.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The driver installer script will be executed with the working directory set to the <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code> project root.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Driver source code which downloaded by the shared Evergreen configuration will reside in a folder matching
+the driver source repository name (e.g. <code class="docutils literal notranslate"><span class="pre">mongo-java-driver</span></code> for Java) within the <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code> project root.</p>
+</div>
+</section>
+<section id="updating-the-evergreen-configuration">
+<span id="integration-step-evergreen-configuration"></span><h2>Updating the Evergreen Configuration<a class="headerlink" href="#updating-the-evergreen-configuration" title="Permalink to this headline">¶</a></h2>
+<p>Finally, to add your driver to the Evergreen test matrix, you will need to update the Evergreen configuration file
+at <code class="docutils literal notranslate"><span class="pre">.evergreen/config.yml</span></code>. First, you must ensure that axis entries for your desired <code class="docutils literal notranslate"><span class="pre">platform</span></code> and <code class="docutils literal notranslate"><span class="pre">runtime</span></code>
+are in place.</p>
+<section id="adding-a-platform">
+<span id="evg-adding-a-platform"></span><h3>Adding a Platform<a class="headerlink" href="#adding-a-platform" title="Permalink to this headline">¶</a></h3>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>Drivers wanting to run the Atlas Planned Maintenance test-suite on Linux systems
+are <strong>strongly advised</strong> to use the custom
+<a class="reference external" href="https://evergreen.mongodb.com/distros#%23ubuntu1804-drivers-atlas-testing">ubuntu1804-drivers-atlas-testing</a>
+distro for running their tests. See <a class="reference internal" href="faq.html#faq-why-custom-distro"><span class="std std-ref">Why should we use the custom ubuntu1804-drivers-atlas-testing distro?</span></a> for details.</p>
+</div>
+<p>The Atlas Planned Maintenance tests can be run on all platforms which have a Python 3.5+ binary installed.
+Each entry to the <code class="docutils literal notranslate"><span class="pre">platform</span></code> axis has the following fields:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">id</span></code> (required): unique identifier for this <code class="docutils literal notranslate"><span class="pre">platform</span></code> axis entry.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">display_name</span></code> (optional): plaintext name for this platform that will be used to display test runs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">run_on</span></code> (required): evergreen distro name for this platform</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">variables.PYTHON3_BINARY</span></code> (required): path to the Python 3.5+ binary on the distro. This is used to run
+<code class="docutils literal notranslate"><span class="pre">astrolabe</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">variables.PYTHON_BIN_DIR</span></code> (required): name of directory in which Python install executables. This is always
+<code class="docutils literal notranslate"><span class="pre">bin</span></code> on *nix systems and <code class="docutils literal notranslate"><span class="pre">Scripts</span></code> on Windows.</p></li>
+</ul>
+<p>Here is an example of a <code class="docutils literal notranslate"><span class="pre">platform</span></code> axis entry for the <code class="docutils literal notranslate"><span class="pre">Ubuntu-16.04</span></code> platform:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="nb">id</span><span class="p">:</span> <span class="n">platform</span>
+  <span class="n">display_name</span><span class="p">:</span> <span class="n">OS</span>
+  <span class="n">values</span><span class="p">:</span>
+    <span class="o">-</span> <span class="nb">id</span><span class="p">:</span> <span class="n">ubuntu</span><span class="o">-</span><span class="mf">16.04</span>
+      <span class="n">display_name</span><span class="p">:</span> <span class="s2">&quot;Ubuntu 16.04&quot;</span>
+      <span class="n">run_on</span><span class="p">:</span> <span class="n">ubuntu1604</span><span class="o">-</span><span class="n">test</span>
+      <span class="n">variables</span><span class="p">:</span>
+        <span class="n">PYTHON3_BINARY</span><span class="p">:</span> <span class="s2">&quot;/opt/python/3.7/bin/python3&quot;</span>
+        <span class="n">PYTHON_BIN_DIR</span><span class="p">:</span> <span class="s2">&quot;bin&quot;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To encourage re-use of <code class="docutils literal notranslate"><span class="pre">platform</span></code> entries across driver projects, it is recommended that no
+driver-specific expansions be added to the <code class="docutils literal notranslate"><span class="pre">variables</span></code> section of the platform definition.</p>
+</div>
+</section>
+<section id="adding-a-runtime">
+<span id="evg-adding-a-runtime"></span><h3>Adding a Runtime<a class="headerlink" href="#adding-a-runtime" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">runtime</span></code> axis is an optional way for drivers to differentiate test runs on a common platform.
+For interpreted languages, for example, the <code class="docutils literal notranslate"><span class="pre">runtime</span></code> axis can be used to run tests with different interpreter
+versions (see the Python driver’s integration for an example). For compiled languages, the <code class="docutils literal notranslate"><span class="pre">runtime</span></code> axis may be
+used to test with different compiler versions. Here is an example of a <code class="docutils literal notranslate"><span class="pre">runtime</span></code> axis entry that defines the
+<code class="docutils literal notranslate"><span class="pre">PYTHON_BINARY</span></code> variable which is used by the Python driver’s scripts to determine which version of the Python
+runtime to use for running the tests:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="nb">id</span><span class="p">:</span> <span class="n">runtime</span>
+  <span class="n">display_name</span><span class="p">:</span> <span class="n">runtime</span>
+  <span class="n">values</span><span class="p">:</span>
+    <span class="o">-</span> <span class="nb">id</span><span class="p">:</span> <span class="n">python27</span>
+      <span class="n">display_name</span><span class="p">:</span> <span class="n">CPython</span><span class="o">-</span><span class="mf">2.7</span>
+      <span class="n">variables</span><span class="p">:</span>
+        <span class="n">PYTHON_BINARY</span><span class="p">:</span> <span class="s2">&quot;/opt/python/2.7/bin/python&quot;</span>
+</pre></div>
+</div>
+<p>Runtime entries are not expected to be shared across driver projects so drivers are encourage to add their own,
+new entries rather than augmenting existing entries used by other drivers.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Use of the <code class="docutils literal notranslate"><span class="pre">runtime</span></code> axis is optional. You may simply omit this axis from your driver’s buildvariant
+definitions should you not require it.</p>
+</div>
+</section>
+<section id="adding-a-driver">
+<span id="evg-adding-a-driver"></span><h3>Adding a Driver<a class="headerlink" href="#adding-a-driver" title="Permalink to this headline">¶</a></h3>
+<p>Once the platform and runtime are in place, you can add entries to the <code class="docutils literal notranslate"><span class="pre">driver</span></code> axis for your driver.
+The number of entries you will need to add for your driver will depend upon how many versions of your driver
+you intend to test. Each entry has the following fields:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">id</span></code> (required): unique identifier for this <code class="docutils literal notranslate"><span class="pre">driver</span></code> axis entry.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">display_name</span></code> (optional): plaintext name for this driver version that will be used to display test runs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">variables.DRIVER_DIRNAME</span></code> (required): path, relative to the <code class="docutils literal notranslate"><span class="pre">astrolable/integrations</span></code> directory where the
+driver-specific scripts live.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">variables.DRIVER_REPOSITORY</span></code> (required): HTTPS URL that can be used to clone the source repository of the
+driver to be tested.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">variables.DRIVER_REVISION</span></code> (required): git revision-id corresponding to the driver version that is to be tested.
+This can be a branch name (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;master&quot;</span></code>) or a tag (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;1.0.0&quot;</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">variables.ASTROLABE_EXECUTOR_STARTUP_TIME</span></code> (optional): the amount of time <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code> should wait after
+invoking the workload executor, but before applying the maintenance plan. It is recommended that this value be
+explicitly set by all drivers whose workload executor implementations take &gt;1 second to start. Failing to do so
+can result in hard-to-debug failures. See <a class="reference internal" href="faq.html#faq-why-startup-time"><span class="std std-ref">What is the purpose of the ASTROLABE_EXECUTOR_STARTUP_TIME environment variable?</span></a> for details.</p></li>
+</ul>
+<p>All additional expansions that are relied upon by the driver’s install and/or workload executor scripts
+should also be declared in the <code class="docutils literal notranslate"><span class="pre">variables</span></code> section of the driver definition. Finally, an entry can be added to
+the <code class="docutils literal notranslate"><span class="pre">buildvariants</span></code> to run the tests on the desired <code class="docutils literal notranslate"><span class="pre">driver</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code>, and <code class="docutils literal notranslate"><span class="pre">runtime</span></code> combinations.
+It is recommended that drivers use the <code class="docutils literal notranslate"><span class="pre">all</span></code> task tag to to enable all tests on their driver.</p>
+<p>Here is an example of the <code class="docutils literal notranslate"><span class="pre">driver</span></code>-axis entry for the Python driver:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="nb">id</span><span class="p">:</span> <span class="n">driver</span>
+  <span class="n">display_name</span><span class="p">:</span> <span class="n">driver</span>
+  <span class="n">values</span><span class="p">:</span>
+    <span class="o">-</span> <span class="nb">id</span><span class="p">:</span> <span class="n">pymongo</span><span class="o">-</span><span class="n">master</span>
+      <span class="n">display_name</span><span class="p">:</span> <span class="s2">&quot;PyMongo (master)&quot;</span>
+      <span class="n">variables</span><span class="p">:</span>
+        <span class="n">DRIVER_DIRNAME</span><span class="p">:</span> <span class="s2">&quot;python/pymongo&quot;</span>
+        <span class="n">DRIVER_REPOSITORY</span><span class="p">:</span> <span class="s2">&quot;https://github.com/mongodb/mongo-python-driver&quot;</span>
+        <span class="n">DRIVER_REVISION</span><span class="p">:</span> <span class="s2">&quot;master&quot;</span>
+        <span class="n">PYMONGO_VIRTUALENV_NAME</span><span class="p">:</span> <span class="s2">&quot;pymongotestvenv&quot;</span>
+</pre></div>
+</div>
+<p>And the corresponding buildvariant definition:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">buildvariants</span><span class="p">:</span>
+<span class="o">-</span> <span class="n">matrix_name</span><span class="p">:</span> <span class="s2">&quot;tests-python&quot;</span>
+  <span class="n">matrix_spec</span><span class="p">:</span>
+    <span class="n">driver</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pymongo-master&quot;</span><span class="p">]</span>
+    <span class="n">platform</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ubuntu-16.04&quot;</span><span class="p">]</span>
+    <span class="n">runtime</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;python27&quot;</span><span class="p">]</span>
+  <span class="n">display_name</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{driver}</span><span class="s2"> $</span><span class="si">{platform}</span><span class="s2"> $</span><span class="si">{runtime}</span><span class="s2">&quot;</span>
+  <span class="n">tasks</span><span class="p">:</span>
+    <span class="o">-</span> <span class="s2">&quot;.all&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="defining-environment-variables">
+<span id="evg-defining-environment-variables"></span><h2>Defining Environment Variables<a class="headerlink" href="#defining-environment-variables" title="Permalink to this headline">¶</a></h2>
+<p>There are 2 places where you can define the variables needed by your driver’s integration scripts
+in the Evergreen configuration file:</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">driver</span></code>-axis: <code class="docutils literal notranslate"><span class="pre">key:</span> <span class="pre">value</span></code> pairs added to the <code class="docutils literal notranslate"><span class="pre">variables</span></code> field of an entry in this axis
+will be available to the driver installer and workload executor scripts as environment variables at runtime.
+This is the ideal place to define variables that are common across all buildvariants of a particular driver.
+See <a class="reference internal" href="#evg-adding-a-driver"><span class="std std-ref">Adding a Driver</span></a> for details.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">runtime</span></code>-axis: <code class="docutils literal notranslate"><span class="pre">key-value</span></code> pairs added to the <code class="docutils literal notranslate"><span class="pre">variables</span></code> field on an entry in this axis
+will be available to the driver installer and workload executor scripts as environment variables at runtime, provided
+the buildvariant uses the <code class="docutils literal notranslate"><span class="pre">runtime</span></code> axis (use of this axis is optional). This is the ideal place to define
+variables that vary across buildvariants for a particular driver. See <a class="reference internal" href="#evg-adding-a-runtime"><span class="std std-ref">Adding a Runtime</span></a> for details.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To encourage re-use of <code class="docutils literal notranslate"><span class="pre">platform</span></code> entries across driver projects, it is recommended that no
+driver-specific expansions be added to the <code class="docutils literal notranslate"><span class="pre">variables</span></code> section of the platform definition.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Users are asked to be extra cautious while dealing with environment variables that contain sensitive secrets.
+Using these variables in a script that sets <code class="docutils literal notranslate"><span class="pre">-xtrace</span></code> can, for instance, result in leaking these secrets
+into Evergreen’s log output.</p>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<p>When using <code class="docutils literal notranslate"><span class="pre">cloud-dev</span></code>, be aware that operational issues within Atlas are
+not being monitored and solved with a particular SLA. If builds are failing
+and the failure appears to be caused by Atlas rather than the tests themselves,
+the driver being tested or <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code>, inquiring in <code class="docutils literal notranslate"><span class="pre">cloud-non-prod-ops</span></code>
+Slack channel is the next suggested troubleshooting step.</p>
+<p>Atlas has a limit of 40 “cross-region network permissions” by default.
+This means a project can have no more than 40 nodes across all of its
+clusters if any of its clusters employ multiple regions. The primary
+takeover and primary removal tests use multi-region clusters; running
+these tests alongside other tests may exceed the 40 node limit. A
+request to the Cloud team is required to raise the limit.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">astrolabe</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installing-running-locally.html">Installing and Running Locally</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Integration Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#implementing-a-workload-executor-script">Implementing a Workload Executor Script</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#implementing-a-driver-installer-script">Implementing a Driver Installer Script</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-the-evergreen-configuration">Updating the Evergreen Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#defining-environment-variables">Defining Environment Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="spec-workload-executor.html">Workload Executor Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spec-test-format.html">Atlas Planned Maintenance Test Scenario Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical-design.html">Technical Design: Testing Drivers Against Atlas Planned Maintenance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="installing-running-locally.html" title="previous chapter">Installing and Running Locally</a></li>
+      <li>Next: <a href="spec-workload-executor.html" title="next chapter">Workload Executor Specification</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, MongoDB, Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/integration-guide.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

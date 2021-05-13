@@ -1,0 +1,275 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Atlas Planned Maintenance Test Scenario Format &#8212; astrolabe  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Technical Design: Testing Drivers Against Atlas Planned Maintenance" href="technical-design.html" />
+    <link rel="prev" title="Workload Executor Specification" href="spec-workload-executor.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="atlas-planned-maintenance-test-scenario-format">
+<span id="test-scenario-format-specification"></span><h1>Atlas Planned Maintenance Test Scenario Format<a class="headerlink" href="#atlas-planned-maintenance-test-scenario-format" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Detailed information about terms that are italicized in this document can be found in the
+<a class="reference internal" href="technical-design.html#terms-technical-design"><span class="std std-ref">Terms</span></a> section.</p>
+</div>
+<p>The YAML file format described herein is used to define platform-independent <em>Atlas Planned Maintenance Tests</em> in
+YAML-formatted <em>Test Scenario Files</em>. Each Test Scenario File describes exactly one Atlas Planned Maintenance Test.
+A Test Scenario File has the following keys:</p>
+<ul>
+<li><p>initialConfiguration (document): Description of <em>Cluster Configuration Options</em> to be used for initializing the
+test cluster. This document MUST contain the following keys:</p>
+<ul class="simple">
+<li><p>clusterConfiguration (document): Document containing initial <em>Basic Configuration Options</em> values.
+This document MUST, at a minimum, have all fields <strong>required</strong> by the
+<a class="reference external" href="https://docs.atlas.mongodb.com/reference/api/clusters-create-one/">Create One Cluster</a> endpoint.</p></li>
+<li><p>processArgs (document): Document containing initial <em>Advanced Configuration Option</em> values. This MAY be an empty
+document if the maintenance plan does not require modifying the Advanced Configuration Options.</p></li>
+</ul>
+</li>
+<li><p>operations (array): List of operations to be performed, representing the
+maintenance event. Each operation is a document containing one key which is
+the name of the operation. The possible operations are:</p>
+<ul>
+<li><p>setClusterConfiguration: set the cluster configuration to the specified
+<em>Cluster Configuration Options</em> as defined in initialConfiguration.
+The value must be the <em>Cluster Configuration Options</em> which MUST contain
+the following keys (note that at least one of these fields MUST be
+a non-empty document):</p>
+<ul class="simple">
+<li><p>clusterConfiguration (document): Document containing final <em>Basic Configuration Option</em> values.
+This MAY be an empty document if no changes to the Basic Configuration Options are needed by the maintenance plan.
+If non-empty, this document MUST, at a minimum, have all fields <strong>required</strong> by the
+<a class="reference external" href="https://docs.atlas.mongodb.com/reference/api/clusters-modify-one/">Modify One Cluster</a> endpoint.</p></li>
+<li><p>processArgs (document): Document containing final <em>Advanced Configuration Option</em> values.
+This MAY be an empty document if the maintenance plan does not require modifying the Advanced Configuration Options.</p></li>
+</ul>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">setClusterConfiguration</span><span class="p">:</span>
+  <span class="n">clusterConfiguration</span><span class="p">:</span>
+    <span class="n">providerSettings</span><span class="p">:</span>
+      <span class="n">providerName</span><span class="p">:</span> <span class="n">AWS</span>
+      <span class="n">regionName</span><span class="p">:</span> <span class="n">US_WEST_1</span>
+      <span class="n">instanceSizeName</span><span class="p">:</span> <span class="n">M10</span>
+  <span class="n">processArgs</span><span class="p">:</span> <span class="p">{}</span>
+</pre></div>
+</div>
+</li>
+<li><p>testFailover: trigger an election in the cluster using the “test failover”
+API endpoint. The value MUST be <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+<p>The workload executor MUST ignore the value of this key, so that
+the value can be changed to a hash in the future to provide options
+to the operation.</p>
+<p>testFailover SHOULD be followed by sleep and waitForIdle operations
+because it does not update maintenance state synchronously (see
+<a class="reference external" href="https://jira.mongodb.org/browse/PRODTRIAGE-1232">PRODTRIAGE-1232</a>).</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">testFailover</span><span class="p">:</span> <span class="n">true</span>
+</pre></div>
+</div>
+</li>
+<li><p>restartVms: perform a rolling restart of all nodes in the cluster.
+This operation requires Atlas Global Operator API key to be set when
+invoking <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code>. The value MUST be <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+<p>The workload executor MUST ignore the value of this key, so that
+the value can be changed to a hash in the future to provide options
+to the operation.</p>
+<p>testFailover SHOULD be followed by sleep and waitForIdle operations
+because it does not update maintenance state synchronously.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">restartVms</span><span class="p">:</span> <span class="n">true</span>
+</pre></div>
+</div>
+</li>
+<li><p>assertPrimaryRegion: assert that the primary in the deployment is in the
+specified region. The value MUST be a hash with the following keys:</p>
+<ul class="simple">
+<li><p>region (string, required): the region name as defined in Atlas API,
+e.g. <code class="docutils literal notranslate"><span class="pre">US_WEST_1</span></code>.</p></li>
+<li><p>timeout (floating-point number, optional): the maximum time, in
+seconds, to wait for the region to become the expected one.
+Default is 90 seconds.</p></li>
+</ul>
+<p>This operation is undefined and MUST NOT be used when the deployment is
+a sharded cluster.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">assertPrimaryRegion</span><span class="p">:</span>
+  <span class="n">region</span><span class="p">:</span> <span class="n">US_WEST_1</span>
+  <span class="n">timeout</span><span class="p">:</span> <span class="mi">15</span>
+</pre></div>
+</div>
+</li>
+<li><p>sleep: do nothing for the specified duration. The value MUST be the duration
+to sleep for, in seconds.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sleep</span><span class="p">:</span> <span class="mi">10</span>
+</pre></div>
+</div>
+</li>
+<li><p>waitForIdle: wait for cluster maintenance state to become “idle”.
+The value MUST be <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+<p>The workload executor MUST ignore the value of this key, so that
+the value can be changed to a hash in the future to provide options
+to the operation.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">waitForIdle</span><span class="p">:</span> <span class="n">true</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>For all maintenance operations other than <code class="docutils literal notranslate"><span class="pre">sleep</span></code>, after the maintenance
+operation is performed, <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code> will wait for cluster state to become
+idle. When performing a VM restart in a sharded cluster, due to the state
+not being updated for a potentially long time, the test SHOULD add an
+explicit <code class="docutils literal notranslate"><span class="pre">sleep</span></code> operation for at least 30 seconds.</p>
+</li>
+<li><p>driverWorkload (document): Description of the driver workload to execute
+The document must be a complete test as defined by the
+<a class="reference external" href="https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst">Unified Test Format specification</a>.</p>
+<p>The workload MUST use a single test, as defined in the unified test format
+specification.</p>
+<p>The workload MUST use the <code class="docutils literal notranslate"><span class="pre">loop</span></code> unified test format operation to
+define the MongoDB operations to execute during maintenance. There MUST
+be exactly one <code class="docutils literal notranslate"><span class="pre">loop</span></code> operation per scenario, and it SHOULD be the last
+operation in the scenario.</p>
+<p>The scenario MUST use <code class="docutils literal notranslate"><span class="pre">storeErrorsAsEntity</span></code>, <code class="docutils literal notranslate"><span class="pre">storeSuccessesAsEntity</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">storeIterationsAsEntity</span></code> operation arguments to allow the workload
+executor to retrieve errors, failures, and operation and iteration counts for
+the executed workload. The entity names for these options MUST be as follows:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">storeErrorsAsEntity</span></code>: <code class="docutils literal notranslate"><span class="pre">errors</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">storeSuccessesAsEntity</span></code>: <code class="docutils literal notranslate"><span class="pre">successes</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">storeIterationsAsEntity</span></code>: <code class="docutils literal notranslate"><span class="pre">iterations</span></code></p></li>
+</ul>
+<p>The scenario MUST NOT use <code class="docutils literal notranslate"><span class="pre">storeFailuresAsEntity</span></code> to ensure that all errors
+and failures are reported under a single <code class="docutils literal notranslate"><span class="pre">errors</span></code> entity irrespective of how
+a test runner might distinguish errors and failures (if at all). Note that
+some ValidateWorkloadExecutor tests may still use <code class="docutils literal notranslate"><span class="pre">storeFailuresAsEntity</span></code>
+with the entity name <code class="docutils literal notranslate"><span class="pre">failures</span></code> to assert workload executor correctness.</p>
+<p>The scenario MUST use <code class="docutils literal notranslate"><span class="pre">storeEventsAsEntities</span></code> operation argument
+when defining MongoClients to record CMAP and command events published
+during maintenance. All events MUST be stored in an entity named <code class="docutils literal notranslate"><span class="pre">events</span></code>.
+When this option is used, <code class="docutils literal notranslate"><span class="pre">astrolabe</span></code> will retrieve the collected events and
+store them as an Evergreen build artifact, and will also calculate statistics
+for command execution time and connection counts.</p>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A previous version of this document specified a top-level
+<code class="docutils literal notranslate"><span class="pre">uriOptions</span></code> for specifying URI options for the MongoClient under test.
+In the current version, options can be specified using the <code class="docutils literal notranslate"><span class="pre">uriOptions</span></code>
+key of the unified test format when creating a client entity.</p>
+</div>
+<section id="changes">
+<h2>Changes<a class="headerlink" href="#changes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>2020-04-22: Move the test format specification into a separate file.</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">astrolabe</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installing-running-locally.html">Installing and Running Locally</a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration-guide.html">Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spec-workload-executor.html">Workload Executor Specification</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Atlas Planned Maintenance Test Scenario Format</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#changes">Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="technical-design.html">Technical Design: Testing Drivers Against Atlas Planned Maintenance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="spec-workload-executor.html" title="previous chapter">Workload Executor Specification</a></li>
+      <li>Next: <a href="technical-design.html" title="next chapter">Technical Design: Testing Drivers Against Atlas Planned Maintenance</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, MongoDB, Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/spec-test-format.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
