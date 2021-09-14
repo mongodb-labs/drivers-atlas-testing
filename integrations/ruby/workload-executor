@@ -7,8 +7,10 @@ puts ([$0] + ARGV.map { |arg| Shellwords.shellescape(arg) }).join(' ')
 $: << File.dirname(__FILE__)
 $: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver/lib')
 $: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver/spec')
+$: << File.join(File.dirname(__FILE__), '../../mongo-ruby-driver/spec/shared/lib')
 $: << File.join(File.dirname(__FILE__), '../../../ruby-driver/lib')
 $: << File.join(File.dirname(__FILE__), '../../../ruby-driver/spec')
+$: << File.join(File.dirname(__FILE__), '../../../ruby-driver/spec/shared/lib')
 
 require 'executor'
 require 'optparse'
