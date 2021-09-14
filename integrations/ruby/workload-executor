@@ -12,6 +12,8 @@ $: << File.join(File.dirname(__FILE__), '../../../ruby-driver/lib')
 $: << File.join(File.dirname(__FILE__), '../../../ruby-driver/spec')
 $: << File.join(File.dirname(__FILE__), '../../../ruby-driver/spec/shared/lib')
 
+require 'rspec/core'
+require 'rspec/expectations'
 require 'executor'
 require 'optparse'
 autoload :Byebug, 'byebug'
