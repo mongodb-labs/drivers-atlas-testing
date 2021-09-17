@@ -88,7 +88,7 @@ class ContextStore:
         self.admin_client = admin_client
 
 
-@click.group()
+@click.group(context_settings = dict(help_option_names=['-h', '--help']))
 @create_click_option(CONFIGOPTS.ATLAS_API_BASE_URL)
 @create_click_option(CONFIGOPTS.ATLAS_API_USERNAME)
 @create_click_option(CONFIGOPTS.ATLAS_API_PASSWORD)

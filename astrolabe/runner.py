@@ -276,9 +276,6 @@ class AtlasTestCase:
 
         LOGGER.info("Workload Statistics: {}".format(stats))
         
-        get_logs(admin_client=self.admin_client,
-            project=self.project, cluster_name=self.cluster_name)
-
         # Step 7: download logs asynchronously and delete cluster.
         # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4
         if not persist_cluster:

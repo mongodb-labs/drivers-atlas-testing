@@ -89,7 +89,25 @@ functions:
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one tests/${TEST_NAME}.yml -e integrations/${DRIVER_DIRNAME}/workload-executor
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one --no-delete tests/${TEST_NAME}.yml -e integrations/${DRIVER_DIRNAME}/workload-executor
+
+  "retrieve server logs":
+    - command: subprocess.exec
+      type: test
+      params:
+        working_dir: astrolabe-src
+        env:
+          ATLAS_PROJECT_NAME: ${project}
+          CLUSTER_NAME_SALT: ${build_id}
+          ATLAS_API_USERNAME: ${atlas_key}
+          ATLAS_API_PASSWORD: ${atlas_secret}
+          ATLAS_API_BASE_URL: ${atlas_url}
+          ATLAS_ORGANIZATION_NAME: ${atlas_organization}
+          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
+          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
+        add_expansions_to_env: true
+        command: |
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests get-logs tests/${TEST_NAME}.yml
 
   "validate executor":
     # Run a MongoDB instance locally.
@@ -180,6 +198,7 @@ pre:
 
 # Functions to run after the test.
 post:
+  - func: "retrieve server logs"
   - func: "delete test cluster"
   - func: "upload test results"
   - func: "upload server logs"
