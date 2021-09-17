@@ -367,7 +367,7 @@ class ValidateWorkloadExecutor(TestCase):
         if stats['numErrors'] != 0:
             self.fail_stats(
                 "Expected no errors to be reported in numErrors, but got {} "
-                "instead.".format(stats['numFailures']))
+                "instead.".format(stats['numErrors']))
 
         # Each loop iteration should include two successful sub-operations
         # followed by one error, so expect numFailures to be numSuccesses/2

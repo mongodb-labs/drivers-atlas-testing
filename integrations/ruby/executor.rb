@@ -11,6 +11,7 @@ class Executor
   def initialize(uri, spec)
     @uri, @spec = uri, spec
     @iteration_count = @success_count = @failure_count = @error_count = 0
+    @exceptions = []
   end
 
   attr_reader :uri, :spec
@@ -20,13 +21,33 @@ class Executor
     unified_tests
 
     set_signal_handler
-    unified_tests.each do |test|
-      test.create_entities
-      test.set_initial_data
-      test.run
-      test.assert_outcome
-      test.assert_events
-      test.cleanup
+    begin
+      unified_tests.each do |test|
+        test.create_entities
+        test.set_initial_data
+        @test_running = true
+        begin
+          test.run
+        ensure
+          @test_running = false
+        end
+        test.assert_outcome
+        test.assert_events
+        test.cleanup
+      end
+    rescue => exc
+      @exceptions << {
+        error: "#{exc.class}: #{exc}",
+        time: Time.now.to_f,
+      }
+
+      STDERR.puts "Error: Uncaught exception: #{exc.class}: #{exc}."
+      STDERR.puts "Waiting for termination signal to exit"
+      @test_running = true
+      until @stop
+        sleep 1
+      end
+      @test_running = false
     end
     write_result
     puts "Result: #{result.inspect}"
@@ -36,9 +57,22 @@ class Executor
 
   def set_signal_handler
     Signal.trap('INT') do
-      @stop = true
-      unified_tests.each do |test|
-        test.stop!
+      if @test_running
+        # Try to gracefully stop the looping.
+
+        @stop = true
+        unified_tests.each do |test|
+          test.stop!
+        end
+
+        Thread.new do
+          sleep 10
+          STDERR.puts "Warning: Exiting from signal handler background thread because executor did not terminate in 10 seconds"
+          exit(1)
+        end
+      else
+        # We aren't looping, exit immediately otherwise runner gets stuck.
+        raise
       end
     end
   end
@@ -85,6 +119,7 @@ class Executor
           @errors += test.entities.get(:error_list, 'errors')
         rescue Unified::Error::EntityMissing
         end
+        @errors += @exceptions
         begin
           @failures += test.entities.get(:failure_list, 'failures')
         rescue Unified::Error::EntityMissing
