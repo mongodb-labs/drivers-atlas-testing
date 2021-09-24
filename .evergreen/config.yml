@@ -107,7 +107,7 @@ functions:
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests get-logs tests/${TEST_NAME}.yml
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests get-logs --only-on-failure tests/${TEST_NAME}.yml
 
   "validate executor":
     # Run a MongoDB instance locally.

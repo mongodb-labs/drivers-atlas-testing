@@ -145,7 +145,7 @@ class AtlasTestCase:
     def run(self, persist_cluster=False, startup_time=1):
         LOGGER.info("Running test {!r} on cluster {!r}".format(
             self.id, self.cluster_name))
-
+        
         # Step-1: sanity-check the cluster configuration.
         self.verify_cluster_configuration_matches(self.spec.initialConfiguration)
 
@@ -269,10 +269,16 @@ class AtlasTestCase:
             self.failed = True
             # Write xunit logs for failed tests.
             junit_test.result = junitparser.Failure(str(stats))
+            
+            with open('status', 'w') as fp:
+                fp.write('failure')
         else:
             LOGGER.info("SUCCEEDED: {!r}".format(self.id))
             # Directly log output of successful tests as xunit output
             # is only visible for failed tests.
+            
+            with open('status', 'w') as fp:
+                fp.write('success')
 
         LOGGER.info("Workload Statistics: {}".format(stats))
         

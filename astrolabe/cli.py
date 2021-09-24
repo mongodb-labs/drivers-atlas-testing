@@ -16,6 +16,7 @@ import logging
 from pprint import pprint
 import unittest
 from urllib.parse import unquote_plus
+import os
 
 import click
 
@@ -80,6 +81,10 @@ NOCREATE_FLAG = click.option(
     help=('Do not create and configure clusters at the beginning of the run '
         'if they already exist, assume they have already been provisioned by '
         'a previous run.'))
+
+ONLYONFAILURE_FLAG = click.option(
+    '--only-on-failure', is_flag=True, default=False,
+    help=('Only retrieve logs if the test run failed.'))
 
 
 class ContextStore:
@@ -431,6 +436,9 @@ def run_single_test(ctx, spec_test_file, workload_executor,
         workload_executor=workload_executor)
     LOGGER.info(tabulate_astrolabe_configuration(config))
 
+    if os.path.exists('status'):
+        os.unlink('status')
+
     # Step-1: create the Test-Runner.
     runner = SingleTestRunner(client=ctx.obj.client,
         admin_client=ctx.obj.admin_client,
@@ -458,14 +466,27 @@ def run_single_test(ctx, spec_test_file, workload_executor,
 @CLUSTERNAMESALT_OPTION
 @POLLINGTIMEOUT_OPTION
 @POLLINGFREQUENCY_OPTION
+@ONLYONFAILURE_FLAG
 @click.pass_context
 def get_logs_cmd(ctx, spec_test_file, org_name, project_name,
                     cluster_name_salt, polling_timeout, polling_frequency,
+                    only_on_failure,
                     ):
     """
     Retrieves logs for the cluster and saves them in logs.tar.gz in the
     current working directory.
     """
+    
+    if only_on_failure:
+        if os.path.exists('status'):
+            with open('status') as fp:
+                status = fp.read().strip()
+                if status == 'success':
+                    LOGGER.info('Test run status is %s, not retrieving logs' % status)
+                    return
+        else:
+            LOGGER.info('Test run status is missing')
+            # Retrieve logs because tests may have timed out
 
     # Step-1: determine the cluster name for the given test.
     cluster_name = get_cluster_name(get_test_name_from_spec_file(
