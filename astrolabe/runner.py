@@ -400,6 +400,14 @@ class SpecTestRunnerBase:
             tablefmt="rst"))
 
     def run(self):
+        try:
+            return self.do_run()
+        except (PollingTimeoutError, AtlasApiError):
+            with open('status', 'w') as fp:
+                fp.write('cloud-failure')
+            raise
+
+    def do_run(self):
         # Step-0: sentinel flag to track failure/success.
         failed = False
 

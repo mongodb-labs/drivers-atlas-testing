@@ -610,6 +610,37 @@ def stats(ctx):
     cmd.aggregate_statistics()
 
 
+@cli.command('check-cloud-failure')
+@click.pass_context
+def check_cloud_failure(ctx):
+    if os.path.exists('status'):
+        with open('status') as fp:
+            status = fp.read().strip()
+            LOGGER.info('Test status: %s' % status)
+            if status == 'cloud-failure':
+                LOGGER.info('Cloud failure, exiting with 1')
+                exit(1)
+        LOGGER.info('Not a cloud failure, exiting with 0')
+    else:
+        LOGGER.info('Test status file missing, exiting with 0')
+
+
+@cli.command('check-success')
+@click.pass_context
+def check_success(ctx):
+    if os.path.exists('status'):
+        with open('status') as fp:
+            status = fp.read().strip()
+            LOGGER.info('Test status: %s' % status)
+            if status == 'success':
+                LOGGER.info('Success, exiting with 0')
+                exit(0)
+            LOGGER.info('Not a success, exiting with 1')
+    else:
+        LOGGER.info('Test status file missing, exiting with 1')
+    exit(1)
+
+
 if __name__ == '__main__':
     require_requests_ipv4()
     cli()

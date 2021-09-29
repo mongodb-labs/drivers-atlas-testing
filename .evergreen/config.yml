@@ -14,6 +14,7 @@ exec_timeout_secs: 7200   # 2 hours
 # What to do when evergreen hits the timeout (`post:` tasks are run automatically)
 timeout:
   - command: shell.exec
+    type: system
     params:
       script: |
         ls -la
@@ -22,27 +23,32 @@ functions:
   "install astrolabe":
     # Clone astrolabe.
     - command: git.get_project
+      type: setup
       params:
         directory: astrolabe-src
     # Make sure virtualenv is installed.
     - command: subprocess.exec
+      type: setup
       params:
         working_dir: astrolabe-src
         command: |
           ${PYTHON3_BINARY} -m pip install virtualenv
     - command: subprocess.exec
+      type: system
       params:
         working_dir: astrolabe-src
         command: |
           cat /etc/resolv.conf
     # Create virtualenv using a CPython 3.5+ binary.
     - command: subprocess.exec
+      type: setup
       params:
         working_dir: astrolabe-src
         command: |
           ${PYTHON3_BINARY} -m virtualenv astrolabevenv
     # Install astrolabe in the created virtualenv.
     - command: subprocess.exec
+      type: setup
       params:
         working_dir: astrolabe-src
         command: |
@@ -51,12 +57,14 @@ functions:
   "install driver":
     # Clone driver source code into the 'astrolabe-src/<driver-repo-name>' directory.
     - command: subprocess.exec
+      type: setup
       params:
         working_dir: astrolabe-src
         command: |
           git clone --depth 1 --recurse-submodules --shallow-submodules --branch ${DRIVER_REVISION} ${DRIVER_REPOSITORY}
     # Install driver on *nix platforms.
     - command: subprocess.exec
+      type: setup
       params:
         working_dir: astrolabe-src
         continue_on_err: true       # Because script may not exist OR platform may not be *nix.
@@ -65,6 +73,7 @@ functions:
           integrations/${DRIVER_DIRNAME}/install-driver.sh
     # Install driver on Windows.
     - command: subprocess.exec
+      type: setup
       params:
         working_dir: astrolabe-src
         continue_on_err: true       # Because script may not exist OR platform may not be Windows.
@@ -78,6 +87,8 @@ functions:
       type: test
       params:
         working_dir: astrolabe-src
+        # Next commands will exit with appropriate status
+        continue_on_err: true
         env:
           ATLAS_PROJECT_NAME: ${project}
           CLUSTER_NAME_SALT: ${build_id}
@@ -90,10 +101,24 @@ functions:
         add_expansions_to_env: true
         command: |
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one --no-delete tests/${TEST_NAME}.yml -e integrations/${DRIVER_DIRNAME}/workload-executor
+    - command: subprocess.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        add_expansions_to_env: true
+        command: |
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe check-cloud-failure
+    - command: subprocess.exec
+      type: test
+      params:
+        working_dir: astrolabe-src
+        add_expansions_to_env: true
+        command: |
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe check-success
 
   "retrieve server logs":
     - command: subprocess.exec
-      type: test
+      type: setup
       params:
         working_dir: astrolabe-src
         env:
@@ -112,6 +137,7 @@ functions:
   "validate executor":
     # Run a MongoDB instance locally.
     - command: shell.exec
+      type: setup
       params:
         working_dir: astrolabe-src
         script: |
@@ -128,6 +154,7 @@ functions:
   "delete test cluster":
     # Delete the cluster that was used to run the test.
     - command: subprocess.exec
+      type: setup
       params:
         working_dir: astrolabe-src
         env:
@@ -146,11 +173,13 @@ functions:
   "upload test results":
     # Upload the xunit-format test results.
     - command: attach.xunit_results
+      type: setup
       params:
         file: "astrolabe-src/xunit-output/*.xml"
 
   "upload server logs":
     - command: s3.put
+      type: setup
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
@@ -163,6 +192,7 @@ functions:
 
   "upload event logs":
     - command: shell.exec
+      type: setup
       params:
         working_dir: astrolabe-src
         continue_on_err: true       # Because script may not exist OR platform may not be Windows.
@@ -170,6 +200,7 @@ functions:
         script: |
           gzip <events.json >events.json.gz
     - command: s3.put
+      type: setup
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
@@ -181,6 +212,7 @@ functions:
         display_name: "events.json.gz"
     # If gzip doesn't exist (Windows?) upload the uncompressed events also.
     - command: s3.put
+      type: setup
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
