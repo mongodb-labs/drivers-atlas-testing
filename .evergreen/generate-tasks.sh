@@ -7,7 +7,6 @@ for f in tests/*.yml; do
   
 cat <<-EOT
   - name: $task
-    cron: '@weekly'
     tags: ["all"]
     commands:
       - func: "run test"

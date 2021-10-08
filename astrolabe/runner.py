@@ -51,6 +51,7 @@ class AtlasTestCase:
         self.spec = specification
         self.config = configuration
         self.failed = False
+        self.expect_failure = specification.get('expectFailure', False)
 
         # Initialize attribute used for memoization of connection string.
         self.__connection_string = None
@@ -412,7 +413,7 @@ class SpecTestRunnerBase:
 
     def do_run(self):
         # Step-0: sentinel flag to track failure/success.
-        failed = False
+        all_ok = True
 
         # Step-1: initialize tests clusters
         for case in self.cases:
@@ -437,10 +438,19 @@ class SpecTestRunnerBase:
                 filename=active_case.id)
             # Remove completed case from list.
             remaining_test_cases.remove(active_case)
+            
+            if active_case.expect_failure:
+                ok = active_case.failed
+            else:
+                ok = not active_case.failed
+            
             # Update tracker.
-            failed = failed or active_case.failed
+            if not ok:
+                all_ok = False
 
-        return failed
+            print('done: %s, %s, %s' % (active_case.failed,ok,all_ok))
+
+        return not all_ok
 
 
 class SingleTestRunner(SpecTestRunnerBase):
