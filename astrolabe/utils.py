@@ -275,6 +275,32 @@ class DriverWorkloadSubprocessRunner:
             LOGGER.error("Sentinel file contains malformed JSON")
             raise WorkloadExecutorError("The workload executor wrote a results.json that contained malformed JSON.")
 
+    def terminate(self):
+        '''Stop the process if running. Use during cleanup.'''
+        
+        try:
+            if not self.is_windows:
+                os.killpg(self.workload_subprocess.pid, signal.SIGINT)
+            else:
+                os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
+        except ProcessLookupError as exc:
+            LOGGER.info("Workload executor process does not exist [PID: {}]".format(self.pid))
+        
+        # Since the default server selection timeout is 30 seconds,
+        # allow up to 60 seconds for the workload executor to terminate.
+        t_wait = 60
+        try:
+            self.workload_subprocess.wait(timeout=t_wait)
+            LOGGER.info("Stopped workload executor [PID: {}]".format(self.pid))
+        except subprocess.TimeoutExpired:
+            LOGGER.info("Workload executor is still running, trying to kill it [PID: {}]".format(self.pid))
+        
+            try:
+                os.killpg(self.workload_subprocess.pid, signal.SIGKILL)
+            except ProcessLookupError as exc:
+                # OK, process exited just as we were trying to kill it
+                pass
+
 
 def get_logs(admin_client, project, cluster_name):
     LOGGER.info(f'Retrieving logs for {cluster_name}')

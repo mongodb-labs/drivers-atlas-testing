@@ -160,136 +160,139 @@ class AtlasTestCase:
             driver_workload=self.spec.driverWorkload,
             startup_time=startup_time)
 
-        for operation in self.spec.operations:
-            if len(operation) != 1:
-                raise ValueError("Operation must have exactly one key: %s" % operation)
-                
-            op_name, op_spec = list(operation.items())[0]
-            
-            if op_name == 'setClusterConfiguration':
-                # Step-3: begin maintenance routine.
-                final_config = op_spec
-                cluster_config = final_config.clusterConfiguration
-                process_args = final_config.processArgs
-
-                if not cluster_config and not process_args:
-                    raise RuntimeError("invalid maintenance plan")
-
-                if cluster_config:
-                    LOGGER.info("Pushing cluster configuration update")
-                    self.cluster_url.patch(**cluster_config)
-
-                if process_args:
-                    LOGGER.info("Pushing process arguments update")
-                    self.cluster_url.processArgs.patch(**process_args)
-
-                # Step-4: wait until maintenance completes (cluster is IDLE).
-                self.wait_for_idle()
-                self.verify_cluster_configuration_matches(final_config)
-                LOGGER.info("Cluster maintenance complete")
-                
-            elif op_name == 'testFailover':
-                timer = Timer()
-                timer.start()
-                timeout = 300
-
-                # DRIVERS-1585: failover may fail due to the cluster not being
-                # ready. Retry failover up to a timeout if the
-                # CLUSTER_RESTART_INVALID error is returned from the call
-                while True:
-                    try:
-                        self.cluster_url['restartPrimaries'].post()
-                    except AtlasApiError as exc:
-                        if exc.error_code != 'CLUSTER_RESTART_INVALID':
-                            raise
-                    else:
-                        break
-
-                    if timer.elapsed > timeout:
-                        raise PollingTimeoutError("Could not test failover as cluster wasn't ready")
-                    else:
-                        sleep(5)
-
-                self.wait_for_idle()
-                
-            elif op_name == 'sleep':
-                _time.sleep(op_spec)
-                
-            elif op_name == 'waitForIdle':
-                self.wait_for_idle()
-                
-            elif op_name == 'restartVms':
-                rv = self.admin_client.nds.groups[self.project.id].clusters[self.cluster_name].reboot.post(api_version='private')
-                
-                self.wait_for_idle()
-                
-            elif op_name == 'assertPrimaryRegion':
-                region = op_spec['region']
-                
-                cluster_config = self.cluster_url.get().data
-                timer = Timer()
-                timer.start()
-                timeout = op_spec.get('timeout', 90)
-                
-                with mongo_client(self.get_connection_string()) as mc:
-                    while True:
-                        rsc = mc.admin.command('replSetGetConfig')
-                        member = [m for m in rsc['config']['members']
-                            if m['horizons']['PUBLIC'] == '%s:%s' % mc.primary][0]
-                        member_region = member['tags']['region']
+        try:
+            for operation in self.spec.operations:
+                if len(operation) != 1:
+                    raise ValueError("Operation must have exactly one key: %s" % operation)
                     
-                        if region == member_region:
+                op_name, op_spec = list(operation.items())[0]
+                
+                if op_name == 'setClusterConfiguration':
+                    # Step-3: begin maintenance routine.
+                    final_config = op_spec
+                    cluster_config = final_config.clusterConfiguration
+                    process_args = final_config.processArgs
+
+                    if not cluster_config and not process_args:
+                        raise RuntimeError("invalid maintenance plan")
+
+                    if cluster_config:
+                        LOGGER.info("Pushing cluster configuration update")
+                        self.cluster_url.patch(**cluster_config)
+
+                    if process_args:
+                        LOGGER.info("Pushing process arguments update")
+                        self.cluster_url.processArgs.patch(**process_args)
+
+                    # Step-4: wait until maintenance completes (cluster is IDLE).
+                    self.wait_for_idle()
+                    self.verify_cluster_configuration_matches(final_config)
+                    LOGGER.info("Cluster maintenance complete")
+                    
+                elif op_name == 'testFailover':
+                    timer = Timer()
+                    timer.start()
+                    timeout = 300
+
+                    # DRIVERS-1585: failover may fail due to the cluster not being
+                    # ready. Retry failover up to a timeout if the
+                    # CLUSTER_RESTART_INVALID error is returned from the call
+                    while True:
+                        try:
+                            self.cluster_url['restartPrimaries'].post()
+                        except AtlasApiError as exc:
+                            if exc.error_code != 'CLUSTER_RESTART_INVALID':
+                                raise
+                        else:
                             break
-                            
+
                         if timer.elapsed > timeout:
-                            raise Exception("Primary in cluster not in expected region '%s' (actual region '%s')" % (region, member_region))
+                            raise PollingTimeoutError("Could not test failover as cluster wasn't ready")
                         else:
                             sleep(5)
+
+                    self.wait_for_idle()
+                    
+                elif op_name == 'sleep':
+                    _time.sleep(op_spec)
+                    
+                elif op_name == 'waitForIdle':
+                    self.wait_for_idle()
+                    
+                elif op_name == 'restartVms':
+                    rv = self.admin_client.nds.groups[self.project.id].clusters[self.cluster_name].reboot.post(api_version='private')
+                    
+                    self.wait_for_idle()
+                    
+                elif op_name == 'assertPrimaryRegion':
+                    region = op_spec['region']
+                    
+                    cluster_config = self.cluster_url.get().data
+                    timer = Timer()
+                    timer.start()
+                    timeout = op_spec.get('timeout', 90)
+                    
+                    with mongo_client(self.get_connection_string()) as mc:
+                        while True:
+                            rsc = mc.admin.command('replSetGetConfig')
+                            member = [m for m in rsc['config']['members']
+                                if m['horizons']['PUBLIC'] == '%s:%s' % mc.primary][0]
+                            member_region = member['tags']['region']
+                        
+                            if region == member_region:
+                                break
+                                
+                            if timer.elapsed > timeout:
+                                raise Exception("Primary in cluster not in expected region '%s' (actual region '%s')" % (region, member_region))
+                            else:
+                                sleep(5)
+                    
+                else:
+                    raise Exception('Unrecognized operation %s' % op_name)
+
+            # Wait 10 seconds to ensure that the driver is not experiencing any
+            # errors after the maintenance has concluded.
+            sleep(10)
+            
+            # Step-5: interrupt driver workload and capture streams
+            stats = self.workload_runner.stop()
+
+            # Stop the timer
+            timer.stop()
+
+            # Step-6: compute xunit entry.
+            junit_test = junitparser.TestCase(self.id)
+            junit_test.time = timer.elapsed
+
+            if (stats['numErrors'] != 0 or stats['numFailures'] != 0 or
+                    stats['numSuccesses'] == 0):
+                LOGGER.info("FAILED: {!r}".format(self.id))
+                self.failed = True
+                # Write xunit logs for failed tests.
+                junit_test.result = junitparser.Failure(str(stats))
                 
+                with open('status', 'w') as fp:
+                    fp.write('failure')
             else:
-                raise Exception('Unrecognized operation %s' % op_name)
+                LOGGER.info("SUCCEEDED: {!r}".format(self.id))
+                # Directly log output of successful tests as xunit output
+                # is only visible for failed tests.
+                
+                with open('status', 'w') as fp:
+                    fp.write('success')
 
-        # Wait 10 seconds to ensure that the driver is not experiencing any
-        # errors after the maintenance has concluded.
-        sleep(10)
-        
-        # Step-5: interrupt driver workload and capture streams
-        stats = self.workload_runner.stop()
-
-        # Stop the timer
-        timer.stop()
-
-        # Step-6: compute xunit entry.
-        junit_test = junitparser.TestCase(self.id)
-        junit_test.time = timer.elapsed
-
-        if (stats['numErrors'] != 0 or stats['numFailures'] != 0 or
-                stats['numSuccesses'] == 0):
-            LOGGER.info("FAILED: {!r}".format(self.id))
-            self.failed = True
-            # Write xunit logs for failed tests.
-            junit_test.result = junitparser.Failure(str(stats))
+            LOGGER.info("Workload Statistics: {}".format(stats))
             
-            with open('status', 'w') as fp:
-                fp.write('failure')
-        else:
-            LOGGER.info("SUCCEEDED: {!r}".format(self.id))
-            # Directly log output of successful tests as xunit output
-            # is only visible for failed tests.
-            
-            with open('status', 'w') as fp:
-                fp.write('success')
+            # Step 7: download logs asynchronously and delete cluster.
+            # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4
+            if not persist_cluster:
+                self.cluster_url.delete()
+                LOGGER.info("Cluster {!r} marked for deletion.".format(
+                    self.cluster_name))
 
-        LOGGER.info("Workload Statistics: {}".format(stats))
-        
-        # Step 7: download logs asynchronously and delete cluster.
-        # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4
-        if not persist_cluster:
-            self.cluster_url.delete()
-            LOGGER.info("Cluster {!r} marked for deletion.".format(
-                self.cluster_name))
-
-        return junit_test
+            return junit_test
+        finally:
+            self.workload_runner.terminate()
         
     def wait_for_idle(self):
         # Small delay to account for Atlas not updating cluster state
