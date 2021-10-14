@@ -66,8 +66,9 @@ class Executor
         end
 
         Thread.new do
-          sleep 10
-          STDERR.puts "Warning: Exiting from signal handler background thread because executor did not terminate in 10 seconds"
+          # Default server selection timeout is 30 seconds.
+          sleep 45
+          STDERR.puts "Warning: Exiting from signal handler background thread because executor did not terminate in 45 seconds"
           exit(1)
         end
       else
