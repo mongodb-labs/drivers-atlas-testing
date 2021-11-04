@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import json
 import logging
 import os
@@ -400,3 +401,8 @@ def require_requests_ipv4():
         return socket.AF_INET
 
     urllib3_cn.allowed_gai_family = allowed_gai_family
+
+def parse_iso8601_time(str):
+    if str[-1] != 'Z':
+        raise ValueError('Only times ending in Z are supported')
+    return datetime.datetime.fromisoformat(str[:-1])

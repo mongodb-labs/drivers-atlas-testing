@@ -30,6 +30,14 @@ functions:
       params:
         directory: astrolabe-src
     # Make sure virtualenv is installed.
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        continue_on_err: true
+        script: |
+          echo Using Python: ${PYTHON3_BINARY}
+          ${PYTHON3_BINARY} -V
     - command: subprocess.exec
       type: setup
       params:
@@ -175,6 +183,17 @@ functions:
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests delete-cluster tests/${TEST_NAME}.yml
 
   "upload test results":
+    # Evergreen fails tasks when the process exits with success but an xunit
+    # file is present with a failure. Delete the files where failures are
+    # expected.
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        continue_on_err: true       # Because script may not exist OR platform may not be Windows.
+        add_expansions_to_env: true
+        script: |
+          rm -f xunit-output/failure_*.xml
     # Upload the xunit-format test results.
     - command: attach.xunit_results
       type: setup
@@ -417,7 +436,7 @@ axes:
         run_on: ubuntu1804-drivers-atlas-testing
         batchtime: 10080  # 7 days
         variables:
-          PYTHON3_BINARY: "python3"
+          PYTHON3_BINARY: "/opt/mongodbtoolchain/v4/bin/python3.9"
           PYTHON_BIN_DIR: "bin"
           # Set locale to unicode - needed for astrolabe to function correctly.
           LC_ALL: "C.UTF-8"
@@ -435,10 +454,10 @@ axes:
   - id: runtime
     display_name: runtime
     values:
-      - id: python38
+      - id: python39
         display_name: CPython-3
         variables:
-          PYTHON_BINARY: "python3"
+          PYTHON_BINARY: "/opt/mongodbtoolchain/v4/bin/python3.9"
       - id: python37-windows
         display_name: CPython-3.7-Windows
         variables:
@@ -459,6 +478,7 @@ axes:
         display_name: Java 17
         variables:
           JAVA_HOME: "/opt/java/jdk17"
+          PYTHON_BINARY: "/opt/mongodbtoolchain/v4/bin/python3.9"
       - id: dotnet-async-netcoreapp2.1
         display_name: dotnet-async-netcoreapp2.1
         variables:
@@ -474,6 +494,7 @@ axes:
         variables:
           GOROOT: /opt/golang/go1.15
           GOPATH: /home/ubuntu/go
+          PYTHON_BINARY: "/opt/mongodbtoolchain/v4/bin/python3.9"
       - id: php-74
         display_name: PHP 7.4
         variables:
@@ -484,7 +505,7 @@ buildvariants:
   matrix_spec:
     driver: ["ruby-master"]
     platform: ubuntu-18.04
-    runtime: python38
+    runtime: python39
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
@@ -493,7 +514,7 @@ buildvariants:
   matrix_spec:
     driver: ["pymongo-master"]
     platform: ["ubuntu-18.04"]
-    runtime: ["python38"]
+    runtime: ["python39"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"

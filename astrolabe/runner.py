@@ -33,7 +33,7 @@ from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
     assert_subset, get_cluster_name, get_test_name_from_spec_file,
     DriverWorkloadSubprocessRunner, SingleTestXUnitLogger,
-    get_logs)
+    get_logs, parse_iso8601_time)
 from .timer import Timer
 
 
@@ -194,6 +194,10 @@ class AtlasTestCase:
                     timer = Timer()
                     timer.start()
                     timeout = 300
+                    start_time = datetime.datetime.now()
+                    # Account for possible clock drift between our system and
+                    # evergreen infrastructure
+                    _time.sleep(5)
 
                     # DRIVERS-1585: failover may fail due to the cluster not being
                     # ready. Retry failover up to a timeout if the
@@ -212,6 +216,7 @@ class AtlasTestCase:
                         else:
                             sleep(5)
 
+                    self.wait_for_planning(start_time)
                     self.wait_for_idle()
                     
                 elif op_name == 'sleep':
@@ -321,6 +326,24 @@ class AtlasTestCase:
             sleep(1.0 / self.config.polling_frequency)
         if not ok:
             raise PollingTimeoutError("Polling timed out after %s seconds" % timeout)
+            
+    def wait_for_planning(self, start_time):
+        timer = Timer()
+        timer.start()
+        timeout = self.config.polling_timeout
+        ok = False
+        LOGGER.info("Waiting for planning for cluster %s" % self.cluster_name)
+        while timer.elapsed < timeout:
+            data = self.admin_client.nds.groups[self.project.id].get(api_version='private').data
+            planning_time = parse_iso8601_time(data['lastPlanningDate'])
+            if planning_time > start_time:
+                ok = True
+                break
+            LOGGER.info("Cluster %s: last planned: %s; wanted after: %s; waited for %.1f sec" % (self.cluster_name, planning_time, start_time, timer.elapsed))
+            _time.sleep(5)
+        
+        if not ok:
+            raise PollingTimeoutError("Timed out waiting for planning after %s seconds" % timeout)
 
 
 class SpecTestRunnerBase:
@@ -449,6 +472,12 @@ class SpecTestRunnerBase:
                 all_ok = False
 
             print('done: %s, %s, %s' % (active_case.failed,ok,all_ok))
+                
+        with open('status', 'w') as fp:
+            if all_ok:
+                fp.write('success')
+            else:
+                fp.write('failure')
 
         return not all_ok
 
