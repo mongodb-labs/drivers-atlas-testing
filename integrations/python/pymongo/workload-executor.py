@@ -1,126 +1,57 @@
 from __future__ import print_function
 
-import copy
+import sys
 import json
 import os
-import re
-import signal
-import sys
-import traceback
 
-from pymongo import MongoClient
-from pymongo.cursor import Cursor
-from pymongo.command_cursor import CommandCursor
-
-
-IS_INTERRUPTED = False
-WIN32 = sys.platform in ("win32", "cygwin")
-
-
-def interrupt_handler(signum, frame):
-    global IS_INTERRUPTED
-    # Set the IS_INTERRUPTED flag here and perform the necessary cleanup
-    # before actually exiting in workload_runner. This is because signals
-    # are handled asynchronously which can cause the interrupt handlers to
-    # fire more than once. Consequently, the handler itself should be
-    # re-entrant (invokable multiple times without needing to wait for prior
-    # invocations to return/complete) which is made possible by this pattern.
-    IS_INTERRUPTED = True
-
-
-if WIN32:
-    # CTRL_BREAK_EVENT is mapped to SIGBREAK
-    signal.signal(signal.SIGBREAK, interrupt_handler)
-else:
-    signal.signal(signal.SIGINT, interrupt_handler)
-
-
-def camel_to_snake(camel):
-    # Regex to convert CamelCase to snake_case.
-    snake = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', camel)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', snake).lower()
-
-
-def prepare_operation(operation_spec):
-    target_name = operation_spec["object"]
-    cmd_name = camel_to_snake(operation_spec["name"])
-    arguments = operation_spec["arguments"]
-    for arg_name in list(arguments):
-        if arg_name == "sort":
-            sort_dict = arguments[arg_name]
-            arguments[arg_name] = list(sort_dict.items())
-    return target_name, cmd_name, arguments, operation_spec.get('result')
-
-
-def run_operation(objects, prepared_operation):
-    target_name, cmd_name, arguments, expected_result = prepared_operation
-
-    if cmd_name.lower().startswith('insert'):
-        # PyMongo's insert* methods mutate the inserted document, so we
-        # duplicate it to avoid the DuplicateKeyError.
-        arguments = copy.deepcopy(arguments)
-
-    target = objects[target_name]
-    cmd = getattr(target, cmd_name)
-    result = cmd(**dict(arguments))
-
-    if expected_result is not None:
-        if isinstance(result, Cursor) or isinstance(result, CommandCursor):
-            result = list(result)
-        assert result == expected_result
-
-
-def connect(mongodb_uri):
-    if WIN32 and mongodb_uri.startswith("mongodb+srv://"):
-        # TODO: remove this once BUILD-10841 is done.
-        import certifi
-        return MongoClient(mongodb_uri, tlsCAFile=certifi.where())
-    return MongoClient(mongodb_uri)
+from test.unified_format import UnifiedSpecTestMixinV1
 
 
 def workload_runner(mongodb_uri, test_workload):
-    # Do not modify connection string and do not add any extra options.
-    client = connect(mongodb_uri)
-
-    # Create test entities.
-    database = client.get_database(test_workload["database"])
-    collection = database.get_collection(test_workload["collection"])
-    objects = {"database": database, "collection": collection}
-
     # Run operations
-    num_failures = 0
-    num_errors = 0
-    num_operations = 0
-    global IS_INTERRUPTED
+    runner = UnifiedSpecTestMixinV1()
+    runner.TEST_SPEC = test_workload
+    UnifiedSpecTestMixinV1.TEST_SPEC = test_workload
+    runner.setUpClass()
+    runner.setUp()
+    for i in test_workload["tests"][0]["operations"]:
+        if i.get("name") == "loop":
+            i["arguments"]["numIterations"] = 5
+    runner.run_scenario(test_workload["tests"][0], uri=mongodb_uri)
+    entity_map = runner.entity_map
+    if "failures" not in entity_map and "errors" in entity_map:
+        entity_map["failures"] = [i for i in entity_map["errors"] if i[
+            "type"] == AssertionError]
+        entity_map._entities["errors"] = [i for i in entity_map["errors"] if i[
+            "type"] != AssertionError]
+    if "errors" not in entity_map and "failures" in entity_map:
+        entity_map["failures"] = [i for i in entity_map["errors"] if i[
+            "type"] == AssertionError]
+        entity_map._entities["errors"] = [i for i in entity_map["errors"] if i[
+            "type"] != AssertionError]
+    for i in ["errors", "failures"]:
+        if i not in entity_map:
+            entity_map[i] = []
+    for i in ["successes", "iterations"]:
+        if i not in entity_map:
+            entity_map[i] = -1
+    
+    results = {"numErrors": len(entity_map["errors"]), "numFailures":
+        len(entity_map["failures"]), "numSuccesses": entity_map["successes"],
+               "numIterations": entity_map["iterations"]}
 
-    operations = test_workload["operations"]
-    ops = [prepare_operation(op) for op in operations]
-
-    while True:
-        if IS_INTERRUPTED:
-            break
-        for op in ops:
-            try:
-                run_operation(objects, op)
-            except AssertionError:
-                traceback.print_exc()
-                num_failures += 1
-            except Exception:
-                traceback.print_exc()
-                num_errors += 1
-            else:
-                num_operations += 1
-
-    # We reach here once IS_INTERRUPTED has been set to True.
-    stats = {"numErrors": num_errors, "numFailures": num_failures,
-             "numSuccesses": num_operations}
-    print("Workload statistics: {!r}".format(stats))
-
+    events = {"events": entity_map["events"], "errors": entity_map[
+        "errors"], "failures": entity_map["failures"]}
+    print("Workload statistics: {!r}".format(results))
+    print("Workload events: {!r}".format(events))
     sentinel = os.path.join(os.path.abspath(os.curdir), 'results.json')
     print("Writing statistics to sentinel file {!r}".format(sentinel))
     with open('results.json', 'w') as fr:
-        json.dump(stats, fr)
-    exit(0 or num_errors or num_failures)
+        json.dump(results, fr)
+    with open('events.json', 'w') as fr:
+        json.dump(events, fr)
+    exit(0 or len(entity_map["errors"]) or len(entity_map[
+        "failures"]))
 
 
 if __name__ == '__main__':
