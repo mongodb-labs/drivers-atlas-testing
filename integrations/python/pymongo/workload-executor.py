@@ -3,13 +3,18 @@ from __future__ import print_function
 import sys
 import json
 import os
+import time
 
 from test.unified_format import UnifiedSpecTestMixinV1
 
 
-def filter_failures_errors(entity_map, target):
+def filter_failures_errors(entity_map):
     e, f = [], []
-    for i in entity_map[target]:
+    pre_filter_arr = []
+    for i in ["failures", "errors"]:
+        if i in entity_map:
+            pre_filter_arr.extend(entity_map[i])
+    for i in pre_filter_arr:
         (e, f)[i["type"] == AssertionError].append(i)
     entity_map._entities["failures"], entity_map._entities["errors"] = f, e
 
@@ -24,14 +29,23 @@ def workload_runner(mongodb_uri, test_workload):
     for i in test_workload["tests"][0]["operations"]:
         if i.get("name") == "loop":
             i["arguments"]["numIterations"] = 10
-    runner.run_scenario(test_workload["tests"][0], uri=mongodb_uri)
+    try:
+        runner.run_scenario(test_workload["tests"][0], uri=mongodb_uri)
+    except AssertionError as exc:
+        if "failures" not in runner.entity_map:
+            runner.entity_map["failures"] = []
+        runner.entity_map["failures"].append({
+                    "error": str(exc), "time": time.time(), "type": type(
+                        exc)})
+    except Exception as exc:
+        if "errors" not in runner.entity_map:
+            runner.entity_map["errors"] = []
+        runner.entity_map["errors"].append({
+            "error": str(exc), "time": time.time(), "type": type(
+                exc)})
     entity_map = runner.entity_map
-    if "failures" not in entity_map and "errors" in entity_map:
-        filter_failures_errors(entity_map, "errors")
-    if "errors" not in entity_map and "failures" in entity_map:
-        filter_failures_errors(entity_map, "failures")
-
-    for i in ["errors", "failures", "events"]:
+    filter_failures_errors(entity_map)
+    for i in ["events"]:
         if i not in entity_map:
             entity_map[i] = []
     for i in ["successes", "iterations"]:
@@ -47,10 +61,10 @@ def workload_runner(mongodb_uri, test_workload):
         entity_map["errors"][i].pop("type")
     events = {"events": entity_map["events"], "errors": entity_map[
         "errors"], "failures": entity_map["failures"]}
-    #print("Workload statistics: {!r}".format(results))
+    print("Workload statistics: {!r}".format(results))
     #print("Workload events: {!r}".format(events))
     sentinel = os.path.join(os.path.abspath(os.curdir), 'results.json')
-    #print("Writing statistics to sentinel file {!r}".format(sentinel))
+    print("Writing statistics to sentinel file {!r}".format(sentinel))
     with open('results.json', 'w') as fr:
         json.dump(results, fr)
     with open('events.json', 'w') as fr:
