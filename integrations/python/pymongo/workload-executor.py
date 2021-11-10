@@ -20,7 +20,6 @@ def filter_failures_errors(entity_map):
 
 
 def workload_runner(mongodb_uri, test_workload):
-    # Run operations
     runner = UnifiedSpecTestMixinV1()
     runner.TEST_SPEC = test_workload
     UnifiedSpecTestMixinV1.TEST_SPEC = test_workload
@@ -35,38 +34,41 @@ def workload_runner(mongodb_uri, test_workload):
         if "errors" not in runner.entity_map:
             runner.entity_map["errors"] = []
         runner.entity_map["errors"].append({
-            "error": str(exc), "time": time.time(), "type": type(
-                exc)})
+            "error": str(exc),
+            "time": time.time(),
+            "type": type(exc)
+        })
     entity_map = runner.entity_map
     filter_failures_errors(entity_map)
-    for i in ["events"]:
-        if i not in entity_map:
-            entity_map[i] = []
+    if "events" not in entity_map:
+        entity_map[i] = []
     for i in ["successes", "iterations"]:
         if i not in entity_map:
             entity_map[i] = -1
-    
-    results = {"numErrors": len(entity_map["errors"]), "numFailures":
-        len(entity_map["failures"]), "numSuccesses": entity_map["successes"],
+
+    results = {"numErrors": len(entity_map["errors"]),
+               "numFailures": len(entity_map["failures"]),
+               "numSuccesses": entity_map["successes"],
                "numIterations": entity_map["iterations"]}
+    print("Workload statistics: {!r}".format(results))
 
     # need to do this so that it can be json serialized
     for target in ["errors", "failures"]:
         for i in range(len(entity_map[target])):
             entity_map[target][i].pop("type")
 
-    events = {"events": entity_map["events"], "errors": entity_map[
-        "errors"], "failures": entity_map["failures"]}
-    print("Workload statistics: {!r}".format(results))
-    #print("Workload events: {!r}".format(events))
+    events = {"events": entity_map["events"],
+              "errors": entity_map["errors"],
+              "failures": entity_map["failures"]}
+    print("Workload events: {!r}".format(events))
+
     sentinel = os.path.join(os.path.abspath(os.curdir), 'results.json')
     print("Writing statistics to sentinel file {!r}".format(sentinel))
     with open('results.json', 'w') as fr:
         json.dump(results, fr)
     with open('events.json', 'w') as fr:
         json.dump(events, fr)
-    exit(0 or len(entity_map["errors"]) or len(entity_map[
-        "failures"]))
+    exit(0 or len(entity_map["errors"]) or len(entity_map["failures"]))
 
 
 if __name__ == '__main__':
