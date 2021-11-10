@@ -4,8 +4,22 @@ import sys
 import json
 import os
 import time
+import signal
 
-from test.unified_format import UnifiedSpecTestMixinV1
+from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop
+
+WIN32 = sys.platform in ("win32", "cygwin")
+
+
+def interrupt_handler(signum, frame):
+    interrupt_loop()
+
+
+if WIN32:
+    # CTRL_BREAK_EVENT is mapped to SIGBREAK
+    signal.signal(signal.SIGBREAK, interrupt_handler)
+else:
+    signal.signal(signal.SIGINT, interrupt_handler)
 
 
 def filter_failures_errors(entity_map):
