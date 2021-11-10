@@ -31,12 +31,6 @@ def workload_runner(mongodb_uri, test_workload):
             i["arguments"]["numIterations"] = 10
     try:
         runner.run_scenario(test_workload["tests"][0], uri=mongodb_uri)
-    except AssertionError as exc:
-        if "failures" not in runner.entity_map:
-            runner.entity_map["failures"] = []
-        runner.entity_map["failures"].append({
-                    "error": str(exc), "time": time.time(), "type": type(
-                        exc)})
     except Exception as exc:
         if "errors" not in runner.entity_map:
             runner.entity_map["errors"] = []
