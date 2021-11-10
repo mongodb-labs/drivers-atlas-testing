@@ -39,6 +39,7 @@ def workload_runner(mongodb_uri, test_workload):
     UnifiedSpecTestMixinV1.TEST_SPEC = test_workload
     runner.setUpClass()
     runner.setUp()
+    # should be removed in final version, but useful for testing right now
     for op in test_workload["tests"][0]["operations"]:
         if op.get("name") == "loop":
             op["arguments"]["numIterations"] = 10
@@ -48,7 +49,7 @@ def workload_runner(mongodb_uri, test_workload):
         if "errors" not in runner.entity_map:
             runner.entity_map["errors"] = []
         runner.entity_map["errors"].append({
-            "error": str(exc),
+            "error": type(exc).__name__+" "+str(exc),
             "time": time.time(),
             "type": type(exc)
         })
