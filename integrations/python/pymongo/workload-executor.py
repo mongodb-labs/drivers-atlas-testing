@@ -5,7 +5,7 @@ import json
 import os
 import time
 import signal
-
+from collections import defaultdict
 from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop
 
 WIN32 = sys.platform in ("win32", "cygwin")
@@ -45,18 +45,23 @@ def workload_runner(mongodb_uri, test_workload):
             op["arguments"]["numIterations"] = 10
     try:
         runner.run_scenario(test_workload["tests"][0], uri=mongodb_uri)
+    except AssertionError as exc:
+        if "failures" not in runner.entity_map:
+            runner.entity_map["failures"] = []
+        runner.entity_map["failures"].append({
+            "error": str(exc),
+            "time": time.time(),
+            "type": type(exc)
+        })
     except Exception as exc:
         if "errors" not in runner.entity_map:
             runner.entity_map["errors"] = []
         runner.entity_map["errors"].append({
-            "error": type(exc).__name__+" "+str(exc),
+            "error": str(exc),
             "time": time.time(),
             "type": type(exc)
         })
-    entity_map = runner.entity_map
-    filter_failures_errors(entity_map)
-    if "events" not in entity_map:
-        entity_map["events"] = []
+    entity_map = defaultdict(list, runner.entity_map._entities)
     for entity_type in ["successes", "iterations"]:
         if entity_type not in entity_map:
             entity_map[entity_type] = -1
@@ -70,7 +75,7 @@ def workload_runner(mongodb_uri, test_workload):
     # need to do this so that it can be json serialized
     for target in ["errors", "failures"]:
         for i in range(len(entity_map[target])):
-            entity_map[target][i].pop("type")
+            entity_map[target][i] = str(entity_map[target][i])
 
     events = {"events": entity_map["events"],
               "errors": entity_map["errors"],
