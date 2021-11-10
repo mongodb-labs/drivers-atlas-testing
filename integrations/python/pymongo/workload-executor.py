@@ -49,10 +49,12 @@ def workload_runner(mongodb_uri, test_workload):
     results = {"numErrors": len(entity_map["errors"]), "numFailures":
         len(entity_map["failures"]), "numSuccesses": entity_map["successes"],
                "numIterations": entity_map["iterations"]}
-    for i in range(len(entity_map["failures"])):
-        entity_map["failures"][i].pop("type")
-    for i in range(len(entity_map["errors"])):
-        entity_map["errors"][i].pop("type")
+
+    # need to do this so that it can be json serialized
+    for target in ["errors", "failures"]:
+        for i in range(len(entity_map[target])):
+            entity_map[target][i].pop("type")
+
     events = {"events": entity_map["events"], "errors": entity_map[
         "errors"], "failures": entity_map["failures"]}
     print("Workload statistics: {!r}".format(results))
