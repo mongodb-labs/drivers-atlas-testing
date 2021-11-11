@@ -20,7 +20,7 @@ if WIN32:
     signal.signal(signal.SIGBREAK, interrupt_handler)
 else:
     signal.signal(signal.SIGINT, interrupt_handler)
-    
+
 
 def workload_runner(mongodb_uri, test_workload):
     runner = UnifiedSpecTestMixinV1()
@@ -29,10 +29,8 @@ def workload_runner(mongodb_uri, test_workload):
     runner.setUpClass()
     runner.setUp()
     # should be removed in final version, but useful for testing right now
-    for op in test_workload["tests"][0]["operations"]:
-        if op.get("name") == "loop":
-            op["arguments"]["numIterations"] = 10
     try:
+        assert len(test_workload["tests"]) == 1
         runner.run_scenario(test_workload["tests"][0], uri=mongodb_uri)
     except Exception as exc:
         target = "failures" if isinstance(exc, AssertionError) else "errors"
@@ -57,12 +55,11 @@ def workload_runner(mongodb_uri, test_workload):
     # need to do this so that it can be json serialized
     for target in ["errors", "failures"]:
         for i in range(len(entity_map[target])):
-            entity_map[target][i] = str(entity_map[target][i])
+            entity_map[target][i]["type"] = str(entity_map[target][i]["type"])
 
     events = {"events": entity_map["events"],
               "errors": entity_map["errors"],
               "failures": entity_map["failures"]}
-    #print("Workload events: {!r}".format(events))
 
     cur_dir = os.path.abspath(os.curdir)
     print("Writing statistics to directory {!r}".format(cur_dir))
