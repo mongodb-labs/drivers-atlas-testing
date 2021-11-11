@@ -1,13 +1,20 @@
 from __future__ import print_function
-
+import site
 import sys
 import json
 import os
 import time
 import signal
-from collections import defaultdict
-from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop
+import inspect
 
+from collections import defaultdict
+import pymongo
+test_path = os.path.dirname(os.path.dirname(inspect.getfile(pymongo)))
+print("sys.path before patching:", sys.path)
+sys.path.insert(0, test_path)
+print("sys.path after patching:", sys.path)
+from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop
+print("where is UnifiedSpecTestMixinV1 from", inspect.getfile("UnifiedSpecTestMixinV1"))
 WIN32 = sys.platform in ("win32", "cygwin")
 
 
