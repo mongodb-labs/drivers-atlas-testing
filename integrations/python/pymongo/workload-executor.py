@@ -20,18 +20,7 @@ if WIN32:
     signal.signal(signal.SIGBREAK, interrupt_handler)
 else:
     signal.signal(signal.SIGINT, interrupt_handler)
-
-
-def filter_failures_errors(entity_map):
-    e, f = [], []
-    pre_filter_arr = []
-    for entity_type in ["failures", "errors"]:
-        if entity_type in entity_map:
-            pre_filter_arr.extend(entity_map[entity_type])
-    for entity in pre_filter_arr:
-        (e, f)[entity["type"] == AssertionError].append(entity)
-    entity_map._entities["failures"], entity_map._entities["errors"] = f, e
-
+    
 
 def workload_runner(mongodb_uri, test_workload):
     runner = UnifiedSpecTestMixinV1()
@@ -81,7 +70,6 @@ def workload_runner(mongodb_uri, test_workload):
         json.dump(results, fr)
     with open("events.json", 'w') as fr:
         json.dump(events, fr)
-    exit(0 or len(entity_map["errors"]) or len(entity_map["failures"]))
 
 
 if __name__ == '__main__':
