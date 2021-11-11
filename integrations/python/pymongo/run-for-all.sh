@@ -1,5 +1,5 @@
 #!/bin/bash -ex
-# this file runs all of the tests for the workload
+# this file runs all of the tests for the workload executor
 # you have to manually interrupt the tests with CTRL-C
 for file in ../../../tests/*
 do
