@@ -28,7 +28,6 @@ def workload_runner(mongodb_uri, test_workload):
     UnifiedSpecTestMixinV1.TEST_SPEC = test_workload
     runner.setUpClass()
     runner.setUp()
-    # should be removed in final version, but useful for testing right now
     try:
         assert len(test_workload["tests"]) == 1
         runner.run_scenario(test_workload["tests"][0], uri=mongodb_uri)
