@@ -484,36 +484,34 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
-# TODO: re-enable language builds once workload executors have been
-# re-implemented to work with the new format
-#- matrix_name: "tests-python"
-#  matrix_spec:
-#    driver: ["pymongo-master"]
-#    platform: ["ubuntu-18.04"]
-#    runtime: ["python27", "python38"]
-#  display_name: "${driver} ${platform} ${runtime}"
-#  tasks:
-#    - ".all"
-#- matrix_name: "tests-python-windows"
-#  matrix_spec:
-#    driver: ["pymongo-master"]
-#    platform: ["windows-64"]
-#    runtime: ["python37-windows"]
-#  display_name: "${driver} ${platform} ${runtime}"
-#  tasks:
-#    - ".all"
-#- matrix_name: tests-node
-#  matrix_spec:
-#    driver:
-#      - node-master
-#    platform:
-#      - ubuntu-18.04
-#    runtime:
-#      - node-dubnium
-#      - node-erbium
-#  display_name: "${driver} ${platform} ${runtime}"
-#  tasks:
-#    - .all
+- matrix_name: "tests-python"
+  matrix_spec:
+    driver: ["pymongo-master"]
+    platform: ["ubuntu-18.04"]
+    runtime: ["python27", "python38"]
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - ".all"
+- matrix_name: "tests-python-windows"
+  matrix_spec:
+    driver: ["pymongo-master"]
+    platform: ["windows-64"]
+    runtime: ["python37-windows"]
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - ".all"
+- matrix_name: tests-node
+  matrix_spec:
+    driver:
+      - node-master
+    platform:
+      - ubuntu-18.04
+    runtime:
+      - node-dubnium
+      - node-erbium
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - .all
 - matrix_name: "tests-java"
   matrix_spec:
     driver: ["java-master"]
