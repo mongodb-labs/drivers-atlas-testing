@@ -352,8 +352,8 @@ axes:
         display_name: "PyMongo (master)"
         variables:
           DRIVER_DIRNAME: "python/pymongo"
-          DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-python-driver"
-          DRIVER_REVISION: "master"
+          DRIVER_REPOSITORY: "https://github.com/juliusgeo/mongo-python-driver"
+          DRIVER_REVISION: "PYTHON-3014"
           PYMONGO_VIRTUALENV_NAME: "pymongotestvenv"
           ASTROLABE_EXECUTOR_STARTUP_TIME: 5
       - id: ruby-master
