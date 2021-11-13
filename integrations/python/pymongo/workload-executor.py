@@ -9,6 +9,9 @@ import inspect
 
 from collections import defaultdict
 import pymongo
+# we insert this path into the sys.path because we want to be able to import
+# test.unified_format directly from the git repo that was used to install 
+# pymongo
 test_path = os.path.dirname(os.path.dirname(inspect.getfile(pymongo)))
 sys.path.insert(0, test_path)
 from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop
