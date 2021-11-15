@@ -61,7 +61,6 @@ def workload_runner(mongodb_uri, test_workload):
     events = {"events": entity_map["events"],
               "errors": entity_map["errors"],
               "failures": entity_map["failures"]}
-    print("events.json: {!r}".format(events))
     cur_dir = os.path.abspath(os.curdir)
     print("Writing statistics to directory {!r}".format(cur_dir))
     with open("results.json", 'w') as fr:
