@@ -11,7 +11,7 @@ from collections import defaultdict
 import pymongo
 # we insert this path into the sys.path because we want to be able to import
 # test.unified_format directly from the git repo that was used to install 
-# pymongo
+# pymongo (this works because pymongo is installed with pip flag -e)
 test_path = os.path.dirname(os.path.dirname(inspect.getfile(pymongo)))
 sys.path.insert(0, test_path)
 from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop
@@ -34,6 +34,9 @@ def workload_runner(mongodb_uri, test_workload):
     runner.TEST_SPEC = test_workload
     UnifiedSpecTestMixinV1.TEST_SPEC = test_workload
     runner.setUp()
+    # this is necessary because there isn't a mongo instance on
+    # localhost:27017 on evergreen, so we have to patch it to use the client
+    # specified in the workload runner
     runner.client = pymongo.MongoClient(mongodb_uri)
     try:
         assert len(test_workload["tests"]) == 1
