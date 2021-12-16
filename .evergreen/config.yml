@@ -455,10 +455,10 @@ axes:
         display_name: Node v12 Erbium
         variables:
           NODE_LTS_NAME: "erbium"
-      - id: java11
-        display_name: Java 11
+      - id: java17
+        display_name: Java 17
         variables:
-          JAVA_HOME: "/opt/java/jdk11"
+          JAVA_HOME: "/opt/java/jdk17"
       - id: dotnet-async-netcoreapp2.1
         display_name: dotnet-async-netcoreapp2.1
         variables:
@@ -523,7 +523,7 @@ buildvariants:
   matrix_spec:
     driver: ["java-master"]
     platform: ["ubuntu-18.04"]
-    runtime: ["java11"]
+    runtime: ["java17"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
