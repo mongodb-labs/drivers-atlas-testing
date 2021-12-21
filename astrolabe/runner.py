@@ -28,6 +28,7 @@ from astrolabe.commands import (
     get_one_organization_by_name, ensure_project, ensure_admin_user,
     ensure_connect_from_anywhere)
 from astrolabe.exceptions import PollingTimeoutError
+from atlasclient.exceptions import AtlasClientError
 from astrolabe.exceptions import AstrolabeTestCaseError
 from astrolabe.poller import BooleanCallablePoller
 from astrolabe.utils import (
@@ -452,6 +453,12 @@ class SpecTestRunnerBase:
         except (PollingTimeoutError, AtlasApiError):
             with open('status', 'w') as fp:
                 fp.write('cloud-failure')
+            raise
+        except AtlasClientError as exc:
+            # Intermittent atlas problem, see DRIVERS-2012.
+            if 'Max retries exceeded' in str(exc):
+                with open('status', 'w') as fp:
+                    fp.write('cloud-failure')
             raise
 
     def do_run(self):
