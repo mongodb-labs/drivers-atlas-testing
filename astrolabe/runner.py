@@ -14,7 +14,7 @@
 
 import logging, datetime, time as _time, gzip
 import os, io, re
-from time import sleep
+from time import sleep, monotonic
 from urllib.parse import urlencode
 
 from pymongo import MongoClient
@@ -316,13 +316,23 @@ class AtlasTestCase:
         ok = False
         timeout = self.config.polling_timeout
         wanted_state = 'idle'
+        last_notified = 0
         while timer.elapsed < timeout:
             cluster_info = self.cluster_url.get().data
             actual_state = cluster_info.stateName.lower()
             if actual_state == wanted_state:
                 ok = True
                 break
-            LOGGER.info("Cluster %s: current state: %s; wanted state: %s; waited for %.1f sec" % (self.cluster_name, actual_state, wanted_state, timer.elapsed))
+            
+            msg = "Cluster %s: current state: %s; wanted state: %s; waited for %.1f sec" % (self.cluster_name, actual_state, wanted_state, timer.elapsed)
+            now = monotonic()
+            # Notify once a minute, see DRIVERS-2013.
+            if now - last_notified >= 60:
+                last_notified = now
+                LOGGER.info(msg)
+            else:
+                LOGGER.debug(msg)
+            
             sleep(1.0 / self.config.polling_frequency)
         if not ok:
             raise PollingTimeoutError("Polling timed out after %s seconds" % timeout)
@@ -333,13 +343,23 @@ class AtlasTestCase:
         timeout = self.config.polling_timeout
         ok = False
         LOGGER.info("Waiting for planning for cluster %s" % self.cluster_name)
+        last_notified = 0
         while timer.elapsed < timeout:
             data = self.admin_client.nds.groups[self.project.id].get(api_version='private').data
             planning_time = parse_iso8601_time(data['lastPlanningDate'])
             if planning_time > start_time:
                 ok = True
                 break
-            LOGGER.info("Cluster %s: last planned: %s; wanted after: %s; waited for %.1f sec" % (self.cluster_name, planning_time, start_time, timer.elapsed))
+            
+            msg = "Cluster %s: last planned: %s; wanted after: %s; waited for %.1f sec" % (self.cluster_name, planning_time, start_time, timer.elapsed)
+            now = monotonic()
+            # Notify once a minute, see DRIVERS-2013.
+            if now - last_notified >= 60:
+                last_notified = now
+                LOGGER.info(msg)
+            else:
+                LOGGER.debug(msg)
+            
             _time.sleep(5)
         
         if not ok:
