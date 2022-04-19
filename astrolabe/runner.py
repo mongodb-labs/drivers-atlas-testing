@@ -12,31 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging, datetime, time as _time, gzip
-import os, io, re
-from time import sleep, monotonic
-from urllib.parse import urlencode
+import datetime
+import logging
+import os
+import re
+import time as _time
+from datetime import timezone
+from time import monotonic, sleep
 
-from pymongo import MongoClient
-from tabulate import tabulate
 import junitparser
 import yaml
-
-from .utils import mongo_client
 from atlasclient import AtlasApiError, JSONObject
-from astrolabe.commands import (
-    get_one_organization_by_name, ensure_project, ensure_admin_user,
-    ensure_connect_from_anywhere)
-from astrolabe.exceptions import PollingTimeoutError
 from atlasclient.exceptions import AtlasClientError
-from astrolabe.exceptions import AstrolabeTestCaseError
-from astrolabe.poller import BooleanCallablePoller
-from astrolabe.utils import (
-    assert_subset, get_cluster_name, get_test_name_from_spec_file,
-    DriverWorkloadSubprocessRunner, SingleTestXUnitLogger,
-    get_logs, parse_iso8601_time)
-from .timer import Timer
+from tabulate import tabulate
 
+from astrolabe.commands import (ensure_admin_user,
+                                ensure_connect_from_anywhere, ensure_project,
+                                get_one_organization_by_name)
+from astrolabe.exceptions import PollingTimeoutError
+from astrolabe.utils import (DriverWorkloadSubprocessRunner,
+                             SingleTestXUnitLogger, assert_subset,
+                             get_cluster_name, get_test_name_from_spec_file, parse_iso8601_time)
+
+from .timer import Timer
+from .utils import mongo_client
 
 LOGGER = logging.getLogger(__name__)
 
@@ -195,7 +194,12 @@ class AtlasTestCase:
                     timer = Timer()
                     timer.start()
                     timeout = 300
-                    start_time = datetime.datetime.now()
+
+                    # The timestamps returned by the "admin" API are UTC timestamps, so record the
+                    # start time in the UTC timezone. All datetimes must be "offset-aware" so they
+                    # can be compared.
+                    start_time = datetime.datetime.now(timezone.utc)
+
                     # Account for possible clock drift between our system and
                     # evergreen infrastructure
                     _time.sleep(5)
