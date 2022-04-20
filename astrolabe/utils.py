@@ -405,4 +405,8 @@ def require_requests_ipv4():
 def parse_iso8601_time(str):
     if str[-1] != 'Z':
         raise ValueError('Only times ending in Z are supported')
-    return datetime.datetime.fromisoformat(str[:-1])
+
+    # Parse the ISO 8601 format timestamp. We need to keep the timezone offset so that all datetimes
+    # are "offset-aware" and can be compared. The fromisoformat() parser doesn't support the "Z"
+    # suffix, so replace it with the UTC time zone offset "+00:00", which the parser does support.
+    return datetime.datetime.fromisoformat(str.replace("Z", "+00:00"))
