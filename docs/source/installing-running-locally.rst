@@ -61,14 +61,14 @@ Each API key consists of 2 parts - a public key and a private key.
 To configure ``astrolabe`` to use production Atlas and specify only a regular
 API key, declare the following variables::
 
-  $ export ATLAS_ORGANIZATION_NAME=<Atlas Organization Name>
+  $ export ATLAS_ORGANIZATION_ID=<Atlas Organization Id>
   $ export ATLAS_API_USERNAME=<API Public Key>
   $ export ATLAS_API_PASSWORD=<API Private Key>
 
 To configure ``astrolabe`` to use development Atlas and specify two sets of
 API keys, declare the following variables::
 
-  $ export ATLAS_ORGANIZATION_NAME=<Atlas Organization Name>
+  $ export ATLAS_ORGANIZATION_ID=<Atlas Organization Id>
   $ export ATLAS_API_USERNAME=<API Public Key>
   $ export ATLAS_API_PASSWORD=<API Private Key>
   $ export ATLAS_ADMIN_API_USERNAME=<Admin API Public Key>

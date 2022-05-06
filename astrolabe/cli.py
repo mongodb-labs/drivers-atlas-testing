@@ -44,6 +44,9 @@ DBPASSWORD_OPTION = create_click_option(CONFIGOPTS.ATLAS_DB_PASSWORD)
 ATLASORGANIZATIONNAME_OPTION = create_click_option(
     CONFIGOPTS.ATLAS_ORGANIZATION_NAME)
 
+ATLASORGANIZATIONID_OPTION = create_click_option(
+    CONFIGOPTS.ATLAS_ORGANIZATION_ID)
+
 ATLASPROJECTNAME_OPTION = create_click_option(CONFIGOPTS.ATLAS_PROJECT_NAME)
 
 POLLINGTIMEOUT_OPTION = create_click_option(CONFIGOPTS.ATLAS_POLLING_TIMEOUT)
@@ -167,13 +170,13 @@ def list_all_organizations(ctx):
 
 
 @atlas_organizations.command('get-one')
-@ATLASORGANIZATIONNAME_OPTION
+@ATLASORGANIZATIONID_OPTION
 @click.pass_context
-def get_one_organization_by_name(ctx, org_name):
-    """Get one Atlas Organization by name. Prints "None" if no organization
-    bearing the given name exists."""
-    pprint(cmd.get_one_organization_by_name(
-        client=ctx.obj.client, organization_name=org_name))
+def get_organization_by_id(ctx, org_id):
+    """Get Atlas Organization by id. Prints "None" if no organization exists.
+    """
+    pprint(cmd.get_organization_by_id(
+        client=ctx.obj.client, org_id=org_id))
 
 
 @cli.group('projects')
@@ -183,13 +186,13 @@ def atlas_projects():
 
 
 @atlas_projects.command('ensure')
-@ATLASORGANIZATIONNAME_OPTION
+@ATLASORGANIZATIONID_OPTION
 @ATLASPROJECTNAME_OPTION
 @click.pass_context
-def create_project_if_necessary(ctx, org_name, project_name, ):
+def create_project_if_necessary(ctx, org_id, project_name, ):
     """Ensure that the given Atlas Project exists."""
-    org = cmd.get_one_organization_by_name(
-        client=ctx.obj.client, organization_name=org_name)
+    org = cmd.get_organization_by_id(
+        client=ctx.obj.client, org_id=org_id)
     pprint(cmd.ensure_project(
         client=ctx.obj.client, project_name=project_name, organization_id=org.id))
 
@@ -406,6 +409,7 @@ def spec_tests():
 @DBUSERNAME_OPTION
 @DBPASSWORD_OPTION
 @ATLASORGANIZATIONNAME_OPTION
+@ATLASORGANIZATIONID_OPTION
 @ATLASPROJECTNAME_OPTION
 @CLUSTERNAMESALT_OPTION
 @POLLINGTIMEOUT_OPTION
@@ -416,7 +420,7 @@ def spec_tests():
 @EXECUTORSTARTUPTIME_OPTION
 @click.pass_context
 def run_single_test(ctx, spec_test_file, workload_executor,
-                    db_username, db_password, org_name, project_name,
+                    db_username, db_password, org_name, org_id, project_name,
                     cluster_name_salt, polling_timeout, polling_frequency,
                     xunit_output, no_delete, no_create, startup_time):
     """
@@ -427,6 +431,7 @@ def run_single_test(ctx, spec_test_file, workload_executor,
     # Step-0: construct test configuration object and log configuration.
     config = TestCaseConfiguration(
         organization_name=org_name,
+        organization_id=org_id,
         project_name=project_name,
         name_salt=cluster_name_salt,
         polling_timeout=polling_timeout,
@@ -461,14 +466,14 @@ def run_single_test(ctx, spec_test_file, workload_executor,
 @spec_tests.command('get-logs')
 @click.argument("spec_test_file", type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
-@ATLASORGANIZATIONNAME_OPTION
+@ATLASORGANIZATIONID_OPTION
 @ATLASPROJECTNAME_OPTION
 @CLUSTERNAMESALT_OPTION
 @POLLINGTIMEOUT_OPTION
 @POLLINGFREQUENCY_OPTION
 @ONLYONFAILURE_FLAG
 @click.pass_context
-def get_logs_cmd(ctx, spec_test_file, org_name, project_name,
+def get_logs_cmd(ctx, spec_test_file, org_id, project_name,
                     cluster_name_salt, polling_timeout, polling_frequency,
                     only_on_failure,
                     ):
@@ -492,9 +497,9 @@ def get_logs_cmd(ctx, spec_test_file, org_name, project_name,
     cluster_name = get_cluster_name(get_test_name_from_spec_file(
         spec_test_file), cluster_name_salt)
     
-    organization = cmd.get_one_organization_by_name(
+    organization = cmd.get_organization_by_id(
         client=ctx.obj.client,
-        organization_name=org_name)
+        org_id=org_id)
     project = cmd.ensure_project(
         client=ctx.obj.client, project_name=project_name,
         organization_id=organization.id)
@@ -505,11 +510,11 @@ def get_logs_cmd(ctx, spec_test_file, org_name, project_name,
 @spec_tests.command('delete-cluster')
 @click.argument("spec_test_file", type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
-@ATLASORGANIZATIONNAME_OPTION
+@ATLASORGANIZATIONID_OPTION
 @ATLASPROJECTNAME_OPTION
 @CLUSTERNAMESALT_OPTION
 @click.pass_context
-def delete_test_cluster(ctx, spec_test_file, org_name, project_name,
+def delete_test_cluster(ctx, spec_test_file, org_id, project_name,
                         cluster_name_salt):
     """
     Deletes the cluster used by the APM test.
@@ -521,8 +526,8 @@ def delete_test_cluster(ctx, spec_test_file, org_name, project_name,
         spec_test_file), cluster_name_salt)
 
     # Step-2: delete the cluster.
-    organization = cmd.get_one_organization_by_name(
-        client=ctx.obj.client, organization_name=org_name)
+    organization = cmd.get_organization_by_id(
+        client=ctx.obj.client, org_id=org_id)
     project = cmd.ensure_project(
         client=ctx.obj.client, project_name=project_name, organization_id=organization.id)
     try:
@@ -538,6 +543,7 @@ def delete_test_cluster(ctx, spec_test_file, org_name, project_name,
 @DBUSERNAME_OPTION
 @DBPASSWORD_OPTION
 @ATLASORGANIZATIONNAME_OPTION
+@ATLASORGANIZATIONID_OPTION
 @ATLASPROJECTNAME_OPTION
 @CLUSTERNAMESALT_OPTION
 @POLLINGTIMEOUT_OPTION
@@ -547,7 +553,7 @@ def delete_test_cluster(ctx, spec_test_file, org_name, project_name,
 @EXECUTORSTARTUPTIME_OPTION
 @click.pass_context
 def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
-                 db_password, org_name, project_name, cluster_name_salt,
+                 db_password, org_name, org_id, project_name, cluster_name_salt,
                  polling_timeout, polling_frequency, xunit_output, no_delete,
                  startup_time):
     """
@@ -558,6 +564,7 @@ def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
     # Step-0: construct test configuration object and log configuration.
     config = TestCaseConfiguration(
         organization_name=org_name,
+        organization_id=org_id,
         project_name=project_name,
         name_salt=cluster_name_salt,
         polling_timeout=polling_timeout,
