@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -o errexit
+
+set +x # Hide the connection string in the test output
+export WORKLOAD_EXECUTOR_CONNECTION_STRING="$1"
+set -x
+
+export WORKLOAD_EXECUTOR_WORKLOAD="$2"
+
+export WORKLOAD_EXECUTOR_WORKING_DIRECTORY="$PWD"
+
+git clone git@github.com:isabelatkinson/mongo-rust-driver.git working-mongo-rust-driver
+
+cd working-mongo-rust-driver
+git checkout add-workload-executor
+cargo test workload_executor
