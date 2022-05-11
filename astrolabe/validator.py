@@ -292,196 +292,196 @@ class ValidateWorkloadExecutor(TestCase):
 
         self.assert_events(hasEvents=True, hasErrors=False, hasFailures=False)
 
-    # def test_num_errors(self):
-    #     driver_workload = JSONObject.from_dict(
-    #         yaml.safe_load(open('tests/validator-numErrors.yml').read())['driverWorkload']
-    #     )
+    def test_num_errors(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numErrors.yml').read())['driverWorkload']
+        )
 
-    #     stats = self.run_test(driver_workload)
-    #     self.assert_basic_stats(stats)
+        stats = self.run_test(driver_workload)
+        self.assert_basic_stats(stats)
 
-    #     # Since the test only uses storeErrorsAsEntity, numFailures should never
-    #     # be reported. This is irrelevant to whether or how a test runner
-    #     # distinguishes between errors and failures.
-    #     if stats['numFailures'] != 0:
-    #         self.fail_stats(
-    #             "Expected no failures to be reported, but got {} instead."
-    #             .format(stats['numFailures']))
+        # Since the test only uses storeErrorsAsEntity, numFailures should never
+        # be reported. This is irrelevant to whether or how a test runner
+        # distinguishes between errors and failures.
+        if stats['numFailures'] != 0:
+            self.fail_stats(
+                "Expected no failures to be reported, but got {} instead."
+                .format(stats['numFailures']))
 
-    #     # Each loop iteration should include two successful sub-operations
-    #     # followed by one failure, so expect numErrors to be numSuccesses/2
-    #     if abs(stats['numErrors'] - stats['numSuccesses']/2) > 1:
-    #         self.fail_stats(
-    #             "Expected approximately {}/2 errored operations to be reported "
-    #             "in numErrors, but got {} instead."
-    #             .format(stats['numSuccesses'], stats['numErrors']))
+        # Each loop iteration should include two successful sub-operations
+        # followed by one failure, so expect numErrors to be numSuccesses/2
+        if abs(stats['numErrors'] - stats['numSuccesses']/2) > 1:
+            self.fail_stats(
+                "Expected approximately {}/2 errored operations to be reported "
+                "in numErrors, but got {} instead."
+                .format(stats['numSuccesses'], stats['numErrors']))
 
-    #     # Each loop iteration should include two successful sub-operations, so
-    #     # expect reported numIterations to be numSuccesses/2
-    #     if abs(stats['numIterations'] - stats['numSuccesses']/2) > 1:
-    #         self.fail_stats(
-    #             "Expected approximately {}/2 iterations to be reported in "
-    #             "numIterations, but got {} instead."
-    #             .format(stats['numSuccesses'], stats['numIterations']))
+        # Each loop iteration should include two successful sub-operations, so
+        # expect reported numIterations to be numSuccesses/2
+        if abs(stats['numIterations'] - stats['numSuccesses']/2) > 1:
+            self.fail_stats(
+                "Expected approximately {}/2 iterations to be reported in "
+                "numIterations, but got {} instead."
+                .format(stats['numSuccesses'], stats['numIterations']))
 
-    #     self.assert_events(hasEvents=False, hasErrors=True, hasFailures=False)
+        self.assert_events(hasEvents=False, hasErrors=True, hasFailures=False)
 
-    # def test_num_errors_not_captured(self):
-    #     driver_workload = JSONObject.from_dict(
-    #         yaml.safe_load(open('tests/validator-numErrors-not-captured.yml').read())['driverWorkload']
-    #     )
+    def test_num_errors_not_captured(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numErrors-not-captured.yml').read())['driverWorkload']
+        )
 
-    #     stats = self.run_test_expecting_error(driver_workload)
-    #     self.assert_basic_stats(stats)
+        stats = self.run_test_expecting_error(driver_workload)
+        self.assert_basic_stats(stats)
 
-    #     # The workload executor is still expected to report errors propagated
-    #     # from the unified test runner (e.g. loop operation without
-    #     # storeErrorsAsEntity and storeFailuresAsEntity).
-    #     if stats['numErrors'] != 1:
-    #         self.fail_stats(
-    #             "Expected one error to be reported, but got {} instead."
-    #             .format(stats['numErrors']))
+        # The workload executor is still expected to report errors propagated
+        # from the unified test runner (e.g. loop operation without
+        # storeErrorsAsEntity and storeFailuresAsEntity).
+        if stats['numErrors'] != 1:
+            self.fail_stats(
+                "Expected one error to be reported, but got {} instead."
+                .format(stats['numErrors']))
 
-    #     if stats['numFailures'] != 0:
-    #         self.fail_stats(
-    #             "Expected no failures to be reported, but got {} instead."
-    #             .format(stats['numFailures']))
+        if stats['numFailures'] != 0:
+            self.fail_stats(
+                "Expected no failures to be reported, but got {} instead."
+                .format(stats['numFailures']))
 
-    #     # Note: we do not assert numSuccesses or numIterations because the spec
-    #     # does not guarantee that they will be reported via the entity map if
-    #     # test runner propagates an error/failure.
+        # Note: we do not assert numSuccesses or numIterations because the spec
+        # does not guarantee that they will be reported via the entity map if
+        # test runner propagates an error/failure.
 
-    #     # In the event the test runner does not capture an error, the workload
-    #     # executor is expected to report it in the same format
-    #     self.assert_events(hasEvents=False, hasErrors=True, hasFailures=False)
+        # In the event the test runner does not capture an error, the workload
+        # executor is expected to report it in the same format
+        self.assert_events(hasEvents=False, hasErrors=True, hasFailures=False)
 
-    # def test_num_errors_as_failures(self):
-    #     driver_workload = JSONObject.from_dict(
-    #         yaml.safe_load(open('tests/validator-numErrors-as-failures.yml').read())['driverWorkload']
-    #     )
+    def test_num_errors_as_failures(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numErrors-as-failures.yml').read())['driverWorkload']
+        )
 
-    #     stats = self.run_test(driver_workload)
-    #     self.assert_basic_stats(stats)
+        stats = self.run_test(driver_workload)
+        self.assert_basic_stats(stats)
 
-    #     # Errors should be reported in numFailures instead of numErrors
-    #     if stats['numErrors'] != 0:
-    #         self.fail_stats(
-    #             "Expected no errors to be reported in numErrors, but got {} "
-    #             "instead.".format(stats['numErrors']))
+        # Errors should be reported in numFailures instead of numErrors
+        if stats['numErrors'] != 0:
+            self.fail_stats(
+                "Expected no errors to be reported in numErrors, but got {} "
+                "instead.".format(stats['numErrors']))
 
-    #     # Each loop iteration should include two successful sub-operations
-    #     # followed by one error, so expect numFailures to be numSuccesses/2
-    #     if abs(stats['numFailures'] - stats['numSuccesses']/2) > 1:
-    #         self.fail_stats(
-    #             "Expected approximately {}/2 errored operations to be reported "
-    #             "in numFailures, but got {} instead."
-    #             .format(stats['numSuccesses'], stats['numFailures']))
+        # Each loop iteration should include two successful sub-operations
+        # followed by one error, so expect numFailures to be numSuccesses/2
+        if abs(stats['numFailures'] - stats['numSuccesses']/2) > 1:
+            self.fail_stats(
+                "Expected approximately {}/2 errored operations to be reported "
+                "in numFailures, but got {} instead."
+                .format(stats['numSuccesses'], stats['numFailures']))
 
-    #     # Each loop iteration should include two successful sub-operations, so
-    #     # expect reported numIterations to be numSuccesses/2
-    #     if abs(stats['numIterations'] - stats['numSuccesses']/2) > 1:
-    #         self.fail_stats(
-    #             "Expected approximately {}/2 iterations to be reported in "
-    #             "numIterations, but got {} instead."
-    #             .format(stats['numSuccesses'], stats['numIterations']))
+        # Each loop iteration should include two successful sub-operations, so
+        # expect reported numIterations to be numSuccesses/2
+        if abs(stats['numIterations'] - stats['numSuccesses']/2) > 1:
+            self.fail_stats(
+                "Expected approximately {}/2 iterations to be reported in "
+                "numIterations, but got {} instead."
+                .format(stats['numSuccesses'], stats['numIterations']))
 
-    #     self.assert_events(hasEvents=False, hasErrors=False, hasFailures=True)
+        self.assert_events(hasEvents=False, hasErrors=False, hasFailures=True)
 
-    # def test_num_failures(self):
-    #     driver_workload = JSONObject.from_dict(
-    #         yaml.safe_load(open('tests/validator-numFailures.yml').read())['driverWorkload']
-    #     )
+    def test_num_failures(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numFailures.yml').read())['driverWorkload']
+        )
 
-    #     stats = self.run_test(driver_workload)
-    #     self.assert_basic_stats(stats)
+        stats = self.run_test(driver_workload)
+        self.assert_basic_stats(stats)
 
-    #     # Since the test only uses storeFailuresAsEntity, numErrors should never
-    #     # be reported. This is irrelevant to whether or how a test runner
-    #     # distinguishes between errors and failures.
-    #     if stats['numErrors'] != 0:
-    #         self.fail_stats(
-    #             "Expected no errors to be reported, but got {} instead."
-    #             .format(stats['numErrors']))
+        # Since the test only uses storeFailuresAsEntity, numErrors should never
+        # be reported. This is irrelevant to whether or how a test runner
+        # distinguishes between errors and failures.
+        if stats['numErrors'] != 0:
+            self.fail_stats(
+                "Expected no errors to be reported, but got {} instead."
+                .format(stats['numErrors']))
 
-    #     # Each loop iteration should include two successful sub-operations
-    #     # followed by one failure, so expect numFailures to be numSuccesses/2
-    #     if abs(stats['numFailures'] - stats['numSuccesses']/2) > 1:
-    #         self.fail_stats(
-    #             "Expected approximately {}/2 failed operations to be reported "
-    #             "in numFailures, but got {} instead."
-    #             .format(stats['numSuccesses'], stats['numFailures']))
+        # Each loop iteration should include two successful sub-operations
+        # followed by one failure, so expect numFailures to be numSuccesses/2
+        if abs(stats['numFailures'] - stats['numSuccesses']/2) > 1:
+            self.fail_stats(
+                "Expected approximately {}/2 failed operations to be reported "
+                "in numFailures, but got {} instead."
+                .format(stats['numSuccesses'], stats['numFailures']))
 
-    #     # Each loop iteration should include two successful sub-operations, so
-    #     # expect reported numIterations to be numSuccesses/2
-    #     if abs(stats['numIterations'] - stats['numSuccesses']/2) > 1:
-    #         self.fail_stats(
-    #             "Expected approximately {}/2 iterations to be reported in "
-    #             "numIterations, but got {} instead."
-    #             .format(stats['numSuccesses'], stats['numIterations']))
+        # Each loop iteration should include two successful sub-operations, so
+        # expect reported numIterations to be numSuccesses/2
+        if abs(stats['numIterations'] - stats['numSuccesses']/2) > 1:
+            self.fail_stats(
+                "Expected approximately {}/2 iterations to be reported in "
+                "numIterations, but got {} instead."
+                .format(stats['numSuccesses'], stats['numIterations']))
 
-    #     self.assert_events(hasEvents=False, hasErrors=False, hasFailures=True)
+        self.assert_events(hasEvents=False, hasErrors=False, hasFailures=True)
 
-    # def test_num_failures_not_captured(self):
-    #     driver_workload = JSONObject.from_dict(
-    #         yaml.safe_load(open('tests/validator-numFailures-not-captured.yml').read())['driverWorkload']
-    #     )
+    def test_num_failures_not_captured(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numFailures-not-captured.yml').read())['driverWorkload']
+        )
 
-    #     stats = self.run_test_expecting_error(driver_workload)
-    #     self.assert_basic_stats(stats)
+        stats = self.run_test_expecting_error(driver_workload)
+        self.assert_basic_stats(stats)
 
-    #     # The workload executor is still expected to report failures propagated
-    #     # from the unified test runner (e.g. loop operation without
-    #     # storeErrorsAsEntity and storeFailuresAsEntity) and is permitted to
-    #     # report them as errors. For this reason, we must be flexible and allow
-    #     # either numFailures or numErrors to be reported (but not both).
-    #     if not ((stats['numErrors'] == 0 and stats['numFailures'] == 1) or
-    #             (stats['numErrors'] == 1 and stats['numFailures'] == 0)):
-    #         self.fail_stats(
-    #             "Expected either numErrors:0 and numFailures:1 or numErrors:1 "
-    #             "and numFailures:0, but got numErrors:{} and numFailures:{} "
-    #             "instead."
-    #             .format(stats['numErrors'], stats['numFailures']))
+        # The workload executor is still expected to report failures propagated
+        # from the unified test runner (e.g. loop operation without
+        # storeErrorsAsEntity and storeFailuresAsEntity) and is permitted to
+        # report them as errors. For this reason, we must be flexible and allow
+        # either numFailures or numErrors to be reported (but not both).
+        if not ((stats['numErrors'] == 0 and stats['numFailures'] == 1) or
+                (stats['numErrors'] == 1 and stats['numFailures'] == 0)):
+            self.fail_stats(
+                "Expected either numErrors:0 and numFailures:1 or numErrors:1 "
+                "and numFailures:0, but got numErrors:{} and numFailures:{} "
+                "instead."
+                .format(stats['numErrors'], stats['numFailures']))
 
-    #     # Note: we do not assert numSuccesses or numIterations because the spec
-    #     # does not guarantee that they will be reported via the entity map if
-    #     # test runner propagates an error/failure.
+        # Note: we do not assert numSuccesses or numIterations because the spec
+        # does not guarantee that they will be reported via the entity map if
+        # test runner propagates an error/failure.
 
-    #     # In the event the test runner does not capture a failure, the workload
-    #     # executor is expected to report it in the same format; however, it may
-    #     # be reported as either an error or failure
-    #     self.assert_events(hasEvents=False, hasErrorsXorFailures=True)
+        # In the event the test runner does not capture a failure, the workload
+        # executor is expected to report it in the same format; however, it may
+        # be reported as either an error or failure
+        self.assert_events(hasEvents=False, hasErrorsXorFailures=True)
 
-    # def test_num_failures_as_errors(self):
-    #     driver_workload = JSONObject.from_dict(
-    #         yaml.safe_load(open('tests/validator-numFailures-as-errors.yml').read())['driverWorkload']
-    #     )
+    def test_num_failures_as_errors(self):
+        driver_workload = JSONObject.from_dict(
+            yaml.safe_load(open('tests/validator-numFailures-as-errors.yml').read())['driverWorkload']
+        )
 
-    #     stats = self.run_test(driver_workload)
-    #     self.assert_basic_stats(stats)
+        stats = self.run_test(driver_workload)
+        self.assert_basic_stats(stats)
 
-    #     # Failures should be reported in numErrors instead of numFailures
-    #     if stats['numFailures'] != 0:
-    #         self.fail_stats(
-    #             "Expected no failures to be reported in numFailures, but got "
-    #             "{} instead.".format(stats['numFailures']))
+        # Failures should be reported in numErrors instead of numFailures
+        if stats['numFailures'] != 0:
+            self.fail_stats(
+                "Expected no failures to be reported in numFailures, but got "
+                "{} instead.".format(stats['numFailures']))
 
-    #     # Each loop iteration should include two successful sub-operations
-    #     # followed by one failure, so expect numErrors to be numSuccesses/2
-    #     if abs(stats['numErrors'] - stats['numSuccesses']/2) > 1:
-    #         self.fail(
-    #             "Expected approximately {}/2 failed operations to be reported "
-    #             "in numErrors, but got {} instead."
-    #             .format(stats['numSuccesses'], stats['numErrors']))
+        # Each loop iteration should include two successful sub-operations
+        # followed by one failure, so expect numErrors to be numSuccesses/2
+        if abs(stats['numErrors'] - stats['numSuccesses']/2) > 1:
+            self.fail(
+                "Expected approximately {}/2 failed operations to be reported "
+                "in numErrors, but got {} instead."
+                .format(stats['numSuccesses'], stats['numErrors']))
 
-    #     # Each loop iteration should include two successful sub-operations, so
-    #     # expect reported numIterations to be numSuccesses/2
-    #     if abs(stats['numIterations'] - stats['numSuccesses']/2) > 1:
-    #         self.fail(
-    #             "Expected approximately {}/2 iterations to be reported in "
-    #             "numIterations, but got {} instead."
-    #             .format(stats['numSuccesses'], stats['numIterations']))
+        # Each loop iteration should include two successful sub-operations, so
+        # expect reported numIterations to be numSuccesses/2
+        if abs(stats['numIterations'] - stats['numSuccesses']/2) > 1:
+            self.fail(
+                "Expected approximately {}/2 iterations to be reported in "
+                "numIterations, but got {} instead."
+                .format(stats['numSuccesses'], stats['numIterations']))
 
-    #     self.assert_events(hasEvents=False, hasErrors=True, hasFailures=False)
+        self.assert_events(hasEvents=False, hasErrors=True, hasFailures=False)
 
 def validator_factory(workload_executor, connection_string, startup_time):
     ValidateWorkloadExecutor.WORKLOAD_EXECUTOR = workload_executor

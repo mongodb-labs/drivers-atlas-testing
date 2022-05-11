@@ -264,6 +264,8 @@ class DriverWorkloadSubprocessRunner:
         
     def read_stats(self):
         try:
+            # Allow time for the workload executor to write the results to files.
+            sleep(1)
             LOGGER.info("Reading sentinel file {!r}".format(self.sentinel))
             with open(self.sentinel, 'r') as fp:
                 stats = json.load(fp)

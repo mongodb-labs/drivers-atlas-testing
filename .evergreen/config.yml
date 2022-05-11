@@ -425,6 +425,13 @@ axes:
           DRIVER_REVISION: "master"
           PHPC_REPOSITORY: "https://github.com/mongodb/mongo-php-driver"
           PHPC_BRANCH: "master"
+      - id: rust-main
+        display_name: "Rust (main)"
+        variables:
+          DRIVER_DIRNAME: "rust"
+          DRIVER_REPOSITORY: "https://github.com/isabelatkinson/mongo-rust-driver"
+          DRIVER_REVISION: "add-workload-executor"
+          ASTROLABE_EXECUTOR_STARTUP_TIME: 5
 
   # The 'platform' axis specifies the evergreen host distro to use.
   # Platforms MUST specify the PYTHON3_BINARY variable as this is required to install astrolabe.
@@ -499,6 +506,8 @@ axes:
         display_name: PHP 7.4
         variables:
           PHP_VERSION: 7.4
+      - id: rust-latest
+        display_name: Rust Latest
 
 buildvariants:
 - matrix_name: "tests-ruby"
@@ -574,3 +583,11 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
+- matrix_name: "tests-rust"
+  matrix_spec:
+    driver: ["rust-main"]
+    platform: ubuntu-18.04
+    runtime: rust-latest
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+   - ".all"
