@@ -2,6 +2,8 @@
 
 set -o errexit
 
+source ~/.cargo/env
+
 # Indicates that the driver should run the workload_executor test
 export ATLAS_PLANNED_MAINTENANCE_TESTING=1
 
