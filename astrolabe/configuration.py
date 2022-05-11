@@ -76,6 +76,11 @@ CONFIGURATION_OPTIONS = JSONObject({
         'cliopt': '--org-name',
         'envvar': 'ATLAS_ORGANIZATION_NAME',
         'default': 'MongoDB Drivers Team'},
+    'ATLAS_ORGANIZATION_ID': {
+        'help': 'ID of the Atlas Organization.',
+        'cliopt': '--org-id',
+        'envvar': 'ATLAS_ORGANIZATION_ID',
+        'default': None},
     'ATLAS_API_BASE_URL': {
         'help': 'Base URL of the Atlas API.',
         'cliopt': '--atlas-base-url',
@@ -107,6 +112,6 @@ CONFIGURATION_OPTIONS = JSONObject({
 # Convenience class for storing settings related to polling.
 TestCaseConfiguration = namedtuple(
     "AtlasPlannedMaintenanceTestConfiguration",
-    ["organization_name", "project_name", "name_salt", "polling_timeout",
+    ["organization_name", "organization_id", "project_name", "name_salt", "polling_timeout",
      "polling_frequency", "database_username", "database_password",
      "workload_executor"])

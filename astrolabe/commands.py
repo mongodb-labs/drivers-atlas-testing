@@ -22,17 +22,11 @@ from atlasclient import AtlasApiError
 LOGGER = logging.getLogger(__name__)
 
 
-def get_one_organization_by_name(*, client, organization_name):
-    """Get the ID of the organization by the given name. Raises
-    AtlasApiError if no organization exists by the given name."""
-    all_orgs = client.orgs.get().data
-    for org in all_orgs.results:
-        if org.name == organization_name:
-            LOGGER.debug("Organization details: {}".format(org))
-            return org
-
-    raise AtlasApiError('Organization {!r} not found.'.format(
-        organization_name))
+def get_organization_by_id(*, client, org_id):
+    """Get the organization by the given id `org_id`."""
+    org = client.orgs[org_id].get().data 
+    LOGGER.debug("Organization details: {}".format(org))   
+    return org    
 
 
 def ensure_project(*, client, project_name, organization_id):
@@ -52,6 +46,21 @@ def ensure_project(*, client, project_name, organization_id):
 
     LOGGER.debug("Project details: {}".format(project))
     return project
+
+
+def list_projects_in_org(*, client, org_id):
+    """List all projects inside organization with id `org_id`."""
+    projects_res = client.orgs[org_id].groups.get(
+            itemsPerPage=500).data
+    LOGGER.debug("Retrieved {} projects in org id: {}".format(projects_res.totalCount, org_id))
+    return projects_res
+
+
+def delete_project(*, client, project_id):
+    """Delete a project with id `project_id`"""    
+    client.groups[project_id].delete().data
+    
+    LOGGER.debug("Deleted project id: {}".format(project_id))
 
 
 def ensure_admin_user(*, client, project_id, username, password):

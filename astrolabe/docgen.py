@@ -40,7 +40,8 @@ def generate_configuration_help():
 
 def tabulate_astrolabe_configuration(config):
     table_data = [["Atlas organization name", config.organization_name],
-                  ["Atlas project name", config.project_name],
+                  ["Atlas organization id", config.organization_id],
+                  ["Atlas project name prefix", config.project_name],
                   ["Salt for cluster names", config.name_salt],
                   ["Polling frequency (Hz)", config.polling_frequency],
                   ["Polling timeout (s)", config.polling_timeout]]

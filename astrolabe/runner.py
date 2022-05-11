@@ -28,7 +28,9 @@ from tabulate import tabulate
 
 from astrolabe.commands import (ensure_admin_user,
                                 ensure_connect_from_anywhere, ensure_project,
-                                get_one_organization_by_name)
+                                get_organization_by_id,
+                                list_projects_in_org,
+                                delete_project)
 from astrolabe.exceptions import PollingTimeoutError
 from astrolabe.utils import (DriverWorkloadSubprocessRunner,
                              SingleTestXUnitLogger, assert_subset,
@@ -59,13 +61,11 @@ class AtlasTestCase:
         # Initialize wrapper class for running workload executor.
         self.workload_runner = DriverWorkloadSubprocessRunner()
 
-        # Validate and store organization and project.
-        self.organization = get_one_organization_by_name(
-            client=self.client,
-            organization_name=self.config.organization_name)
-        self.project = ensure_project(
-            client=self.client, project_name=self.config.project_name,
-            organization_id=self.organization.id)
+        # Generate a unique project name with timestamp
+        current_timestamp = int(_time.time())
+        timestamp_suffix = '-' + str(current_timestamp)            
+        self.project_name = self.config.project_name + timestamp_suffix  
+        self.project = None
 
     @property
     def cluster_url(self):
@@ -383,6 +383,20 @@ class SpecTestRunnerBase:
         self.persist_clusters = persist_clusters
         self.no_create = no_create
         self.workload_startup_time = workload_startup_time
+        # Hardcoded to 12 hours, can be configurable in the future
+        self.project_expiration_threshold_seconds = 12 * 60 * 60
+
+        # Set up Atlas for tests.
+        # Step-1: ensure validity of the organization.
+        # Note: organizations can only be created by via the web UI.
+        org_id = self.config.organization_id
+        LOGGER.info("Verifying organization id: {!r}".format(org_id))
+        org = get_organization_by_id(
+            client=self.client, org_id=org_id)
+        LOGGER.info("Successfully verified organization {!r}".format(org.name))
+
+        # Step-2: clean old projects from organization.
+        self.clean_old_projects(org.id)                             
 
         for full_path in self.find_spec_tests(test_locator_token):
             # Step-1: load test specification.
@@ -396,51 +410,55 @@ class SpecTestRunnerBase:
             # Step-3: generate unique cluster name.
             cluster_name = get_cluster_name(test_name, self.config.name_salt)
 
-            self.cases.append(
-                AtlasTestCase(client=self.client, admin_client=self.admin_client,
+            atlas_test_case = AtlasTestCase(client=self.client, admin_client=self.admin_client,
                               test_name=test_name,
                               cluster_name=cluster_name,
                               specification=test_spec,
-                              configuration=self.config))
+                              configuration=self.config)
+            self.cases.append(atlas_test_case)
+        
+            # Set up Atlas for tests.
+            # Step-1: check that the project exists or else create it.
+            pro_name = atlas_test_case.project_name
+            LOGGER.info("Verifying project {!r}".format(pro_name))
+            project = ensure_project(
+                client=self.client, project_name=pro_name, organization_id=org.id)
+            atlas_test_case.project = project
+            LOGGER.info("Successfully verified project {!r}".format(pro_name))
 
-        # Set up Atlas for tests.
-        # Step-1: ensure validity of the organization.
-        # Note: organizations can only be created by via the web UI.
-        org_name = self.config.organization_name
-        LOGGER.info("Verifying organization {!r}".format(org_name))
-        org = get_one_organization_by_name(
-            client=self.client, organization_name=org_name)
-        LOGGER.info("Successfully verified organization {!r}".format(org_name))
+            # Step-2: create a user under the project.
+            # Note: all test operations will be run as this user.
+            uname = self.config.database_username
+            LOGGER.info("Verifying user {!r}".format(uname))
+            ensure_admin_user(
+                client=self.client, project_id=project.id,
+                username=uname, password=self.config.database_password)
+            LOGGER.info("Successfully verified user {!r}".format(uname))
 
-        # Step-2: check that the project exists or else create it.
-        pro_name = self.config.project_name
-        LOGGER.info("Verifying project {!r}".format(pro_name))
-        project = ensure_project(
-            client=self.client, project_name=pro_name, organization_id=org.id)
-        LOGGER.info("Successfully verified project {!r}".format(pro_name))
+            # Step-3: populate project IP whitelist to allow access from anywhere.
+            LOGGER.info("Enabling access from anywhere on project "
+                        "{!r}".format(pro_name))
+            ensure_connect_from_anywhere(client=self.client, project_id=project.id)
+            LOGGER.info("Successfully enabled access from anywhere on project "
+                        "{!r}".format(pro_name))
 
-        # Step-3: create a user under the project.
-        # Note: all test operations will be run as this user.
-        uname = self.config.database_username
-        LOGGER.info("Verifying user {!r}".format(uname))
-        ensure_admin_user(
-            client=self.client, project_id=project.id,
-            username=uname, password=self.config.database_password)
-        LOGGER.info("Successfully verified user {!r}".format(uname))
-
-        # Step-4: populate project IP whitelist to allow access from anywhere.
-        LOGGER.info("Enabling access from anywhere on project "
-                    "{!r}".format(pro_name))
-        ensure_connect_from_anywhere(client=self.client, project_id=project.id)
-        LOGGER.info("Successfully enabled access from anywhere on project "
-                    "{!r}".format(pro_name))
-
-        # Step-5: log test plan.
+        # Log test plan.
         LOGGER.info(self.get_printable_test_plan())
 
     @staticmethod
     def find_spec_tests(test_locator_token):
         raise NotImplementedError
+
+    def clean_old_projects(self, org_id):
+        current_timestamp = int(_time.time())
+        projects_res = list_projects_in_org(client=self.client, org_id=org_id)
+        for project in projects_res['results']:
+            project_timestamp = project.name.split('-')[-1]
+            if project.name.startswith(self.config.project_name) and \
+                project_timestamp.isnumeric() and \
+                    int(project_timestamp) < current_timestamp - self.project_expiration_threshold_seconds:
+                delete_project(client=self.client, project_id=project.id)
+                LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id)) 
 
     def get_printable_test_plan(self):
         table_data = []
