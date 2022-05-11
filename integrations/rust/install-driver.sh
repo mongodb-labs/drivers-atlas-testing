@@ -20,3 +20,6 @@ echo 'export PATH=$PATH:~/.cargo/bin' >> ~/.cargo/env
 echo "export CARGO_NET_GIT_FETCH_WITH_CLI=true" >> ~/.cargo/env
 
 source ~/.cargo/env
+
+cd mongo-rust-driver
+cargo build --tests
