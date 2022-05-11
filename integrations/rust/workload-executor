@@ -13,5 +13,4 @@ export WORKLOAD_EXECUTOR_WORKLOAD="$2"
 
 export WORKLOAD_EXECUTOR_WORKING_DIRECTORY="$PWD"
 
-cd mongo-rust-driver
 cargo test workload_executor -- --nocapture
