@@ -2,17 +2,18 @@
 
 set -o errexit
 
-source ~/.cargo/env
+source $HOME/.cargo/env
 
 # Indicates that the driver should run the workload_executor test
 export ATLAS_PLANNED_MAINTENANCE_TESTING=1
 
 set +x # Hide the connection string in the test output
 export WORKLOAD_EXECUTOR_CONNECTION_STRING="$1"
+export MONGODB_URI="$1"
 set -x
 
 export WORKLOAD_EXECUTOR_WORKLOAD="$2"
 
 export WORKLOAD_EXECUTOR_WORKING_DIRECTORY="$PWD"
 
-cargo test workload_executor -- --nocapture
+RUST_BACKTRACE=1 cargo test workload_executor --manifest-path mongo-rust-driver/Cargo.toml -- --nocapture

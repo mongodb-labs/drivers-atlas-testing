@@ -1,11 +1,13 @@
 #!/bin/bash
 
+set -o errexit
+set -o xtrace
+
 rm -rf ~/.rustup
-curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path $DEFAULT_HOST_OPTIONS
+curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path
 
 echo "export CARGO_NET_GIT_FETCH_WITH_CLI=true" >> ~/.cargo/env
 
-source ~/.cargo/env
+source $HOME/.cargo/env
 
-cd mongo-rust-driver
-cargo build --tests
+cargo build --manifest-path mongo-rust-driver/Cargo.toml --tests
