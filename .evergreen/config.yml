@@ -431,7 +431,7 @@ axes:
           DRIVER_DIRNAME: "rust"
           DRIVER_REPOSITORY: "https://github.com/isabelatkinson/mongo-rust-driver"
           DRIVER_REVISION: "add-workload-executor"
-          ASTROLABE_EXECUTOR_STARTUP_TIME: 5
+          ASTROLABE_EXECUTOR_STARTUP_TIME: 100
 
   # The 'platform' axis specifies the evergreen host distro to use.
   # Platforms MUST specify the PYTHON3_BINARY variable as this is required to install astrolabe.
