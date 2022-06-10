@@ -79,7 +79,7 @@ functions:
       type: setup
       params:
         working_dir: astrolabe-src
-        continue_on_err: false       # Because script may not exist OR platform may not be *nix.
+        continue_on_err: true       # Because script may not exist OR platform may not be *nix.
         add_expansions_to_env: true
         command: |
           integrations/${DRIVER_DIRNAME}/install-driver.sh

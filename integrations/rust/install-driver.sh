@@ -10,4 +10,4 @@ echo "export CARGO_NET_GIT_FETCH_WITH_CLI=true" >> ~/.cargo/env
 
 source $HOME/.cargo/env
 
-cargo build --manifest-path mongo-rust-driver/Cargo.toml --tests
+cargo build --manifest-path mongo-rust-driver/Cargo.toml --tests --release
