@@ -98,6 +98,7 @@ class ValidateWorkloadExecutor(TestCase):
         try:
             try:
                 stats = subprocess.stop()
+            # Premature exit can cause a PrematureExitError or PermissionError
             except (PrematureExitError, PermissionError):
                 stats = subprocess.read_stats()
         except WorkloadExecutorError as exc:
