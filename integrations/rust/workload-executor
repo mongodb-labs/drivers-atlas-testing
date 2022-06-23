@@ -1,8 +1,14 @@
 #!/bin/bash
 
 set -o errexit
+set -o xtrace
 
-source $HOME/.cargo/env
+export WORKING_DIRECTORY=$(pwd)
+
+export RUSTUP_HOME="$WORKING_DIRECTORY/.rustup"
+export CARGO_HOME="$WORKING_DIRECTORY/.cargo"
+
+source $WORKING_DIRECTORY/.cargo/env
 
 # Indicate that the driver should run the workload_executor test
 export ATLAS_PLANNED_MAINTENANCE_TESTING=1
@@ -14,7 +20,7 @@ set -x
 
 export WORKLOAD_EXECUTOR_WORKLOAD="$2"
 
-export WORKLOAD_EXECUTOR_WORKING_DIRECTORY="$PWD"
+export WORKLOAD_EXECUTOR_WORKING_DIRECTORY=$WORKING_DIRECTORY
 
 cd mongo-rust-driver
 
