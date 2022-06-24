@@ -15,7 +15,7 @@ export MONGO_ORCHESTRATION_HOME="$DRIVERS_TOOLS/.evergreen/orchestration"
 export PATH="$MONGODB_BINARIES:$PATH"
 
 # Clone drivers-evergreen-tools
-git clone --recursive git://github.com/mongodb-labs/drivers-evergreen-tools.git $DRIVERS_TOOLS
+git clone --recursive https://github.com/mongodb-labs/drivers-evergreen-tools.git $DRIVERS_TOOLS
 
 # Configure mongo-orchestration
 echo "{ \"releases\": { \"default\": \"$MONGODB_BINARIES\" }}" > $MONGO_ORCHESTRATION_HOME/orchestration.config

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -o errexit
+set -o xtrace
+
+export WORKING_DIRECTORY=$(pwd)
+
+export RUSTUP_HOME="$WORKING_DIRECTORY/.rustup"
+export CARGO_HOME="$WORKING_DIRECTORY/.cargo"
+
+source $WORKING_DIRECTORY/.cargo/env
+
+# Indicate that the driver should run the workload_executor test
+export ATLAS_PLANNED_MAINTENANCE_TESTING=1
+
+set +x # Hide the connection string in the test output
+export WORKLOAD_EXECUTOR_CONNECTION_STRING="$1"
+export MONGODB_URI="$1"
+set -x
+
+export WORKLOAD_EXECUTOR_WORKLOAD="$2"
+
+export WORKLOAD_EXECUTOR_WORKING_DIRECTORY=$WORKING_DIRECTORY
+
+cd mongo-rust-driver
+
+# Write the test executable name to exe_name.txt
+cargo test get_exe_name --release
+
+RUST_BACKTRACE=1 $(cat exe_name.txt) workload_executor --nocapture -- --release
