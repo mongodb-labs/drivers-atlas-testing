@@ -29,6 +29,21 @@ def get_organization_by_id(*, client, org_id):
     return org    
 
 
+def get_project(*, client, project_name, organization_id):
+    """Returns project with specified name if one exists, otherwise None."""
+    try:
+        project = client.groups.byName[project_name].get().data
+    except AtlasApiError as exc:
+        if exc.error_code == 'MULTIPLE_GROUPS':
+            LOGGER.warn("There are many projects {!r}".format(project_name))
+            projects_res = client.orgs[organization_id].groups.get().data
+            project = projects_res['results'][0]
+        else:
+            raise
+    LOGGER.debug("Project details: {}".format(project))
+    return project
+
+
 def ensure_project(*, client, project_name, organization_id):
     """Ensure a project named `project_name` exists and return it. Does not
     raise an exception if a project by that name already exists."""
@@ -38,7 +53,7 @@ def ensure_project(*, client, project_name, organization_id):
     except AtlasApiError as exc:
         if exc.error_code == 'GROUP_ALREADY_EXISTS':
             LOGGER.debug("Project {!r} already exists".format(project_name))
-            project = client.groups.byName[project_name].get().data
+            project = get_project(client=client, project_name=project_name, organization_id=organization_id)
         else:
             raise
     else:
@@ -58,10 +73,24 @@ def list_projects_in_org(*, client, org_id):
 
 def delete_project(*, client, project_id):
     """Delete a project with id `project_id`"""    
-    client.groups[project_id].delete().data
     
-    LOGGER.debug("Deleted project id: {}".format(project_id))
-
+    clusters = client.groups[project_id].clusters.get()
+    for cluster in clusters.data['results']:
+        LOGGER.debug("Deleting cluster {}".format(cluster['name']))
+        try:
+            client.groups[project_id].clusters[cluster['name']].delete().data
+        except AtlasApiError as exc:
+            # May already have been requested to be deleted earlier but still
+            # not deleted, atlas returns an error in this case
+            LOGGER.warn(exc)
+    
+    try:
+        client.groups[project_id].delete().data
+        LOGGER.debug("Deleted project id: {}".format(project_id))
+    except AtlasApiError as exc:
+        # Some clusters may remain pending deletion, which prevents
+        # deleting the project
+        LOGGER.warn(exc)
 
 def ensure_admin_user(*, client, project_id, username, password):
     """Ensure an admin user with the given credentials exists on the project

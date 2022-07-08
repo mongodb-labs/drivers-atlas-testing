@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import datetime
+import random
 import logging
 import os
 import re
@@ -61,10 +62,11 @@ class AtlasTestCase:
         # Initialize wrapper class for running workload executor.
         self.workload_runner = DriverWorkloadSubprocessRunner()
 
-        # Generate a unique project name with timestamp
+        # Generate a unique project name with timestamp & random suffix
         current_timestamp = int(_time.time())
         timestamp_suffix = '-' + str(current_timestamp)            
-        self.project_name = self.config.project_name + timestamp_suffix  
+        random_suffix = '-' + str(int(random.random() * 1_000_000_000))
+        self.project_name = self.config.project_name + timestamp_suffix + random_suffix
         self.project = None
 
     @property
@@ -395,8 +397,9 @@ class SpecTestRunnerBase:
             client=self.client, org_id=org_id)
         LOGGER.info("Successfully verified organization {!r}".format(org.name))
 
-        # Step-2: clean old projects from organization.
-        self.clean_old_projects(org.id)                             
+        # Step-2: clean old projects with same name base from organization.
+        if True or not no_create:
+            self.clean_old_projects(org.id)                             
 
         for full_path in self.find_spec_tests(test_locator_token):
             # Step-1: load test specification.
@@ -453,12 +456,15 @@ class SpecTestRunnerBase:
         current_timestamp = int(_time.time())
         projects_res = list_projects_in_org(client=self.client, org_id=org_id)
         for project in projects_res['results']:
-            project_timestamp = project.name.split('-')[-1]
-            if project.name.startswith(self.config.project_name) and \
-                project_timestamp.isnumeric() and \
+            if project.name.startswith(self.config.project_name):
+                try:
+                    project_timestamp = project.name.split('-')[-2]
+                except:
+                    project_timestamp = project.name.split('-')[-1]
+                if project_timestamp.isnumeric() and \
                     int(project_timestamp) < current_timestamp - self.project_expiration_threshold_seconds:
-                delete_project(client=self.client, project_id=project.id)
-                LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id)) 
+                    delete_project(client=self.client, project_id=project.id)
+                    LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id)) 
 
     def get_printable_test_plan(self):
         table_data = []
