@@ -398,7 +398,7 @@ class SpecTestRunnerBase:
         LOGGER.info("Successfully verified organization {!r}".format(org.name))
 
         # Step-2: clean old projects with same name base from organization.
-        if True or not no_create:
+        if not no_create:
             self.clean_old_projects(org.id)                             
 
         for full_path in self.find_spec_tests(test_locator_token):
