@@ -5,8 +5,7 @@ Installing and Running Locally
 
 Installing and running ``astrolabe`` is useful when writing integrations for new drivers (see :ref:`integration-guide`)
 and when debugging issues uncovered by testing. This document walks through the steps needed to install ``astrolabe``
-on your local machine and using it to run a planned maintenance test scenario.
-
+on your local machine and use it to run Atlas and Kubernetes test scenarios.
 
 Platform Support
 ----------------
@@ -36,10 +35,51 @@ Once installed, check that your installation is working::
 
   $ astrolabe --version
 
+Exploring the API
+-----------------
+
+With the Atlas API credentials now configured, you are ready to use ``astrolabe``. Exploring
+``astrolabe``'s capabilities is very easy due to its self-documenting command-line interface. To see a list of
+available commands, run::
+
+  $ astrolabe --help
+
+Say, for instance, that you would like to use ``astrolabe`` to create a cluster. Looking at the output of the
+``astrolabe --help`` command, you realize that the ``clusters`` command group probably has what you are looking for.
+You can explore the usage of this command group by running::
+
+  $ astrolabe clusters --help
+
+Sure enough, the command group has the ``create-dedicated`` command that does what you want to do. Command usage can be
+understood by employing a familiar pattern::
+
+  $ astrolabe clusters create-dedicated --help
+
+Debugging
+---------
+
+Astrolabe comes with built-in logging functionality that can be customized using the ``--log-level`` option.
+Supported logging levels, in decreasing order of verbosity are:
+
+* ``DEBUG``
+* ``INFO`` (the default)
+* ``WARNING``
+* ``ERROR``
+* ``CRITICAL``
+
+For example, to use the ``DEBUG`` logging level, do::
+
+  $ astrolabe --log-level DEBUG <command> [COMMAND OPTIONS]
+
+Running Atlas Planned Maintenance Tests
+=======================================
+
+Follow these instructions to run an Atlas Planned Maintenance (APM) test.
+
 Configuration
 -------------
 
-Before you can start using ``astrolabe``, you must configure it to give it access to the MongoDB Atlas API.
+Before you can start using ``astrolabe`` to run Atlas planned maintenance tests, you must configure it to give it access to the MongoDB Atlas API.
 
 If you haven't done so already, create a
 `MongoDB Atlas Organization <https://docs.atlas.mongodb.com/organizations-projects>`_ (this can
@@ -83,39 +123,17 @@ with the Atlas API::
 .. note:: If you encounter an ``AtlasAuthenticationError`` when running ``check-connection``, it means that
    configuration was unsuccessful.
 
+Running Tests
+-------------
 
-Exploring the API
------------------
+The ``atlas-tests`` command-group is used for Atlas Planned Maintenance (APM) tests. To run a single APM test, do::
 
-With the Atlas API credentials now configured, you are ready to use ``astrolabe``. Exploring
-``astrolabe``'s capabilities is very easy due to its self-documenting command-line interface. To see a list of
-available commands, run::
-
-  $ astrolabe --help
-
-Say, for instance, that you would like to use ``astrolabe`` to create a cluster. Looking at the output of the
-``astrolabe --help`` command, you realize that the ``clusters`` command group probably has what you are looking for.
-You can explore the usage of this command group by running::
-
-  $ astrolabe clusters --help
-
-Sure enough, the command group has the ``create-dedicated`` command that does what you want to do. Command usage can be
-understood by employing a familiar pattern::
-
-  $ astrolabe clusters create-dedicated --help
-
-
-Running Atlas Planned Maintenance Tests
----------------------------------------
-
-The ``spec-tests`` command-group is used for Atlas Planned Maintenance (APM) tests. To run a single APM test, do::
-
-  $ astrolabe spec-tests run-one <path/to/test-file.yml> -e <path/to/workload-executor> --project-name <atlasProjectName> --cluster-name-salt <randomString>
+  $ astrolabe atlas-tests run-one <path/to/test-file.yml> -e <path/to/workload-executor> --project-name <atlasProjectName> --cluster-name-salt <randomString>
 
 where:
 
 * ``<path/to/test-file.yml>`` is the absolute or relative path to a test scenario file in the
-  :ref:`test-scenario-format-specification`,
+  :ref:`atlas-test-scenario-format`,
 * ``<path/to/workload-executor>`` is the absolute or relative path to the workload executor of the driver to be tested,
 * ``<atlasProjectName>`` is the name of the Atlas Project under which the test cluster used for the test will be created,
 * ``<randomString>`` is a string that is used as salt while generating the randomized character string that will be
@@ -135,7 +153,7 @@ cluster uptime). This is quite inconvenient when the test needs to be run multip
 creation is very time consuming and can take up to 10 minutes. To ameliorate the situation, the ``run-one`` command
 supports a ``--no-delete`` flag that prevents the deletion of the cluster at the end of a test run::
 
-  $ astrolabe spec-tests run-one ... --no-delete
+  $ astrolabe atlas-tests run-one ... --no-delete
 
 Using this flag with a given test file and static ``--cluster-name-salt`` value helps significantly reduce waiting
 times between successive test runs (you will still need to wait for the cluster to be reconfigured to the initial
@@ -149,19 +167,36 @@ where the cluster configuration does not change from the initial one
 ``--no-delete`` is recommended with ``--no-create``, otherwise each run will
 delete the cluster upon completion.
 
+Running Kubernetes Tests
+========================
 
-Debugging
----------
+Follow these instructions to run a Kubernetes container scheduling test.
 
-Astrolabe comes with built-in logging functionality that can be customized using the ``--log-level`` option.
-Supported logging levels, in decreasing order of verbosity are:
+Running Tests
+-------------
 
-* ``DEBUG``
-* ``INFO`` (the default)
-* ``WARNING``
-* ``ERROR``
-* ``CRITICAL``
+The ``kubernetes-tests`` command-group is used for Kubernetes tests. To run a single Kubernetes test, do::
 
-For example, to use the ``DEBUG`` logging level, do::
+  $ astrolabe kubernetes-tests \
+      run-one <path/to/test-file.yml> \
+      --workload-file <path/to/workload-file.yml>
+      --workload-executor <path/to/workload-executor> \
+      --connection-string <mongodbConnectionString>
 
-  $ astrolabe --log-level DEBUG <command> [COMMAND OPTIONS]
+where:
+
+* ``<path/to/test-file.yml>`` is the absolute or relative path to a Kubernetes test scenario file in the
+  :ref:`kubernetes-test-scenario-format`,
+* ``<path/to/workload-file.yml>`` is the absolute or relative path to a workload file in the
+  :ref:`kubernetes-test-scenario-format`,
+* ``<path/to/workload-executor>`` is the absolute or relative path to the workload executor of the driver to be tested,
+* ``<mongodbConnectionString>`` is the connection string
+
+For example::
+
+  $ DRIVER_DIRNAME=go \
+      astrolabe kubernetes-tests \
+      run-one tests/kubernetes/kind/deletePod.yml \
+      --workload-file workloads/reads.yml \
+      --workload-executor integrations/$DRIVER_DIRNAME/workload-executor \
+      --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?ssl=true&tlsCertificateKeyFile=./mongodb_tls_cert.pem&tlsCAFile=./kubernetes/kind/rootCA.pem"

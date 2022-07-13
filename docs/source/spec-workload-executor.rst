@@ -26,7 +26,7 @@ where:
   `standardized URI options <https://github.com/mongodb/specifications/blob/master/source/uri-options/uri-options.rst>`_
   that is to be used to connect to the Atlas cluster, and
 * ``workload-spec`` is a JSON blob representation of the ``driverWorkload`` field from the
-  :ref:`test-scenario-format-specification`.
+  :ref:`atlas-test-scenario-format`.
 
 .. note:: Some languages might find it convenient to wrap their natively implemented workload executors in a shell
    script in order to conform to the user-facing API described here. See :ref:`wrapping-workload-executor-shell-script`

@@ -1,0 +1,8 @@
+# Delete one of the pods in the 3-node MongoDB replica set. Wait for the MongoDB Kubernetes operator
+# to recreate the pod and for it to become ready.
+# This test case is primarily used to assert that reads can continue when a pod goes down or is
+# moved to another node.
+operations:
+  - kubectl: --namespace default delete pod mongodb-0
+  - kubectl: --namespace default wait pod/mongodb-0 --for=condition=Ready --timeout=5m
+  - sleep: 5
