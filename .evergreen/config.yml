@@ -93,6 +93,77 @@ functions:
         command: |
           C:/cygwin/bin/sh integrations/${DRIVER_DIRNAME}/install-driver.sh
 
+  "download kubernetes tools":
+    # Download all of the tools needed to interact with Kubernetes and Kind.
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        script: |
+          if [ "Windows_NT" = "$OS" ]; then
+            # Download kind.
+            curl -sfSL -o ./kind.exe https://kind.sigs.k8s.io/dl/v0.14.0/kind-windows-amd64
+            chmod +x ./kind.exe
+            # Download helm.
+            curl -sfSLO https://get.helm.sh/helm-v3.9.2-windows-amd64.zip
+            unzip helm-v3.9.2-windows-amd64.zip
+            mv windows-amd64/helm.exe ./
+            # Download kubectl.
+            curl -sfSLO https://dl.k8s.io/release/v1.24.0/bin/windows/amd64/kubectl.exe
+            chmod +x ./kubectl.exe
+            # Download cmctl.
+            curl -sfSLO https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cmctl-windows-amd64.zip
+            unzip cmctl-windows-amd64.zip
+            # Download jq.
+            curl -sfSL -o ./jq.exe https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe
+            chmod +x ./jq.exe
+          else
+            # Download kind.
+            curl -sfSL -o ./kind https://kind.sigs.k8s.io/dl/v0.14.0/kind-linux-amd64
+            chmod +x ./kind
+            # Download helm.
+            curl -sfSLO https://get.helm.sh/helm-v3.9.2-linux-amd64.tar.gz
+            tar -zxvf helm-v3.9.2-linux-amd64.tar.gz --strip-components 1 linux-amd64/helm
+            # Download kubectl.
+            curl -sfSLO https://dl.k8s.io/release/v1.24.0/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            # Download cmctl.
+            curl -sfSLO https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cmctl-linux-amd64.tar.gz
+            tar -zxvf cmctl-linux-amd64.tar.gz cmctl
+            # Download jq.
+            curl -sfSL -o ./jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+            chmod +x ./jq
+          fi
+
+  "create kind cluster":
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        script: |
+          KIND=./kind HELM=./helm KUBECTL=./kubectl CMCTL=./cmctl JQ=./jq bash kubernetes/kind/create.sh
+
+  "delete kind cluster":
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        script: |
+          KIND=./kind bash kubernetes/kind/delete.sh
+
+  "list kind databases":
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        script: |
+          mongosh \
+            "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?ssl=true" \
+            --tls \
+            --tlsCAFile kubernetes/kind/rootCA.pem \
+            --tlsCertificateKeyFile mongodb_tls_cert.pem \
+            --eval "show dbs;"
+
   "run test":
     # Run the Atlas Planned Maintenance Test.
     - command: subprocess.exec
@@ -364,6 +435,13 @@ tasks:
       - func: "run test"
         vars:
           TEST_NAME: retryWrites-toggleServerSideJS
+  - name: test-kind
+    tags: ["all"]
+    commands:
+      - func: "download kubernetes tools"
+      - func: "create kind cluster"
+      - func: "list kind databases"
+      - func: "delete kind cluster"
 
 axes:
   # The 'driver' axis specifies the driver to be tested (including driver version).
