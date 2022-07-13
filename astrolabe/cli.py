@@ -204,6 +204,17 @@ def list_projects(ctx):
     pprint(ctx.obj.client.groups.get().data)
 
 
+@atlas_projects.command('delete-all')
+@ATLASORGANIZATIONID_OPTION
+@click.pass_context
+def delete_all_projects(ctx, org_id):
+    """Delete all Atlas Projects in organization."""
+    projects_res = cmd.list_projects_in_org(client=ctx.obj.client, org_id=org_id)
+    for project in projects_res['results']:
+        cmd.delete_project(client=ctx.obj.client, project_id=project.id)
+        LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id)) 
+
+
 @atlas_projects.command('get-one')
 @ATLASPROJECTNAME_OPTION
 @click.pass_context
@@ -528,12 +539,13 @@ def delete_test_cluster(ctx, spec_test_file, org_id, project_name,
     # Step-2: delete the cluster.
     organization = cmd.get_organization_by_id(
         client=ctx.obj.client, org_id=org_id)
-    project = cmd.ensure_project(
+    project = cmd.get_project(
         client=ctx.obj.client, project_name=project_name, organization_id=organization.id)
-    try:
-        ctx.obj.client.groups[project.id].clusters[cluster_name].delete()
-    except AtlasApiBaseError:
-        pass
+    if project:
+        try:
+            ctx.obj.client.groups[project.id].clusters[cluster_name].delete()
+        except AtlasApiBaseError:
+            pass
 
 
 @spec_tests.command('run')
