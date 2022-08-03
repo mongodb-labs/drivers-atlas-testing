@@ -9,7 +9,7 @@ Prerequisites
 
 1. `Install Docker <https://docs.docker.com/engine/install/>`_.
 
-  *IMPORTANT:* If you're using Docker on macOS or Windows, you need to increase the maximum memory usage by . See the `Settings for Docker Desktop <https://kind.sigs.k8s.io/docs/user/quick-start/#settings-for-docker-desktop>`_ section of the Kind setup for instructions.
+  *IMPORTANT:* If you're using Docker on macOS or Windows, you need to increase the Docker VM memory to at least 6GB (8GB recommended). See the `Settings for Docker Desktop <https://kind.sigs.k8s.io/docs/user/quick-start/#settings-for-docker-desktop>`_ section of the Kind setup for instructions.
 
 2. Install the `kind <https://kind.sigs.k8s.io/docs/user/quick-start/#installation>`_, `helm <https://helm.sh/docs/intro/install/>`_, `kubectl <https://kubernetes.io/docs/tasks/tools/#kubectl>`_, `cmctl <https://cert-manager.io/docs/usage/cmctl/#installation>`_, and `jq <https://stedolan.github.io/jq/download/>`_ command line tools in the system ``PATH``.
 
