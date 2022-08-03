@@ -1,8 +1,8 @@
 ====
-Run a MongoDB Replicaset Using Kind
+Run a MongoDB Replica Set Using Kind
 ====
 
-The scripts and configurations in this directory create a 3-node MongoDB replicaset in a local Kind cluster with authentication and TLS enabled. `Kind <https://kind.sigs.k8s.io/>`_ is a tool for running a local Kubernetes cluster in a Docker container.
+The scripts and configurations in this directory create a 3-node MongoDB replica set in a local Kind cluster with authentication and TLS enabled. `Kind <https://kind.sigs.k8s.io/>`_ is a tool for running a local Kubernetes cluster in a Docker container.
 
 Prerequisites
 -------------
@@ -20,13 +20,13 @@ Usage
 
 To create a cluster, make sure Docker is running, then run the create Bash script::
 
-  $ create.sh
+  $ ./create.sh
 
-The create script will create a Kind cluster and start a 3-node MongoDB replicaset listening on ``localhost`` ports 31181-31183 with user:password ``user:12345``. It writes the TLS certificate to ``mongodb_tls_cert.pem`` in the current directory.
+The create script will create a Kind cluster and start a 3-node MongoDB replica set listening on ``localhost`` ports 31181-31183 with user:password ``user:12345``. It will write the TLS certificate to ``mongodb_tls_cert.pem`` in the current directory.
 
 **Connect to a Cluster**
 
-To connect to the MongoDB replicaset with ``mongosh``, run the following command::
+To connect to the MongoDB cluster with ``mongosh``, run the following command::
 
   $ mongosh \                                     
     "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?ssl=true" \
@@ -36,6 +36,6 @@ To connect to the MongoDB replicaset with ``mongosh``, run the following command
 
 **Delete a Cluster**
 
-To delete the MongoDB replicaset and Kind cluster, run the delete Bash script::
+To delete the MongoDB cluster and Kind cluster, run the delete Bash script::
 
-  $ delete.sh
+  $ ./delete.sh
