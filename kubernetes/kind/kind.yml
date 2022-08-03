@@ -1,0 +1,18 @@
+# Kind cluster configuration that maps cluster ports 31181-31183 to the same host ports.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 31181
+    hostPort: 31181
+    listenAddress: 127.0.0.1
+    protocol: tcp
+  - containerPort: 31182
+    hostPort: 31182
+    listenAddress: 127.0.0.1
+    protocol: tcp
+  - containerPort: 31183
+    hostPort: 31183
+    listenAddress: 127.0.0.1
+    protocol: tcp

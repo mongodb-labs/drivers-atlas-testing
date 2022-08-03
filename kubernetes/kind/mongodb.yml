@@ -1,0 +1,109 @@
+# Password for the MongoDB database user.
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: user-password
+type: Opaque
+stringData:
+  password: "12345"
+
+# MongoDB Community Operator configuration for a MongoDB v5.0.8 3-node replicaset with TLS and
+# authentication enabled.
+---
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: mongodb
+spec:
+  members: 3
+  type: ReplicaSet
+  version: "5.0.8"
+  replicaSetHorizons:
+  - local: localhost:31181
+  - local: localhost:31182
+  - local: localhost:31183
+  security:
+    tls:
+      enabled: true
+      certificateKeySecretRef:
+        name: mongodb-tls
+      caConfigMapRef:
+        name: ca-config-map
+    authentication:
+      modes: ["SCRAM"]
+  users:
+    - name: user
+      db: admin
+      passwordSecretRef:
+        name: user-password
+      roles:
+        - name: root
+          db: admin
+      scramCredentialsSecretName: user-scram
+  statefulSet:
+    spec:
+      template:
+        spec:
+          # Reduce the CPU and memory requests for the mongod and mongodb-agent containers to 0 so
+          # that they can be scheduled on Evergreen hosts with fewer CPUs.
+          containers:
+            - name: mongod
+              resources:
+                requests:
+                  cpu: 0
+                  memory: 0
+            - name: mongodb-agent
+              resources:
+                requests:
+                  cpu: 0
+                  memory: 0
+
+# NodePort for MongoDB replicaset member 0. Exposes port 31181.
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: external-mongodb-0
+spec:
+  type: NodePort
+  selector:
+    app: mongodb-svc
+    statefulset.kubernetes.io/pod-name: mongodb-0
+  ports:
+    - protocol: TCP
+      nodePort: 31181
+      port: 31181
+      targetPort: 27017
+
+# NodePort for MongoDB replicaset member 1. Exposes port 31182.
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: external-mongodb-1
+spec:
+  type: NodePort
+  selector:
+    app: mongodb-svc
+    statefulset.kubernetes.io/pod-name: mongodb-1
+  ports:
+    - nodePort: 31182
+      port: 31182
+      targetPort: 27017
+
+# NodePort for MongoDB replicaset member 2. Exposes port 31183.
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: external-mongodb-2
+spec:
+  type: NodePort
+  selector:
+    app: mongodb-svc
+    statefulset.kubernetes.io/pod-name: mongodb-2
+  ports:
+    - nodePort: 31183
+      port: 31183
+      targetPort: 27017
