@@ -8,25 +8,25 @@ set -e
 SCRIPT_DIR="$(dirname "$0")"
 
 # Checks if the binary is available, either in $PATH or at the explicit path provided.
-function is_binary_available {
-  builtin type -P "$1" &> /dev/null
+is_binary_available() {
+  type "$1" >/dev/null 2>/dev/null
 }
 
 # Allow overriding the kind, helm, kubectl, cmctl, and jq binary paths.
 KIND=${KIND:-kind}
-is_binary_available $KIND || (echo "Failed to find kind at '$KIND'" && exit 1)
+is_binary_available $KIND || (echo "Failed to find kind binary at '$KIND'" && exit 1)
 
 HELM=${HELM:-helm}
-is_binary_available $HELM || (echo "Failed to find helm at '$HELM'" && exit 1)
+is_binary_available $HELM || (echo "Failed to find helm binary at '$HELM'" && exit 1)
 
 KUBECTL=${KUBECTL:-kubectl}
-is_binary_available $KUBECTL || (echo "Failed to find kubectl at '$KUBECTL'" && exit 1)
+is_binary_available $KUBECTL || (echo "Failed to find kubectl binary at '$KUBECTL'" && exit 1)
 
 CMCTL=${CMCTL:-cmctl}
-is_binary_available $CMCTL || (echo "Failed to find cmctl at '$CMCTL'" && exit 1)
+is_binary_available $CMCTL || (echo "Failed to find cmctl binary at '$CMCTL'" && exit 1)
 
 JQ=${JQ:-jq}
-is_binary_available $JQ || (echo "Failed to find jq at '$JQ'" && exit 1)
+is_binary_available $JQ || (echo "Failed to find jq binary at '$JQ'" && exit 1)
 
 # Create local Kind cluster with specific host-port mapping. Wait for up to 5 minutes.
 $KIND create cluster --config $SCRIPT_DIR/kind.yml --wait 5m
@@ -79,3 +79,7 @@ $KUBECTL --namespace default wait MongoDBCommunity/mongodb \
 # jq and concatenate them together to match the format expected by MongoDB drivers.
 $KUBECTL --namespace default get secret mongodb-tls -o json | \
     $JQ -r '.data."tls.crt", .data."tls.key" | @base64d' > mongodb_tls_cert.pem
+
+# Sleep for 30 seconds to allow the Kubernetes operator to add the user to the database.
+# TODO: Find a better way to wait for the availability of the user than just sleeping.
+sleep 30

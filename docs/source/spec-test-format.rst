@@ -3,10 +3,10 @@
 Atlas Planned Maintenance Test Scenario Format
 ==============================================
 
-.. note:: Detailed information about terms that are italicized in this document can be found in the
+.. note:: Detailed information about terms that are italicized in this section can be found in the
    :ref:`terms-technical-design` section.
 
-The YAML file format described herein is used to define platform-independent *Atlas Planned Maintenance Tests* in
+The YAML file format described in this section is used to define platform-independent *Atlas Planned Maintenance Tests* in
 YAML-formatted *Test Scenario Files*. Each Test Scenario File describes exactly one Atlas Planned Maintenance Test.
 A Test Scenario File has the following keys:
 
@@ -157,8 +157,53 @@ A Test Scenario File has the following keys:
   In the current version, options can be specified using the ``uriOptions``
   key of the unified test format when creating a client entity.
 
+
+Kubernetes Test Scenario Format
+===============================
+
+Kubernetes Tests use two separate YAML document formats: the *Kubernetes Test
+Scenario File* and the *Workload File*. The combination of one *Kubernetes Test
+Scenario File* and one *Workload File* defines a unique Kubernetes Test. The
+following sections describe the format for each type of document.
+
+Kubernetes Test Scenario File
+-----------------------------
+
+A *Kubernetes Test Scenario File* describes a sequence of operations that modify
+the running conditions or configuration of a MongoDB cluster running in
+Kubernetes. A *Kubernetes Test Scenario File* has the following keys:
+
+* operations (array): List of operations to be performed. The possible
+  operations are:
+
+  * ``kubectl``: Run a command using the `kubectl
+    <https://kubernetes.io/docs/reference/kubectl/kubectl/>`_ command line tool.
+    The value MUST be a valid set of arguments for the ``kubectl`` command line
+    tool.
+
+    Example::
+
+      kubectl: --namespace default delete pod mongodb-0
+
+  * ``sleep``: Do nothing for the specified duration. The value MUST be the
+    duration to sleep for, in seconds.
+
+    Example::
+
+      sleep: 10
+
+Workload File
+-------------
+
+A *Workload File* describes a set of operations that the MongoDB driver under
+test will run while connected to the MongoDB cluster in Kubernetes.
+
+The document must be a complete test as defined by the `Unified Test Format
+specification <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
+
 -------
 Changes
 -------
 
 * 2020-04-22: Move the test format specification into a separate file.
+* 2022-08-08: Add specification for Kubernetes tests.

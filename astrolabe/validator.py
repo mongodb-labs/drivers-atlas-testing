@@ -252,7 +252,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_simple(self):
         driver_workload = JSONObject.from_dict(
-            yaml.safe_load(open('tests/validator-simple.yml').read())['driverWorkload']
+            yaml.safe_load(open('tests/validator/validator-simple.yml').read())['driverWorkload']
         )
 
         stats = self.run_test(driver_workload)
@@ -295,7 +295,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_num_errors(self):
         driver_workload = JSONObject.from_dict(
-            yaml.safe_load(open('tests/validator-numErrors.yml').read())['driverWorkload']
+            yaml.safe_load(open('tests/validator/validator-numErrors.yml').read())['driverWorkload']
         )
 
         stats = self.run_test(driver_workload)
@@ -329,7 +329,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_num_errors_not_captured(self):
         driver_workload = JSONObject.from_dict(
-            yaml.safe_load(open('tests/validator-numErrors-not-captured.yml').read())['driverWorkload']
+            yaml.safe_load(open('tests/validator/validator-numErrors-not-captured.yml').read())['driverWorkload']
         )
 
         stats = self.run_test_expecting_error(driver_workload)
@@ -358,7 +358,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_num_errors_as_failures(self):
         driver_workload = JSONObject.from_dict(
-            yaml.safe_load(open('tests/validator-numErrors-as-failures.yml').read())['driverWorkload']
+            yaml.safe_load(open('tests/validator/validator-numErrors-as-failures.yml').read())['driverWorkload']
         )
 
         stats = self.run_test(driver_workload)
@@ -390,7 +390,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_num_failures(self):
         driver_workload = JSONObject.from_dict(
-            yaml.safe_load(open('tests/validator-numFailures.yml').read())['driverWorkload']
+            yaml.safe_load(open('tests/validator/validator-numFailures.yml').read())['driverWorkload']
         )
 
         stats = self.run_test(driver_workload)
@@ -424,7 +424,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_num_failures_not_captured(self):
         driver_workload = JSONObject.from_dict(
-            yaml.safe_load(open('tests/validator-numFailures-not-captured.yml').read())['driverWorkload']
+            yaml.safe_load(open('tests/validator/validator-numFailures-not-captured.yml').read())['driverWorkload']
         )
 
         stats = self.run_test_expecting_error(driver_workload)
@@ -454,7 +454,7 @@ class ValidateWorkloadExecutor(TestCase):
 
     def test_num_failures_as_errors(self):
         driver_workload = JSONObject.from_dict(
-            yaml.safe_load(open('tests/validator-numFailures-as-errors.yml').read())['driverWorkload']
+            yaml.safe_load(open('tests/validator/validator-numFailures-as-errors.yml').read())['driverWorkload']
         )
 
         stats = self.run_test(driver_workload)

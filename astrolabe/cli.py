@@ -25,14 +25,15 @@ from atlasclient import AtlasClient, AtlasApiBaseError
 from astrolabe.docgen import (
     generate_configuration_help, tabulate_astrolabe_configuration,
     tabulate_client_configuration)
-from astrolabe.runner import MultiTestRunner, SingleTestRunner
+from astrolabe.atlas_runner import MultiTestRunner, SingleTestRunner
 from astrolabe.configuration import (
     CONFIGURATION_OPTIONS as CONFIGOPTS, TestCaseConfiguration)
 from astrolabe.utils import (
     require_requests_ipv4, get_logs,
     create_click_option, get_cluster_name, get_test_name_from_spec_file,
-    ClickLogHandler)
+    ClickLogHandler, SingleTestXUnitLogger)
 from astrolabe.validator import validator_factory
+from astrolabe.kubernetes_runner import KubernetesTest
 
 
 LOGGER = logging.getLogger(__name__)
@@ -89,6 +90,18 @@ ONLYONFAILURE_FLAG = click.option(
     '--only-on-failure', is_flag=True, default=False,
     help=('Only retrieve logs if the test run failed.'))
 
+KUBECTL_PATH_OPTION = click.option(
+    '--kubectl-path',
+    help='Path to the kubectl binary.',
+    type=click.Path(),
+    default='kubectl')
+
+CONNECTION_STRING_OPTION = click.option(
+    '--connection-string',
+    help='Database connection string.',
+    type=click.STRING,
+    required=True,
+    prompt=True)
 
 class ContextStore:
     def __init__(self, client, admin_client):
@@ -212,7 +225,7 @@ def delete_all_projects(ctx, org_id):
     projects_res = cmd.list_projects_in_org(client=ctx.obj.client, org_id=org_id)
     for project in projects_res['results']:
         cmd.delete_project(client=ctx.obj.client, project_id=project.id)
-        LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id)) 
+        LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id))
 
 
 @atlas_projects.command('get-one')
@@ -406,14 +419,36 @@ def help_configuration_options():
     """About astrolabe's configurable settings."""
     click.echo_via_pager(generate_configuration_help())
 
+@cli.group('validate')
+def validate():
+    """Commands for validating test components"""
+    pass
 
-@cli.group('spec-tests')
-def spec_tests():
-    """Commands related to running APM spec-tests."""
+@validate.command('workload-executor')
+@WORKLOADEXECUTOR_OPTION
+@EXECUTORSTARTUPTIME_OPTION
+@CONNECTION_STRING_OPTION
+def validate_workload_executor(workload_executor, startup_time,
+                               connection_string):
+    """
+    Runs a series of tests to validate a workload executor.
+    Relies upon a user-provisioned instance of MongoDB to run operations against.
+    """
+    test_case_class = validator_factory(
+        workload_executor, connection_string, startup_time)
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(test_case_class)
+    result = unittest.TextTestRunner(descriptions=True, verbosity=2).run(suite)
+    if any([result.errors, result.failures]):
+        exit(1)
+
+
+@cli.group('atlas-tests')
+def atlas_tests():
+    """Commands related to running APM spec tests."""
     pass
 
 
-@spec_tests.command('run-one')
+@atlas_tests.command('run-one')
 @click.argument("spec_test_file", type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
 @WORKLOADEXECUTOR_OPTION
@@ -474,7 +509,7 @@ def run_single_test(ctx, spec_test_file, workload_executor,
         exit(0)
 
 
-@spec_tests.command('get-logs')
+@atlas_tests.command('get-logs')
 @click.argument("spec_test_file", type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
 @ATLASORGANIZATIONID_OPTION
@@ -518,7 +553,7 @@ def get_logs_cmd(ctx, spec_test_file, org_id, project_name,
         project=project, cluster_name=cluster_name)
 
 
-@spec_tests.command('delete-cluster')
+@atlas_tests.command('delete-cluster')
 @click.argument("spec_test_file", type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
 @ATLASORGANIZATIONID_OPTION
@@ -548,7 +583,7 @@ def delete_test_cluster(ctx, spec_test_file, org_id, project_name,
             pass
 
 
-@spec_tests.command('run')
+@atlas_tests.command('run')
 @click.argument("spec_tests_directory", type=click.Path(
     exists=True, file_okay=False, dir_okay=True, resolve_path=True))
 @WORKLOADEXECUTOR_OPTION
@@ -603,30 +638,59 @@ def run_headless(ctx, spec_tests_directory, workload_executor, db_username,
         exit(0)
 
 
-@spec_tests.command('validate-workload-executor')
-@WORKLOADEXECUTOR_OPTION
-@EXECUTORSTARTUPTIME_OPTION
-@click.option('--connection-string', required=True, type=click.STRING,
-              help='Connection string for the test MongoDB instance.',
-              prompt=True)
-def validate_workload_executor(workload_executor, startup_time,
-                               connection_string):
-    """
-    Runs a series of tests to validate a workload executor.
-    Relies upon a user-provisioned instance of MongoDB to run operations against.
-    """
-    test_case_class = validator_factory(
-        workload_executor, connection_string, startup_time)
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(test_case_class)
-    result = unittest.TextTestRunner(descriptions=True, verbosity=2).run(suite)
-    if any([result.errors, result.failures]):
-        exit(1)
-
-
-@spec_tests.command()
+@atlas_tests.command()
 @click.pass_context
 def stats(ctx):
     cmd.aggregate_statistics()
+
+@cli.group('kubernetes-tests')
+def kubernetes_tests():
+    """Commands related to running Kubernetes spec tests."""
+    pass
+
+
+@kubernetes_tests.command('run-one')
+@click.argument(
+    "spec_test_file",
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True))
+@click.option(
+    '--workload-file',
+    help='Path to the unified test format workload file.',
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    required=True)
+@WORKLOADEXECUTOR_OPTION
+@KUBECTL_PATH_OPTION
+@CONNECTION_STRING_OPTION
+@XUNITOUTPUT_OPTION
+def kubernetes_run_one(
+    spec_test_file,
+    workload_file,
+    workload_executor,
+    kubectl_path,
+    connection_string,
+    xunit_output):
+    """
+    TODO: Comment?
+    """
+    LOGGER.info(f"Running {spec_test_file} with driver {workload_executor} using connstring {connection_string}")
+
+    # TODO: Where do we get the name?
+    name = "TESTING"
+    test = KubernetesTest(
+        name=name,
+        spec_test_file=spec_test_file,
+        workload_file=workload_file,
+        workload_executor=workload_executor,
+        connection_string=connection_string,
+        kubectl_path=kubectl_path)
+    xunit_test = test.run()
+
+    xunit_logger = SingleTestXUnitLogger(output_directory=xunit_output)
+    xunit_logger.write_xml(
+        test_case=xunit_test,
+        filename=name)
+
+    LOGGER.info("Done!")
 
 
 @cli.command('check-cloud-failure')

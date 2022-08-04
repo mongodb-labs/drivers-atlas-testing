@@ -1,0 +1,5 @@
+# Sleep for 30 seconds.
+# This test case is primarily used as a baseline to assert that reads and writes work to a MongoDB
+# deployment running in Kubernetes when everything is running correctly.
+operations:
+  - sleep: 30
