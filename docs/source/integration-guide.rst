@@ -144,13 +144,13 @@ Adding a Platform
    `ubuntu1804-drivers-atlas-testing <https://evergreen.mongodb.com/distros#%23ubuntu1804-drivers-atlas-testing>`_
    distro for running their tests. See :ref:`faq-why-custom-distro` for details.
 
-The Atlas Planned Maintenance tests can be run on all platforms which have a Python 3.5+ binary installed.
+The Atlas Planned Maintenance tests can be run on all platforms which have a Python 3.7+ binary installed.
 Each entry to the ``platform`` axis has the following fields:
 
 * ``id`` (required): unique identifier for this ``platform`` axis entry.
 * ``display_name`` (optional): plaintext name for this platform that will be used to display test runs.
 * ``run_on`` (required): evergreen distro name for this platform
-* ``variables.PYTHON3_BINARY`` (required): path to the Python 3.5+ binary on the distro. This is used to run
+* ``variables.PYTHON3_BINARY`` (required): path to the Python 3.7+ binary on the distro. This is used to run
   ``astrolabe``.
 * ``variables.PYTHON_BIN_DIR`` (required): name of directory in which Python install executables. This is always
   ``bin`` on \*nix systems and ``Scripts`` on Windows.
