@@ -44,7 +44,7 @@ setup(
     url="https://github.com/mongodb-labs/drivers-atlas-testing",
     keywords=["mongodb", "mongodbatlas", "atlas", "mongo"],
     license="Apache License, Version 2.0",
-    python_requires=">=3.5",
+    python_requires=">=3.7",
     packages=["atlasclient", "astrolabe"],
     install_requires=install_requires,
     entry_points={
@@ -54,9 +54,8 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Testing"])

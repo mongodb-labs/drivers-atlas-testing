@@ -51,7 +51,7 @@ functions:
         continue_on_err: true
         command: |
           cat /etc/resolv.conf
-    # Create virtualenv using a CPython 3.5+ binary.
+    # Create virtualenv using a CPython 3.7+ binary.
     - command: subprocess.exec
       type: setup
       params:

@@ -13,7 +13,7 @@ Platform Support
 
 ``astrolabe`` runs on Linux, OSX and Windows.
 
-Running ``astrolabe`` requires Python 3.5 or later. To check the version of Python you are running, do::
+Running ``astrolabe`` requires Python 3.7 or later. To check the version of Python you are running, do::
 
   $ python --version
 

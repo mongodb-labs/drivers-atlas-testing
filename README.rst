@@ -19,7 +19,7 @@ interface. The ``astrolabe`` package provides a convenient, command-line
 interface to the ``atlasclient`` and also contains the test harnesses
 necessary to run Atlas Planned Maintenance specification tests.
 
-Astrolabe supports Python 3.5+.
+Astrolabe supports Python 3.7+.
 
 Installation
 ============
@@ -37,7 +37,7 @@ You can also download the project source and do::
 Dependencies
 ============
 
-Astrolabe supports CPython 3.5+.
+Astrolabe supports CPython 3.7+.
 
 Astrolabe requires `Click <https://pypi.org/project/click/>`_,
 `requests <https://pypi.org/project/requests/>`_,
