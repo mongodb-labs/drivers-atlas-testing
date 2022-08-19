@@ -40,7 +40,6 @@ class KubernetesTest:
         workload_file,
         workload_executor,
         connection_string,
-        kubectl_path="kubectl",
     ):
         """
         Create a Kubernetes test runner.
@@ -51,7 +50,6 @@ class KubernetesTest:
           - `workload_file` (string): path to the workload file
           - `workload_executor` (string): path to the workload executor binary or script
           - `connection_string` (string): the MongoDB connection string to give to the workload exeuctor
-          - `kubectl_path` (string): path to the kubectl binary
         """
 
         self.name = name
@@ -59,7 +57,6 @@ class KubernetesTest:
         self.workload_file = workload_file
         self.workload_executor = workload_executor
         self.connection_string = connection_string
-        self.kubectl_path = kubectl_path
 
         self.failed = False
 
@@ -79,8 +76,11 @@ class KubernetesTest:
             f"Running test {self.name} using test file {self.spec_test_file} and workload file {self.workload_file}"
         )
 
-        test = JSONObject.from_dict(yaml.safe_load(open(self.spec_test_file)))
-        workload = JSONObject.from_dict(yaml.safe_load(open(self.workload_file)))
+        with open(self.spec_test_file) as f:
+            test = JSONObject.from_dict(yaml.safe_load(f))
+
+        with open(self.workload_file) as f:
+            workload = JSONObject.from_dict(yaml.safe_load(f))
 
         # Start the test timer. The timer times the duration of the workload executor.
         timer = Timer()
@@ -105,10 +105,10 @@ class KubernetesTest:
                 op_name, op_val = list(operation.items())[0]
 
                 if op_name == "kubectl":
-                    # The "kubectl" operation runs a command with the kubectl CLI. The value is a
-                    # string of the command arguments that needs to be split before we can run it
-                    # with "subprocess.run()".
-                    command = [self.kubectl_path] + op_val.split()
+                    # The "kubectl" operation runs a command with the kubectl CLI. The value is an
+                    # array of the command arguments. Note that the kubectl executable must be in
+                    # the system PATH.
+                    command = ["kubectl"] + op_val
                     LOGGER.info(f"Running command {command}")
                     subprocess.run(command)
                 elif op_name == "sleep":

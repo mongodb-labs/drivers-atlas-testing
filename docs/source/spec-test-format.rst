@@ -180,12 +180,12 @@ Kubernetes. A *Kubernetes Test Scenario File* has the following keys:
 
   * ``kubectl``: Run a command using the `kubectl
     <https://kubernetes.io/docs/reference/kubectl/kubectl/>`_ command line tool.
-    The value MUST be a valid set of arguments for the ``kubectl`` command line
-    tool.
+    The value MUST be a valid array of arguments for the ``kubectl`` command line
+    tool. Note that the ``kubectl`` executable must be in the system PATH.
 
     Example::
 
-      kubectl: --namespace default delete pod mongodb-0
+      kubectl: [--namespace, default, delete, pod, mongodb-0]
 
   * ``sleep``: Do nothing for the specified duration. The value MUST be the
     duration to sleep for, in seconds.

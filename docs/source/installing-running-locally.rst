@@ -199,4 +199,4 @@ For example::
       run-one tests/kubernetes/kind/deletePod.yml \
       --workload-file workloads/reads.yml \
       --workload-executor integrations/$DRIVER_DIRNAME/workload-executor \
-      --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?ssl=true&tlsCertificateKeyFile=./mongodb_tls_cert.pem&tlsCAFile=./kubernetes/kind/rootCA.pem"
+      --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?ssl=true&tlsCertificateKeyFile=$(pwd)/mongodb_tls_cert.pem&tlsCAFile=$(pwd)/kubernetes/kind/rootCA.pem"

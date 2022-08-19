@@ -83,3 +83,5 @@ $KUBECTL --namespace default get secret mongodb-tls -o json | \
 # Sleep for 30 seconds to allow the Kubernetes operator to add the user to the database.
 # TODO: Find a better way to wait for the availability of the user than just sleeping.
 sleep 30
+
+echo "Kind cluster is ready!"

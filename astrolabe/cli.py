@@ -90,12 +90,6 @@ ONLYONFAILURE_FLAG = click.option(
     '--only-on-failure', is_flag=True, default=False,
     help=('Only retrieve logs if the test run failed.'))
 
-KUBECTL_PATH_OPTION = click.option(
-    '--kubectl-path',
-    help='Path to the kubectl binary.',
-    type=click.Path(),
-    default='kubectl')
-
 CONNECTION_STRING_OPTION = click.option(
     '--connection-string',
     help='Database connection string.',
@@ -659,14 +653,12 @@ def kubernetes_tests():
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
     required=True)
 @WORKLOADEXECUTOR_OPTION
-@KUBECTL_PATH_OPTION
 @CONNECTION_STRING_OPTION
 @XUNITOUTPUT_OPTION
 def run_kubernetes_test(
     spec_test_file,
     workload_file,
     workload_executor,
-    kubectl_path,
     connection_string,
     xunit_output):
     """
@@ -681,8 +673,7 @@ def run_kubernetes_test(
         spec_test_file=spec_test_file,
         workload_file=workload_file,
         workload_executor=workload_executor,
-        connection_string=connection_string,
-        kubectl_path=kubectl_path)
+        connection_string=connection_string)
     xunit_test = test.run()
 
     xunit_logger = SingleTestXUnitLogger(output_directory=xunit_output)

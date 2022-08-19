@@ -111,28 +111,42 @@ functions:
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe validate workload-executor -e integrations/${DRIVER_DIRNAME}/workload-executor --connection-string "mongodb://localhost:27017/?serverselectiontimeoutms=10000"
 
   "download kubernetes tools":
-    # Download all of the tools needed to interact with Kubernetes and Kind.
+    # Download all of the tools needed to interact with Kubernetes and Kind to the .bin directory.
     - command: shell.exec
       type: setup
       params:
         working_dir: astrolabe-src
         script: |
+          mkdir .bin && cd .bin
           CURL="curl -fsSL --max-time 20 --retry 5 --retry-delay 0 --retry-max-time 60"
           # Download kind.
-          $CURL -o ./kind https://kind.sigs.k8s.io/dl/v0.14.0/kind-linux-amd64
-          chmod +x ./kind
+          $CURL -o kind https://kind.sigs.k8s.io/dl/v0.14.0/kind-linux-amd64
+          chmod +x kind
           # Download helm.
           $CURL -O https://get.helm.sh/helm-v3.9.2-linux-amd64.tar.gz
           tar -zxvf helm-v3.9.2-linux-amd64.tar.gz --strip-components 1 linux-amd64/helm
           # Download kubectl.
           $CURL -O https://dl.k8s.io/release/v1.24.0/bin/linux/amd64/kubectl
-          chmod +x ./kubectl
+          chmod +x kubectl
           # Download cmctl.
           $CURL -O https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cmctl-linux-amd64.tar.gz
           tar -zxvf cmctl-linux-amd64.tar.gz cmctl
           # Download jq.
-          $CURL -o ./jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
-          chmod +x ./jq
+          $CURL -o jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+          chmod +x jq
+    # Add the .bin directory to the PATH for all tasks using expansions.
+    - command: shell.exec
+      params:
+        working_dir: astrolabe-src
+        script: |
+          cat <<EOT > expansion.yml
+          PATH: "$PATH:$(pwd)/.bin/"
+          EOT
+          # See what we variables we've set.
+          cat expansion.yml
+    - command: expansions.update
+      params:
+        file: astrolabe-src/expansion.yml
 
   "run atlas test":
     # Run the Atlas Planned Maintenance Test.
@@ -223,8 +237,9 @@ functions:
       type: setup
       params:
         working_dir: astrolabe-src
+        add_expansions_to_env: true
         script: |
-          KIND=./kind HELM=./helm KUBECTL=./kubectl CMCTL=./cmctl JQ=./jq ./kubernetes/kind/create.sh
+          ./kubernetes/kind/create.sh
 
   "run kind test":
     # Run a test using a Kind cluster.
@@ -234,17 +249,17 @@ functions:
         working_dir: astrolabe-src
         add_expansions_to_env: true
         script: |
-          # Copy the CA and TLS cert to the /tmp directory so we can use absolute paths in the
-          # connection string. Not all drivers evaluate relative paths from the same directory, so
-          # using the same relative path for all drivers is tricky.
-          cp ./kubernetes/kind/rootCA.pem /tmp/
-          cp ./mongodb_tls_cert.pem /tmp/
+          # Use absolute paths to the TLS cert and CA files in the connection string. Not all
+          # drivers evaluate relative paths in the connection string from the same directory, so
+          # using relative paths can be tricky. The "mongodb_tls_cert.pem" file is written by the
+          # "kubernetes/kind/create.sh" script.
+          CERT_PATH="$(pwd)/mongodb_tls_cert.pem"
+          CA_PATH="$(pwd)/kubernetes/kind/rootCA.pem"
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe kubernetes-tests \
             run-one ${TEST_FILE} \
             --workload-file ${WORKLOAD_FILE} \
             --workload-executor integrations/${DRIVER_DIRNAME}/workload-executor \
-            --kubectl-path ./kubectl \
-            --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?ssl=true&tlsCertificateKeyFile=/tmp/mongodb_tls_cert.pem&tlsCAFile=/tmp/rootCA.pem"
+            --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?ssl=true&tlsCertificateKeyFile=$CERT_PATH&tlsCAFile=$CA_PATH"
 
   "retrieve kind logs":
     - command: shell.exec
@@ -253,6 +268,8 @@ functions:
         working_dir: astrolabe-src
         add_expansions_to_env: true
         script: |
+          set -e
+
           # Only run after Kind tasks.
           if [ "${KIND}" != "true" ]; then
             echo "Skipping Kind logs download because it's not a Kind task."
@@ -260,7 +277,7 @@ functions:
           fi
 
           # Download the logs from all pods to corresponding .log files.
-          KUBECTL=./kubectl ./kubernetes/kind/download_logs.sh
+          ./kubernetes/kind/download_logs.sh
 
           # Then write all the log files to a gzip-compressed tarball named logs.tar.gz.
           tar -zcvf logs.tar.gz *.log
@@ -271,6 +288,7 @@ functions:
       type: setup
       params:
         working_dir: astrolabe-src
+        add_expansions_to_env: true
         script: |
           # Only run after Kind tasks.
           if [ "${KIND}" != "true" ]; then
@@ -278,7 +296,7 @@ functions:
             exit 0
           fi
 
-          KIND=./kind ./kubernetes/kind/delete.sh
+          ./kubernetes/kind/delete.sh
 
   "upload test results":
     # Evergreen fails tasks when the process exits with success but an xunit
@@ -706,7 +724,11 @@ buildvariants:
     runtime: ["java17"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - ".all"
+    # TODO(DRIVERS-2420): The Kind test runner currently expects drivers to be able to load TLS
+    # secrets from the files specified in the connection string, but the Java driver doesn't support
+    # that. Remove the "!.kind" filter when the Java workload executor is updated to support loading
+    # TLS secrets into a trust store so the Java driver can use them.
+    - ".all !.kind"
 - matrix_name: "tests-dotnet-windows"
   matrix_spec:
     driver: ["dotnet-master"]
