@@ -28,11 +28,11 @@ The create script will create a Kind cluster and start a 3-node MongoDB replica 
 
 To connect to the MongoDB cluster with ``mongosh``, run the following command::
 
-  $ mongosh \                                     
-    "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?ssl=true" \
+  $ mongosh \
+    "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin" \
     --tls \
-    --tlsCAFile ./kubernetes/kind/rootCA.pem \
-    --tlsCertificateKeyFile ./mongodb_tls_cert.pem
+    --tlsCAFile kubernetes/kind/rootCA.pem \
+    --tlsCertificateKeyFile mongodb_tls_cert.pem
 
 **Delete a Cluster**
 

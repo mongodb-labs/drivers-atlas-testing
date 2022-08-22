@@ -131,6 +131,9 @@ functions:
           # Download cmctl.
           $CURL -O https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cmctl-linux-amd64.tar.gz
           tar -zxvf cmctl-linux-amd64.tar.gz cmctl
+          # Download mongosh
+          $CURL -O https://downloads.mongodb.com/compass/mongosh-1.5.4-linux-x64.tgz
+          tar -zxvf mongosh-1.5.4-linux-x64.tgz --strip-components 2 mongosh-1.5.4-linux-x64/bin/mongosh
           # Download jq.
           $CURL -o jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
           chmod +x jq
@@ -259,7 +262,7 @@ functions:
             run-one ${TEST_FILE} \
             --workload-file ${WORKLOAD_FILE} \
             --workload-executor integrations/${DRIVER_DIRNAME}/workload-executor \
-            --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?ssl=true&tlsCertificateKeyFile=$CERT_PATH&tlsCAFile=$CA_PATH"
+            --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?tls=true&tlsCertificateKeyFile=$CERT_PATH&tlsCAFile=$CA_PATH"
 
   "retrieve kind logs":
     - command: shell.exec

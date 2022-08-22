@@ -25,6 +25,9 @@ is_binary_available $KUBECTL || (echo "Failed to find kubectl binary at '$KUBECT
 CMCTL=${CMCTL:-cmctl}
 is_binary_available $CMCTL || (echo "Failed to find cmctl binary at '$CMCTL'" && exit 1)
 
+MONGOSH=${MONGOSH:-mongosh}
+is_binary_available $MONGOSH || (echo "Failed to find mongosh binary at '$MONGOSH'" && exit 1)
+
 JQ=${JQ:-jq}
 is_binary_available $JQ || (echo "Failed to find jq binary at '$JQ'" && exit 1)
 
@@ -80,8 +83,14 @@ $KUBECTL --namespace default wait MongoDBCommunity/mongodb \
 $KUBECTL --namespace default get secret mongodb-tls -o json | \
     $JQ -r '.data."tls.crt", .data."tls.key" | @base64d' > mongodb_tls_cert.pem
 
-# Sleep for 30 seconds to allow the Kubernetes operator to add the user to the database.
-# TODO: Find a better way to wait for the availability of the user than just sleeping.
-sleep 30
+# After the MongoDB cluster transitions to the "Running" phase, the MongoDB Kubernetes Operator may
+# still not have added the user specified in the service definition. Try to connect and run an
+# authenticated command (show dbs) with the expected userinfo in a loop until it succeeds.
+CONN_STRING="mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?tls=true&tlsCertificateKeyFile=mongodb_tls_cert.pem&tlsCAFile=$SCRIPT_DIR/rootCA.pem"
+until $MONGOSH $CONN_STRING --eval "show dbs;"
+do
+    echo "Waiting 5 seconds for the user to be created..."
+    sleep 5
+done
 
 echo "Kind cluster is ready!"
