@@ -143,7 +143,7 @@ functions:
         working_dir: astrolabe-src
         script: |
           cat <<EOT > expansion.yml
-          PATH: "$PATH:$(pwd)/.bin/"
+          PATH: "$(pwd)/.bin:$PATH"
           EOT
           # See what we variables we've set.
           cat expansion.yml
@@ -264,6 +264,7 @@ functions:
             --workload-executor integrations/${DRIVER_DIRNAME}/workload-executor \
             --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?tls=true&tlsCertificateKeyFile=$CERT_PATH&tlsCAFile=$CA_PATH"
 
+  # TODO(DRIVERS-2424): Fix Kind logs retrieval.
   "retrieve kind logs":
     - command: shell.exec
       type: setup
@@ -374,7 +375,8 @@ pre:
 post:
   - func: "retrieve atlas logs"
   - func: "delete atlas cluster"
-  - func: "retrieve kind logs"
+  # TODO(DRIVERS-2424): Re-enable Kind logs retrieval.
+  # - func: "retrieve kind logs"
   - func: "delete kind cluster"
   - func: "upload test results"
   - func: "upload server logs"
