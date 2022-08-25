@@ -389,7 +389,9 @@ tasks:
     tags: ["all"]
     commands:
       - func: "validate executor"
+
   # Atlas test tasks
+  # ================
   # Use .evergreen/generate-tasks.sh to generate this list.
   - name: atlas-failure-read
     tags: ["all"]
@@ -504,8 +506,8 @@ tasks:
           TEST_NAME: retryWrites-toggleServerSideJS
           ATLAS: "true"
 
-  # Kind test tasks.
-  # ================
+  # Kind test tasks
+  # ===============
   - name: kind-reads-baseline
     tags: ["all", "kind"]
     commands:
