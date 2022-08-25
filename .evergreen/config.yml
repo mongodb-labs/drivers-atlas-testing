@@ -93,7 +93,65 @@ functions:
         command: |
           C:/cygwin/bin/sh integrations/${DRIVER_DIRNAME}/install-driver.sh
 
-  "run test":
+  "validate executor":
+    # Run a MongoDB instance locally.
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        script: |
+          sh .evergreen/run-mongodb.sh
+    # Validate the workload executor against the local MongoDB instance.
+    - command: subprocess.exec
+      type: test
+      params:
+        working_dir: astrolabe-src
+        add_expansions_to_env: true
+        command: |
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe validate workload-executor -e integrations/${DRIVER_DIRNAME}/workload-executor --connection-string "mongodb://localhost:27017/?serverselectiontimeoutms=10000"
+
+  "download kubernetes tools":
+    # Download all of the tools needed to interact with Kubernetes and Kind to the .bin directory.
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        script: |
+          mkdir .bin && cd .bin
+          CURL="curl -fsSL --max-time 20 --retry 5 --retry-delay 0 --retry-max-time 60"
+          # Download kind.
+          $CURL -o kind https://kind.sigs.k8s.io/dl/v0.14.0/kind-linux-amd64
+          chmod +x kind
+          # Download helm.
+          $CURL -O https://get.helm.sh/helm-v3.9.2-linux-amd64.tar.gz
+          tar -zxvf helm-v3.9.2-linux-amd64.tar.gz --strip-components 1 linux-amd64/helm
+          # Download kubectl.
+          $CURL -O https://dl.k8s.io/release/v1.24.0/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          # Download cmctl.
+          $CURL -O https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cmctl-linux-amd64.tar.gz
+          tar -zxvf cmctl-linux-amd64.tar.gz cmctl
+          # Download mongosh
+          $CURL -O https://downloads.mongodb.com/compass/mongosh-1.5.4-linux-x64.tgz
+          tar -zxvf mongosh-1.5.4-linux-x64.tgz --strip-components 2 mongosh-1.5.4-linux-x64/bin/mongosh
+          # Download jq.
+          $CURL -o jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+          chmod +x jq
+    # Add the .bin directory to the PATH for all tasks using expansions.
+    - command: shell.exec
+      params:
+        working_dir: astrolabe-src
+        script: |
+          cat <<EOT > expansion.yml
+          PATH: "$(pwd)/.bin:$PATH"
+          EOT
+          # See what we variables we've set.
+          cat expansion.yml
+    - command: expansions.update
+      params:
+        file: astrolabe-src/expansion.yml
+
+  "run atlas test":
     # Run the Atlas Planned Maintenance Test.
     - command: subprocess.exec
       type: test
@@ -112,7 +170,7 @@ functions:
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests run-one --no-delete tests/${TEST_NAME}.yml -e integrations/${DRIVER_DIRNAME}/workload-executor
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests run-one --no-delete tests/atlas/${TEST_NAME}.yml -e integrations/${DRIVER_DIRNAME}/workload-executor
     - command: subprocess.exec
       type: setup
       params:
@@ -128,44 +186,33 @@ functions:
         command: |
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe check-success
 
-  "retrieve server logs":
-    - command: subprocess.exec
-      type: setup
-      params:
-        working_dir: astrolabe-src
-        env:
-          ATLAS_PROJECT_NAME: ${project}
-          CLUSTER_NAME_SALT: ${build_id}
-          ATLAS_API_USERNAME: ${atlas_key}
-          ATLAS_API_PASSWORD: ${atlas_secret}
-          ATLAS_API_BASE_URL: ${atlas_url}
-          ATLAS_ORGANIZATION_ID: ${atlas_organization_id}
-          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
-          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
-        add_expansions_to_env: true
-        command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests get-logs --only-on-failure tests/${TEST_NAME}.yml
-
-  "validate executor":
-    # Run a MongoDB instance locally.
+  "retrieve atlas logs":
     - command: shell.exec
       type: setup
       params:
         working_dir: astrolabe-src
-        script: |
-          sh .evergreen/run-mongodb.sh
-    # Validate the workload executor against the local MongoDB instance.
-    - command: subprocess.exec
-      type: test
-      params:
-        working_dir: astrolabe-src
+        env:
+          ATLAS_PROJECT_NAME: ${project}
+          CLUSTER_NAME_SALT: ${build_id}
+          ATLAS_API_USERNAME: ${atlas_key}
+          ATLAS_API_PASSWORD: ${atlas_secret}
+          ATLAS_API_BASE_URL: ${atlas_url}
+          ATLAS_ORGANIZATION_ID: ${atlas_organization_id}
+          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
+          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
-        command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests validate-workload-executor -e integrations/${DRIVER_DIRNAME}/workload-executor --connection-string "mongodb://localhost:27017/?serverselectiontimeoutms=10000"
+        script: |
+          # Only run after Atlas tasks.
+          if [ "${ATLAS}" != "true" ]; then
+            echo "Skipping Atlas logs download because it's not a Atlas task."
+            exit 0
+          fi
 
-  "delete test cluster":
-    # Delete the cluster that was used to run the test.
-    - command: subprocess.exec
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests get-logs --only-on-failure tests/atlas/${TEST_NAME}.yml
+
+  "delete atlas cluster":
+    # Delete the Atlas cluster that was used to run the test.
+    - command: shell.exec
       type: setup
       params:
         working_dir: astrolabe-src
@@ -179,8 +226,81 @@ functions:
           ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
-        command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe spec-tests delete-cluster tests/${TEST_NAME}.yml
+        script: |
+          # Only run after Atlas tasks.
+          if [ "${ATLAS}" != "true" ]; then
+            echo "Skipping Atlas cluster cleanup because it's not a Atlas task."
+            exit 0
+          fi
+
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests delete-cluster tests/atlas/${TEST_NAME}.yml
+
+  "create kind cluster":
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        add_expansions_to_env: true
+        script: |
+          ./kubernetes/kind/create.sh
+
+  "run kind test":
+    # Run a test using a Kind cluster.
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: astrolabe-src
+        add_expansions_to_env: true
+        script: |
+          # Use absolute paths to the TLS cert and CA files in the connection string. Not all
+          # drivers evaluate relative paths in the connection string from the same directory, so
+          # using relative paths can be tricky. The "mongodb_tls_cert.pem" file is written by the
+          # "kubernetes/kind/create.sh" script.
+          CERT_PATH="$(pwd)/mongodb_tls_cert.pem"
+          CA_PATH="$(pwd)/kubernetes/kind/rootCA.pem"
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe kubernetes-tests \
+            run-one ${TEST_FILE} \
+            --workload-file ${WORKLOAD_FILE} \
+            --workload-executor integrations/${DRIVER_DIRNAME}/workload-executor \
+            --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?tls=true&tlsCertificateKeyFile=$CERT_PATH&tlsCAFile=$CA_PATH"
+
+  # TODO(DRIVERS-2424): Fix Kind logs retrieval.
+  "retrieve kind logs":
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        add_expansions_to_env: true
+        script: |
+          set -e
+
+          # Only run after Kind tasks.
+          if [ "${KIND}" != "true" ]; then
+            echo "Skipping Kind logs download because it's not a Kind task."
+            exit 0
+          fi
+
+          # Download the logs from all pods to corresponding .log files.
+          ./kubernetes/kind/download_logs.sh
+
+          # Then write all the log files to a gzip-compressed tarball named logs.tar.gz.
+          tar -zcvf logs.tar.gz *.log
+
+  "delete kind cluster":
+    # Delete the Kind cluster that was used for the test.
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        add_expansions_to_env: true
+        script: |
+          # Only run after Kind tasks.
+          if [ "${KIND}" != "true" ]; then
+            echo "Skipping Kind cluster cleanup because it's not a Kind task."
+            exit 0
+          fi
+
+          ./kubernetes/kind/delete.sh
 
   "upload test results":
     # Evergreen fails tasks when the process exits with success but an xunit
@@ -253,8 +373,11 @@ pre:
 
 # Functions to run after the test.
 post:
-  - func: "retrieve server logs"
-  - func: "delete test cluster"
+  - func: "retrieve atlas logs"
+  - func: "delete atlas cluster"
+  # TODO(DRIVERS-2424): Re-enable Kind logs retrieval.
+  # - func: "retrieve kind logs"
+  - func: "delete kind cluster"
   - func: "upload test results"
   - func: "upload server logs"
   - func: "upload event logs"
@@ -266,104 +389,155 @@ tasks:
     tags: ["all"]
     commands:
       - func: "validate executor"
-  # One test-case per task.
+
+  # Atlas test tasks
+  # ================
   # Use .evergreen/generate-tasks.sh to generate this list.
-  - name: failure-read
+  - name: atlas-failure-read
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: failure-read
-  - name: failure-write
+          ATLAS: "true"
+  - name: atlas-failure-write
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: failure-write
-  - name: retryReads-move-sharded
+          ATLAS: "true"
+  - name: atlas-retryReads-move-sharded
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-move-sharded
-  - name: retryReads-move
+          ATLAS: "true"
+  - name: atlas-retryReads-move
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-move
-  - name: retryReads-primaryRemoval
+          ATLAS: "true"
+  - name: atlas-retryReads-primaryRemoval
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-primaryRemoval
-  - name: retryReads-primaryTakeover
+          ATLAS: "true"
+  - name: atlas-retryReads-primaryTakeover
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-primaryTakeover
-  - name: retryReads-processRestart-sharded
+          ATLAS: "true"
+  - name: atlas-retryReads-processRestart-sharded
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-processRestart-sharded
-  - name: retryReads-processRestart
+          ATLAS: "true"
+  - name: atlas-retryReads-processRestart
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-processRestart
-  - name: retryReads-resizeCluster
+          ATLAS: "true"
+  - name: atlas-retryReads-resizeCluster
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-resizeCluster
-  - name: retryReads-testFailover-sharded
+          ATLAS: "true"
+  - name: atlas-retryReads-testFailover-sharded
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-testFailover-sharded
-  - name: retryReads-testFailover
+          ATLAS: "true"
+  - name: atlas-retryReads-testFailover
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-testFailover
-  - name: retryReads-toggleServerSideJS
+          ATLAS: "true"
+  - name: atlas-retryReads-toggleServerSideJS
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-toggleServerSideJS
-  - name: retryReads-vmRestart-sharded
+          ATLAS: "true"
+  - name: atlas-retryReads-vmRestart-sharded
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-vmRestart-sharded
-  - name: retryReads-vmRestart
+          ATLAS: "true"
+  - name: atlas-retryReads-vmRestart
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryReads-vmRestart
-  - name: retryWrites-resizeCluster
+          ATLAS: "true"
+  - name: atlas-retryWrites-resizeCluster
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryWrites-resizeCluster
-  - name: retryWrites-toggleServerSideJS
+          ATLAS: "true"
+  - name: atlas-retryWrites-toggleServerSideJS
     tags: ["all"]
     commands:
-      - func: "run test"
+      - func: "run atlas test"
         vars:
           TEST_NAME: retryWrites-toggleServerSideJS
+          ATLAS: "true"
+
+  # Kind test tasks
+  # ===============
+  - name: kind-reads-baseline
+    tags: ["all", "kind"]
+    commands:
+      - func: "download kubernetes tools"
+      - func: "create kind cluster"
+      - func: "run kind test"
+        vars:
+          WORKLOAD_FILE: workloads/reads.yml
+          TEST_FILE: tests/kubernetes/kind/baseline.yml
+          KIND: "true"
+  - name: kind-writes-baseline
+    tags: ["all", "kind"]
+    commands:
+      - func: "download kubernetes tools"
+      - func: "create kind cluster"
+      - func: "run kind test"
+        vars:
+          WORKLOAD_FILE: workloads/writes.yml
+          TEST_FILE: tests/kubernetes/kind/baseline.yml
+          KIND: "true"
+  - name: kind-retryReads-deletePod
+    tags: ["all", "kind"]
+    commands:
+      - func: "download kubernetes tools"
+      - func: "create kind cluster"
+      - func: "run kind test"
+        vars:
+          TEST_FILE: tests/kubernetes/kind/deletePod.yml
+          WORKLOAD_FILE: workloads/reads.yml
+          KIND: "true"
 
 axes:
   # The 'driver' axis specifies the driver to be tested (including driver version).
@@ -534,7 +708,8 @@ buildvariants:
     runtime: ["python37-windows"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - ".all"
+    # Kind tasks can't run on Windows, so exclude them.
+    - ".all !.kind"
 # TODO: re-enable language builds once workload executors have been
 # re-implemented to work with the new format
 #- matrix_name: tests-node
@@ -556,7 +731,11 @@ buildvariants:
     runtime: ["java17"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - ".all"
+    # TODO(DRIVERS-2420): The Kind test runner currently expects drivers to be able to load TLS
+    # secrets from the files specified in the connection string, but the Java driver doesn't support
+    # that. Remove the "!.kind" filter when the Java workload executor is updated to support loading
+    # TLS secrets into a trust store so the Java driver can use them.
+    - ".all !.kind"
 - matrix_name: "tests-dotnet-windows"
   matrix_spec:
     driver: ["dotnet-master"]
@@ -566,7 +745,8 @@ buildvariants:
       - "dotnet-sync-netcoreapp2.1"
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - ".all"
+    # Kind tasks can't run on Windows, so exclude them.
+    - ".all !.kind"
 - matrix_name: "tests-go"
   matrix_spec:
     driver: ["go-master"]
