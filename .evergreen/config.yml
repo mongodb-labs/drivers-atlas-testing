@@ -733,11 +733,7 @@ buildvariants:
     runtime: ["java17"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    # TODO(DRIVERS-2420): The Kind test runner currently expects drivers to be able to load TLS
-    # secrets from the files specified in the connection string, but the Java driver doesn't support
-    # that. Remove the "!.kind" filter when the Java workload executor is updated to support loading
-    # TLS secrets into a trust store so the Java driver can use them.
-    - ".all !.kind"
+    - ".all"
 - matrix_name: "tests-dotnet-windows"
   matrix_spec:
     driver: ["dotnet-master"]

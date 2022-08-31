@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -o xtrace
 set -o errexit
 
 workloadExecutorFile="/tmp/java-driver-workload-executor.json"
@@ -11,5 +12,37 @@ printf "%s" "$2" > "$workloadExecutorFile"
 
 OUTPUT_DIRECTORY=$PWD
 
-java -Xmx8g -jar -Dorg.mongodb.test.uri="$1" driver-workload-executor.jar $workloadExecutorFile $OUTPUT_DIRECTORY
+# The Java driver doesn't support the "tlsCAFile" connection string param, so if it's present, we
+# need to add that file to a truststore file and set JVM properties to use the truststore.
+CA_FILE=$(sed -En 's/.*tlsCAFile=([^&]+).*/\1/p' <<< "$1")
+if [ ! -z "$CA_FILE" ]; then
+    echo "Found tlsCAFile=$CA_FILE in connection string, adding CA to a trust store."
+    $JAVA_HOME/bin/keytool \
+        -import \
+        -keystore truststore.jks \
+        -trustcacerts \
+        -file "$CA_FILE" \
+        -storepass 123456 \
+        -noprompt
+    TRUSTSTORE_OPTS="-Djavax.net.ssl.trustStore=$(pwd)/truststore.jks -Djavax.net.ssl.trustStorePassword=123456"
+fi
 
+# The Java driver doesn't support the "tlsCertificateKeyFile" connection string param, so if it's
+# present, we need to add that file to a keystore file and set JVM properties to use the keystore.
+CERT_FILE=$(sed -En 's/.*tlsCertificateKeyFile=([^&]+).*/\1/p' <<< "$1")
+if [ ! -z "$CERT_FILE" ]; then
+    echo "Found tlsCertificateKeyFile=$CERT_FILE in connection string, adding cert to a key store."
+    $JAVA_HOME/bin/keytool \
+        -importcert \
+        -keystore keystore.jks \
+        -file "$CERT_FILE" \
+        -storepass 123456 \
+        -noprompt
+    KEYSTORE_OPTS="-Djavax.net.ssl.keyStore=$(pwd)/keystore.jks -Djavax.net.ssl.keyStorePassword=123456"
+fi
+
+$JAVA_HOME/bin/java -Xmx8g -jar \
+    -Dorg.mongodb.test.uri="$1" \
+    $TRUSTSTORE_OPTS \
+    $KEYSTORE_OPTS \
+    driver-workload-executor.jar $workloadExecutorFile $OUTPUT_DIRECTORY
