@@ -74,24 +74,18 @@ functions:
         working_dir: astrolabe-src
         command: |
           git clone --depth 1 --recurse-submodules --shallow-submodules --branch ${DRIVER_REVISION} ${DRIVER_REPOSITORY}
-    # Install driver on *nix platforms.
-    - command: subprocess.exec
+    # Run the install-driver.sh shell script.
+    - command: shell.exec
       type: setup
       params:
         working_dir: astrolabe-src
-        continue_on_err: true       # Because script may not exist OR platform may not be *nix.
         add_expansions_to_env: true
-        command: |
-          integrations/${DRIVER_DIRNAME}/install-driver.sh
-    # Install driver on Windows.
-    - command: subprocess.exec
-      type: setup
-      params:
-        working_dir: astrolabe-src
-        continue_on_err: true       # Because script may not exist OR platform may not be Windows.
-        add_expansions_to_env: true
-        command: |
-          C:/cygwin/bin/sh integrations/${DRIVER_DIRNAME}/install-driver.sh
+        script: |
+          if [ "Windows_NT" = "$OS" ]; then
+            C:/cygwin/bin/sh integrations/${DRIVER_DIRNAME}/install-driver.sh
+          else
+            ./integrations/${DRIVER_DIRNAME}/install-driver.sh
+          fi
 
   "validate executor":
     # Run a MongoDB instance locally.
@@ -252,17 +246,25 @@ functions:
         working_dir: astrolabe-src
         add_expansions_to_env: true
         script: |
-          # Use absolute paths to the TLS cert and CA files in the connection string. Not all
-          # drivers evaluate relative paths in the connection string from the same directory, so
-          # using relative paths can be tricky. The "mongodb_tls_cert.pem" file is written by the
-          # "kubernetes/kind/create.sh" script.
-          CERT_PATH="$(pwd)/mongodb_tls_cert.pem"
-          CA_PATH="$(pwd)/kubernetes/kind/rootCA.pem"
+          # If there is a KIND_CONNSTRING provided by the driver task, use that as the connection
+          # string. Otherwise, use the standard connection string that works for most drivers.
+          if [ ! -z "${KIND_CONNSTRING}" ]; then
+            CONNSTRING="${KIND_CONNSTRING}"
+          else
+            # Use absolute paths to the TLS cert and CA files in the connection string. Not all
+            # drivers evaluate relative paths in the connection string from the same directory, so
+            # using relative paths can be tricky. The "mongodb_tls_cert.pem" file is written by the
+            # "kubernetes/kind/create.sh" script.
+            CERT_PATH="$(pwd)/mongodb_tls_cert.pem"
+            CA_PATH="$(pwd)/kubernetes/kind/rootCA.pem"
+            CONNSTRING="mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?tls=true&tlsCertificateKeyFile=$CERT_PATH&tlsCAFile=$CA_PATH"
+          fi
+
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe kubernetes-tests \
             run-one ${TEST_FILE} \
             --workload-file ${WORKLOAD_FILE} \
             --workload-executor integrations/${DRIVER_DIRNAME}/workload-executor \
-            --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?tls=true&tlsCertificateKeyFile=$CERT_PATH&tlsCAFile=$CA_PATH"
+            --connection-string "$CONNSTRING"
 
   # TODO(DRIVERS-2424): Fix Kind logs retrieval.
   "retrieve kind logs":
@@ -579,12 +581,12 @@ axes:
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-csharp-driver"
           DRIVER_REVISION: "master"
           ASTROLABE_EXECUTOR_STARTUP_TIME: 40
-          DOTNET_CLI_HOME: "Z:/"
-          TMP: "Z:/"
-          TEMP: "Z:/"
-          NUGET_PACKAGES: "Z:/"
-          NUGET_HTTP_CACHE_PATH: "Z:/"
-          APPDATA: "Z:/"
+          # The .NET driver currently doesn't support loading TLS and CA certs from connection
+          # string params, so override the standard Kind connection string with one that uses
+          # "tlsInsecure=true" to ignore the validity of the custom CA and TLS certs that the Kind
+          # clusters use.
+          # TODO(DRIVERS-2428): Update .NET workload executor in Astrolabe to support TLS secrets.
+          KIND_CONNSTRING: "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?tls=true&tlsInsecure=true"
       - id: go-master
         display_name: "Go (master)"
         variables:
@@ -747,6 +749,17 @@ buildvariants:
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
     - ".all !.kind"
+- matrix_name: "tests-dotnet-linux"
+  matrix_spec:
+    driver: ["dotnet-master"]
+    platform: ["ubuntu-18.04"]
+    runtime:
+      - "dotnet-async-netcoreapp2.1"
+      - "dotnet-sync-netcoreapp2.1"
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    # Only run the Kind tasks for the .NET driver on Linux.
+    - ".kind"
 - matrix_name: "tests-go"
   matrix_spec:
     driver: ["go-master"]
