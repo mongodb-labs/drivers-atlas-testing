@@ -13,28 +13,29 @@
 # limitations under the License.
 
 import logging
-from pprint import pprint
-import unittest
-from urllib.parse import unquote_plus
 import os
+import unittest
+from pprint import pprint
+from urllib.parse import unquote_plus
 
 import click
+from atlasclient import AtlasApiBaseError, AtlasApiError, AtlasClient
+from atlasclient.exceptions import AtlasClientError
 
 import astrolabe.commands as cmd
-from atlasclient import AtlasClient, AtlasApiBaseError
-from astrolabe.docgen import (
-    generate_configuration_help, tabulate_astrolabe_configuration,
-    tabulate_client_configuration)
 from astrolabe.atlas_runner import MultiTestRunner, SingleTestRunner
-from astrolabe.configuration import (
-    CONFIGURATION_OPTIONS as CONFIGOPTS, TestCaseConfiguration)
-from astrolabe.utils import (
-    require_requests_ipv4, get_logs,
-    create_click_option, get_cluster_name, get_test_name_from_spec_file,
-    ClickLogHandler, SingleTestXUnitLogger)
-from astrolabe.validator import validator_factory
+from astrolabe.configuration import CONFIGURATION_OPTIONS as CONFIGOPTS
+from astrolabe.configuration import TestCaseConfiguration
+from astrolabe.docgen import (generate_configuration_help,
+                              tabulate_astrolabe_configuration,
+                              tabulate_client_configuration)
+from astrolabe.exceptions import PollingTimeoutError
 from astrolabe.kubernetes_runner import KubernetesTest
-
+from astrolabe.utils import (ClickLogHandler, SingleTestXUnitLogger,
+                             create_click_option, get_cluster_name, get_logs,
+                             get_test_name_from_spec_file,
+                             require_requests_ipv4)
+from astrolabe.validator import validator_factory
 
 LOGGER = logging.getLogger(__name__)
 
@@ -484,22 +485,48 @@ def run_atlas_test(ctx, spec_test_file, workload_executor,
     if os.path.exists('status'):
         os.unlink('status')
 
-    # Step-1: create the Test-Runner.
-    runner = SingleTestRunner(client=ctx.obj.client,
-        admin_client=ctx.obj.admin_client,
-                              test_locator_token=spec_test_file,
-                              configuration=config,
-                              xunit_output=xunit_output,
-                              persist_clusters=no_delete,
-                              no_create=no_create,
-                              workload_startup_time=startup_time)
+    # Initialize the test runner. The test runner constructor performs a bunch of the Atlas setup
+    # and can raise exceptions due to Atlas cluster provisioning problems. Treat any exception that
+    # happens while initializing the test runner as a "cloud-failure" and not a driver failure.
+    try:
+        runner = SingleTestRunner(
+            client=ctx.obj.client,
+            admin_client=ctx.obj.admin_client,
+            test_locator_token=spec_test_file,
+            configuration=config,
+            xunit_output=xunit_output,
+            persist_clusters=no_delete,
+            no_create=no_create,
+            workload_startup_time=startup_time,
+        )
+    except Exception as exc:
+        with open('status', 'w') as fp:
+            fp.write('cloud-failure')
+        raise
 
-    # Step-2: run the tests.
-    failed = runner.run()
+    # Run the test. The test runner can raise exceptions due to both Atlas cluster provisioning
+    # problems and due to driver failures. Treat specific exceptions that happen while running the
+    # test as a "cloud-failure" and all other exceptions as a driver failure.
+    try:
+        failed = runner.run()
+    except (PollingTimeoutError, AtlasApiError):
+        with open('status', 'w') as fp:
+            fp.write('cloud-failure')
+        raise
+    except AtlasClientError as exc:
+        # Intermittent atlas problem, see DRIVERS-2012.
+        if 'Max retries exceeded' in str(exc):
+            with open('status', 'w') as fp:
+                fp.write('cloud-failure')
+        raise
 
     if failed:
+        with open('status', 'w') as fp:
+            fp.write('failure')
         exit(1)
     else:
+        with open('status', 'w') as fp:
+            fp.write('success')
         exit(0)
 
 

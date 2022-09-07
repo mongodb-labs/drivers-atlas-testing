@@ -283,16 +283,10 @@ class AtlasTestCase:
                 self.failed = True
                 # Write xunit logs for failed tests.
                 junit_test.result = junitparser.Failure(str(stats))
-                
-                with open('status', 'w') as fp:
-                    fp.write('failure')
             else:
                 LOGGER.info("SUCCEEDED: {!r}".format(self.id))
                 # Directly log output of successful tests as xunit output
                 # is only visible for failed tests.
-                
-                with open('status', 'w') as fp:
-                    fp.write('success')
 
             LOGGER.info("Workload Statistics: {}".format(stats))
             
@@ -476,20 +470,6 @@ class SpecTestRunnerBase:
             tablefmt="rst"))
 
     def run(self):
-        try:
-            return self.do_run()
-        except (PollingTimeoutError, AtlasApiError):
-            with open('status', 'w') as fp:
-                fp.write('cloud-failure')
-            raise
-        except AtlasClientError as exc:
-            # Intermittent atlas problem, see DRIVERS-2012.
-            if 'Max retries exceeded' in str(exc):
-                with open('status', 'w') as fp:
-                    fp.write('cloud-failure')
-            raise
-
-    def do_run(self):
         # Step-0: sentinel flag to track failure/success.
         all_ok = True
 
@@ -527,12 +507,6 @@ class SpecTestRunnerBase:
                 all_ok = False
 
             print('done: %s, %s, %s' % (active_case.failed,ok,all_ok))
-                
-        with open('status', 'w') as fp:
-            if all_ok:
-                fp.write('success')
-            else:
-                fp.write('failure')
 
         return not all_ok
 
