@@ -1,0 +1,12 @@
+# Upgrade the MongoDB server version from 5.0.8 to 5.0.12. That will cause a rolling deploy where
+# each pod is terminated and recreated with the new server version. This process typically takes
+# between 5 and 10 minutes for a 3-node replica set.
+# This test case is used to assert that reads and writes can continue when a rolling deploy of the
+# MongoDB replica set happens.
+operations:
+  - kubectl: [--namespace, default, patch, MongoDBCommunity, mongodb, --type=merge, -p, '{"spec":{"version":"5.0.12"}}']
+  # It can take a few seconds for the MongoDBCommunity resource to switch from "Running" back to
+  # "Pending" after patching the resource, so sleep for 10 seconds before checking the status.
+  - sleep: 10
+  - kubectl: [--namespace, default, wait, MongoDBCommunity/mongodb, --for, "jsonpath={.status.phase}=Running", --timeout=15m]
+  - sleep: 5
