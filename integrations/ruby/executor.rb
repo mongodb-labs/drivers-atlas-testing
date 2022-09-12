@@ -23,7 +23,7 @@ class Executor
     set_signal_handler
     begin
       unified_tests.each do |test|
-        test.create_entities
+        test.create_spec_entities
         test.set_initial_data
         @test_running = true
         begin
