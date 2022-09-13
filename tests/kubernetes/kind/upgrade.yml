@@ -4,6 +4,9 @@
 # This test case is used to assert that reads and writes can continue when a rolling deploy of the
 # MongoDB replica set happens.
 operations:
+  # Note that this server version upgrade command assumes that the "mongodb" cluster is created with
+  # server version 5.0.8, which is defined in "kubernetes/kind/mongodb.yml". If the server version in
+  # that config file changes, this upgrade version must be updated as well.
   - kubectl: [--namespace, default, patch, MongoDBCommunity, mongodb, --type=merge, -p, '{"spec":{"version":"5.0.12"}}']
   # It can take a few seconds for the MongoDBCommunity resource to switch from "Running" back to
   # "Pending" after patching the resource, so sleep for 10 seconds before checking the status.

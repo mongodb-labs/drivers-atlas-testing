@@ -18,6 +18,9 @@ metadata:
 spec:
   members: 3
   type: ReplicaSet
+  # Note that the "upgrade" Kind test scenario depends on the server version here being 5.0.8. If we
+  # update the server version here, we must also update the server version used in the "patch"
+  # command in "tests/kubernetes/kind/upgrade.yml".
   version: "5.0.8"
   replicaSetHorizons:
   - local: localhost:31181
