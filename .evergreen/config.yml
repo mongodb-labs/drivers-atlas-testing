@@ -540,6 +540,26 @@ tasks:
           TEST_FILE: tests/kubernetes/kind/deletePod.yml
           WORKLOAD_FILE: workloads/reads.yml
           KIND: "true"
+  - name: kind-retryReads-upgrade
+    tags: ["all", "kind"]
+    commands:
+      - func: "download kubernetes tools"
+      - func: "create kind cluster"
+      - func: "run kind test"
+        vars:
+          TEST_FILE: tests/kubernetes/kind/upgrade.yml
+          WORKLOAD_FILE: workloads/reads.yml
+          KIND: "true"
+  - name: kind-retryWrites-upgrade
+    tags: ["all", "kind"]
+    commands:
+      - func: "download kubernetes tools"
+      - func: "create kind cluster"
+      - func: "run kind test"
+        vars:
+          TEST_FILE: tests/kubernetes/kind/upgrade.yml
+          WORKLOAD_FILE: workloads/writes.yml
+          KIND: "true"
 
 axes:
   # The 'driver' axis specifies the driver to be tested (including driver version).

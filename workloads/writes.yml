@@ -42,7 +42,14 @@ tests:
           storeIterationsAsEntity: iterations
           storeSuccessesAsEntity: successes
           operations:
-          - name: insertOne
-            object: *collection0
-            arguments:
-              document: { data: 100 }
+            - name: insertOne
+              object: *collection0
+              arguments:
+                document: { data: 100 }
+            # Introduce some latency in the insert loop to prevent the number of recorded events
+            # from becoming too large, especially for local Kind deployments that have a very short
+            # round trip time.
+            - name: find
+              object: *collection0
+              arguments:
+                filter: { $where: 'sleep(50)' }
