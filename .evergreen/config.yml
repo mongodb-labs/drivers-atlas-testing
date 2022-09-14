@@ -732,8 +732,8 @@ buildvariants:
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
     - ".all !.kind"
-# TODO: re-enable language builds once workload executors have been
-# re-implemented to work with the new format
+# TODO(NODE-3049): Re-enable Node builds once the Node driver and/or workload executor have been
+# updated to be able to run the new unified-format tests.
 #- matrix_name: tests-node
 #  matrix_spec:
 #    driver:
