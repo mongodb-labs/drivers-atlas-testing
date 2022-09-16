@@ -128,12 +128,19 @@ Running Tests
 
 The ``atlas-tests`` command-group is used for Atlas Planned Maintenance (APM) tests. To run a single APM test, do::
 
-  $ astrolabe atlas-tests run-one <path/to/test-file.yml> -e <path/to/workload-executor> --project-name <atlasProjectName> --cluster-name-salt <randomString>
+  $ astrolabe atlas-tests \
+      run-one <path/to/test-file.yml> \
+      --workload-file <path/to/workload-file.yml> \
+      --workload-executor <path/to/workload-executor> \
+      --project-name <atlasProjectName> \
+      --cluster-name-salt <randomString>
 
 where:
 
 * ``<path/to/test-file.yml>`` is the absolute or relative path to a test scenario file in the
-  :ref:`atlas-test-scenario-format`,
+  :ref:`atlas-test-scenario` format,
+* ``<path/to/workload-file.yml>`` is the absolute or relative path to a workload file in the
+  :ref:`kubernetes-test-scenario` format,
 * ``<path/to/workload-executor>`` is the absolute or relative path to the workload executor of the driver to be tested,
 * ``<atlasProjectName>`` is the name of the Atlas Project under which the test cluster used for the test will be created,
 * ``<randomString>`` is a string that is used as salt while generating the randomized character string that will be
@@ -179,16 +186,16 @@ The ``kubernetes-tests`` command-group is used for Kubernetes tests. To run a si
 
   $ astrolabe kubernetes-tests \
       run-one <path/to/test-file.yml> \
-      --workload-file <path/to/workload-file.yml>
+      --workload-file <path/to/workload-file.yml> \
       --workload-executor <path/to/workload-executor> \
       --connection-string <mongodbConnectionString>
 
 where:
 
 * ``<path/to/test-file.yml>`` is the absolute or relative path to a Kubernetes test scenario file in the
-  :ref:`kubernetes-test-scenario-format`,
+  :ref:`kubernetes-test-scenario` format,
 * ``<path/to/workload-file.yml>`` is the absolute or relative path to a workload file in the
-  :ref:`kubernetes-test-scenario-format`,
+  :ref:`kubernetes-test-scenario` format,
 * ``<path/to/workload-executor>`` is the absolute or relative path to the workload executor of the driver to be tested,
 * ``<mongodbConnectionString>`` is the connection string
 
@@ -197,6 +204,6 @@ For example::
   $ DRIVER_DIRNAME=go \
       astrolabe kubernetes-tests \
       run-one tests/kubernetes/kind/deletePod.yml \
-      --workload-file workloads/reads.yml \
+      --workload-file workloads/retryReads.yml \
       --workload-executor integrations/$DRIVER_DIRNAME/workload-executor \
       --connection-string "mongodb://user:12345@localhost:31181,localhost:31182,localhost:31183/admin?tls=true&tlsCertificateKeyFile=$(pwd)/mongodb_tls_cert.pem&tlsCAFile=$(pwd)/kubernetes/kind/rootCA.pem"

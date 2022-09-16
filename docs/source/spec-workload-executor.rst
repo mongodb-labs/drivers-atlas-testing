@@ -25,8 +25,7 @@ where:
 * ``connection-string`` is ``mongodb+srv`` which may contain any of the
   `standardized URI options <https://github.com/mongodb/specifications/blob/master/source/uri-options/uri-options.rst>`_
   that is to be used to connect to the Atlas cluster, and
-* ``workload-spec`` is a JSON blob representation of the ``driverWorkload`` field from the
-  :ref:`atlas-test-scenario-format`.
+* ``workload-spec`` is a JSON blob representation of the driver workload YAML file.
 
 .. note:: Some languages might find it convenient to wrap their natively implemented workload executors in a shell
    script in order to conform to the user-facing API described here. See :ref:`wrapping-workload-executor-shell-script`
@@ -44,8 +43,8 @@ After accepting the inputs, the workload executor:
    * MUST NOT override any of the URI options specified in the incoming connection string.
    * MUST NOT augment the incoming connection string with any additional URI options.
 
-#. MUST parse the incoming ``driverWorkload`` document and set up
-    the driver's unified test runner to execute the provided workload.
+#. MUST parse the incoming driver workload spec document and set up the driver's
+  unified test runner to execute the provided workload.
 
    .. note::
 
@@ -207,7 +206,7 @@ Pseudocode Implementation
      * JSON blob describing the driver workload. This function will be invoked
      * with arguments parsed from the command-line invocation of the workload
      * executor script. */
-    function workloadRunner(connectionString: string, driverWorkload: object): void {
+    function workloadRunner(connectionString: string, workload: object): void {
 
         # Use the driver's unified test runner to run the workload
         const runner = UnifiedTestRunner(connectionString);

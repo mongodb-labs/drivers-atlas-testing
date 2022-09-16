@@ -1,0 +1,14 @@
+initialConfiguration:
+  clusterConfiguration:
+    clusterType: REPLICASET
+    providerSettings:
+      providerName: AWS
+      regionName: US_WEST_1
+      instanceSizeName: M10
+  processArgs: {}
+
+operations:
+  - setClusterConfiguration:
+      clusterConfiguration: {}
+      processArgs:
+        javascriptEnabled: true

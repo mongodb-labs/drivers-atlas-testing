@@ -1,11 +1,11 @@
-# Runs "insert" in a loop with "retryWrites" enabled and collects events.
+# Runs "insert" in a loop with "retryWrites" disabled and collects events.
 description: "Insert"
 schemaVersion: "1.2"
 createEntities:
   - client:
       id: &client0 client0
       uriOptions:
-        retryWrites: true
+        retryWrites: false
       storeEventsAsEntities:
         - id: events
           events:
@@ -46,10 +46,3 @@ tests:
               object: *collection0
               arguments:
                 document: { data: 100 }
-            # Introduce some latency in the insert loop to prevent the number of recorded events
-            # from becoming too large, especially for local Kind deployments that have a very short
-            # round trip time.
-            - name: find
-              object: *collection0
-              arguments:
-                filter: { $where: 'sleep(50)' }
