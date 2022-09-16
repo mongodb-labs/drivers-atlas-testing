@@ -238,6 +238,9 @@ functions:
         script: |
           ./kubernetes/kind/create.sh
 
+  # Note that "run kind test" must be run in the same task as the "create kind cluster" function
+  # because Evergreen cleans up processes and Docker state changes between tasks (except in task
+  # groups where "share_processes=true").
   "run kind test":
     # Run a test using a Kind cluster.
     - command: shell.exec
@@ -266,7 +269,9 @@ functions:
             --workload-executor integrations/${DRIVER_DIRNAME}/workload-executor \
             --connection-string "$CONNSTRING"
 
-  # TODO(DRIVERS-2424): Fix Kind logs retrieval.
+  # Note that "retrieve kind logs" must be run in the same task as the "create kind cluster"
+  # function because Evergreen cleans up processes and Docker state changes between tasks (except in
+  # task groups where "share_processes=true").
   "retrieve kind logs":
     - command: shell.exec
       type: setup
@@ -276,18 +281,15 @@ functions:
         script: |
           set -e
 
-          # Only run after Kind tasks.
-          if [ "${KIND}" != "true" ]; then
-            echo "Skipping Kind logs download because it's not a Kind task."
-            exit 0
-          fi
-
           # Download the logs from all pods to corresponding .log files.
           ./kubernetes/kind/download_logs.sh
 
           # Then write all the log files to a gzip-compressed tarball named logs.tar.gz.
           tar -zcvf logs.tar.gz *.log
 
+  # Note that "delete kind cluster" must be run in the same task as the "create kind cluster"
+  # function because Evergreen cleans up processes and Docker state changes between tasks (except in
+  # task groups where "share_processes=true").
   "delete kind cluster":
     # Delete the Kind cluster that was used for the test.
     - command: shell.exec
@@ -296,12 +298,6 @@ functions:
         working_dir: astrolabe-src
         add_expansions_to_env: true
         script: |
-          # Only run after Kind tasks.
-          if [ "${KIND}" != "true" ]; then
-            echo "Skipping Kind cluster cleanup because it's not a Kind task."
-            exit 0
-          fi
-
           ./kubernetes/kind/delete.sh
 
   "upload test results":
@@ -377,9 +373,6 @@ pre:
 post:
   - func: "retrieve atlas logs"
   - func: "delete atlas cluster"
-  # TODO(DRIVERS-2424): Re-enable Kind logs retrieval.
-  # - func: "retrieve kind logs"
-  - func: "delete kind cluster"
   - func: "upload test results"
   - func: "upload server logs"
   - func: "upload event logs"
@@ -519,7 +512,8 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/reads.yml
           TEST_FILE: tests/kubernetes/kind/baseline.yml
-          KIND: "true"
+      - func: "retrieve kind logs"
+      - func: "delete kind cluster"
   - name: kind-writes-baseline
     tags: ["all", "kind"]
     commands:
@@ -529,7 +523,8 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/writes.yml
           TEST_FILE: tests/kubernetes/kind/baseline.yml
-          KIND: "true"
+      - func: "retrieve kind logs"
+      - func: "delete kind cluster"
   - name: kind-retryReads-deletePod
     tags: ["all", "kind"]
     commands:
@@ -539,7 +534,8 @@ tasks:
         vars:
           TEST_FILE: tests/kubernetes/kind/deletePod.yml
           WORKLOAD_FILE: workloads/reads.yml
-          KIND: "true"
+      - func: "retrieve kind logs"
+      - func: "delete kind cluster"
   - name: kind-retryReads-upgrade
     tags: ["all", "kind"]
     commands:
@@ -549,7 +545,8 @@ tasks:
         vars:
           TEST_FILE: tests/kubernetes/kind/upgrade.yml
           WORKLOAD_FILE: workloads/reads.yml
-          KIND: "true"
+      - func: "retrieve kind logs"
+      - func: "delete kind cluster"
   - name: kind-retryWrites-upgrade
     tags: ["all", "kind"]
     commands:
@@ -559,7 +556,8 @@ tasks:
         vars:
           TEST_FILE: tests/kubernetes/kind/upgrade.yml
           WORKLOAD_FILE: workloads/writes.yml
-          KIND: "true"
+      - func: "retrieve kind logs"
+      - func: "delete kind cluster"
 
 axes:
   # The 'driver' axis specifies the driver to be tested (including driver version).
