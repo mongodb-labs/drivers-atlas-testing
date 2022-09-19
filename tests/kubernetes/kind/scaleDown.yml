@@ -1,0 +1,14 @@
+# Scale down the MongoDB replica set from 3 nodes to 1 node.
+# This test case is used to assert that reads and writes can continue when a scale-down operation
+# happens.
+operations:
+  # Note that this scale-down command assumes that the "mongodb" cluster is created with 3 replica
+  # set nodes, which is defined by the "members" value in "kubernetes/kind/mongodb.yml". If the
+  # number of replica set nodes in that config file changes, this scale-down command must be updated
+  # as well.
+  - kubectl: [--namespace, default, patch, MongoDBCommunity, mongodb, --type=merge, -p, '{"spec":{"members":1}}']
+  # It can take a few seconds for the MongoDBCommunity resource to switch from "Running" back to
+  # "Pending" after patching the resource, so sleep for 10 seconds before checking the status.
+  - sleep: 10
+  - kubectl: [--namespace, default, wait, MongoDBCommunity/mongodb, --for, "jsonpath={.status.phase}=Running", --timeout=15m]
+  - sleep: 5

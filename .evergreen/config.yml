@@ -558,6 +558,28 @@ tasks:
           WORKLOAD_FILE: workloads/writes.yml
       - func: "retrieve kind logs"
       - func: "delete kind cluster"
+  - name: kind-retryReads-scaleDown
+    tags: ["all", "kind"]
+    commands:
+      - func: "download kubernetes tools"
+      - func: "create kind cluster"
+      - func: "run kind test"
+        vars:
+          TEST_FILE: tests/kubernetes/kind/scaleDown.yml
+          WORKLOAD_FILE: workloads/reads.yml
+      - func: "retrieve kind logs"
+      - func: "delete kind cluster"
+  - name: kind-retryWrites-scaleDown
+    tags: ["all", "kind"]
+    commands:
+      - func: "download kubernetes tools"
+      - func: "create kind cluster"
+      - func: "run kind test"
+        vars:
+          TEST_FILE: tests/kubernetes/kind/scaleDown.yml
+          WORKLOAD_FILE: workloads/writes.yml
+      - func: "retrieve kind logs"
+      - func: "delete kind cluster"
 
 axes:
   # The 'driver' axis specifies the driver to be tested (including driver version).
