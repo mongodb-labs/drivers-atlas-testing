@@ -44,8 +44,7 @@ if spec.nil? && !options[:scenario_path]
 end
 
 if options[:scenario_path]
-  scenario = YAML.load(File.read(options[:scenario_path]))
-  spec = scenario.fetch('driverWorkload')
+  spec = YAML.load(File.read(options[:scenario_path]))
 else
   spec = JSON.load(spec)
 end

@@ -138,11 +138,13 @@ class SingleTestXUnitLogger:
         xml.write(xml_path)
 
 
-def get_test_name_from_spec_file(full_path):
-    """Generate test name from a spec test file."""
-    _, filename = os.path.split(full_path)
-    test_name = os.path.splitext(filename)[0].replace('-', '_')
-    return test_name
+def get_test_name(spec_test_file, workload_file):
+    """
+    Generate test name from a spec test file and workload file.
+    
+    The test name is "{spec test filename}-{workload filename}".
+    """
+    return f"{os.path.basename(spec_test_file)}-{os.path.basename(workload_file)}"
 
 
 def get_cluster_name(test_name, name_salt):

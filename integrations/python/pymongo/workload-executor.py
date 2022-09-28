@@ -74,12 +74,11 @@ if __name__ == '__main__':
     try:
         workload_spec = json.loads(driver_workload)
     except json.decoder.JSONDecodeError:
-        # We also support passing in a raw test YAML file to this
+        # We also support passing in a raw workload YAML file to this
         # script to make it easy to run the script in debug mode.
         # PyYAML is imported locally to avoid ImportErrors on EVG.
         import yaml
         with open(driver_workload, 'r') as fp:
-            testspec = yaml.load(fp, Loader=yaml.FullLoader)
-            workload_spec = testspec['driverWorkload']
+            workload_spec = yaml.load(fp, Loader=yaml.FullLoader)
 
     workload_runner(connection_string, workload_spec)

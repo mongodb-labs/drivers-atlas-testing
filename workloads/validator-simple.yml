@@ -1,11 +1,10 @@
-# Runs "find" in a loop with "retryReads" disabled and collects events.
-description: "Find"
+description: "Validator - simple"
+
 schemaVersion: "1.2"
+
 createEntities:
   - client:
       id: &client0 client0
-      uriOptions:
-        retryReads: false
       storeEventsAsEntities:
         - id: events
           events:
@@ -36,27 +35,28 @@ initialData:
   - collectionName: *collection0Name
     databaseName: *database0Name
     documents:
-      - {_id: 1, x: 11}
-      - {_id: 2, x: 22}
-      - {_id: 3, x: 33}
+      - _id: validation_sentinel
+        count: 0
 
 tests:
-  - description: "Find one"
+  - description: "updateOne"
     operations:
       - name: loop
         object: testRunner
         arguments:
-          storeErrorsAsEntity: errors
           storeIterationsAsEntity: iterations
           storeSuccessesAsEntity: successes
           operations:
+            # Reduce number of events produced
             - name: find
               object: *collection0
               arguments:
-                filter: { _id: { $gt: 1 }}
-                sort: { _id: 1 }
-              expectResult:
-                - _id: 2
-                  x: 22
-                - _id: 3
-                  x: 33
+                filter: { $where: 'sleep(250)' }
+            
+            - name: updateOne
+              object: *collection0
+              arguments:
+                filter: { _id: validation_sentinel}
+                update: 
+                  $inc:
+                    count: 1

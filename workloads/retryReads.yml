@@ -1,11 +1,11 @@
-# Runs "find" in a loop with "retryReads" disabled and collects events.
+# Runs "find" in a loop with "retryReads" enabled and collects events.
 description: "Find"
 schemaVersion: "1.2"
 createEntities:
   - client:
       id: &client0 client0
       uriOptions:
-        retryReads: false
+        retryReads: true
       storeEventsAsEntities:
         - id: events
           events:
@@ -60,3 +60,10 @@ tests:
                   x: 22
                 - _id: 3
                   x: 33
+            # Introduce some latency in the find loop to prevent the number of recorded events from
+            # becoming too large, especially for local Kind deployments that have a very short round
+            # trip time.
+            - name: find
+              object: *collection0
+              arguments:
+                filter: { $where: 'sleep(25)' }

@@ -33,7 +33,7 @@ from astrolabe.exceptions import PollingTimeoutError
 from astrolabe.kubernetes_runner import KubernetesTest
 from astrolabe.utils import (ClickLogHandler, SingleTestXUnitLogger,
                              create_click_option, get_cluster_name, get_logs,
-                             get_test_name_from_spec_file,
+                             get_test_name,
                              require_requests_ipv4)
 from astrolabe.validator import validator_factory
 
@@ -69,6 +69,12 @@ WORKLOADEXECUTOR_OPTION = click.option(
     '-e', '--workload-executor', required=True, type=click.Path(
         exists=True, file_okay=True, dir_okay=False, resolve_path=True),
     help='Absolute or relative path to the workload-executor.')
+
+WORKLOAD_FILE_OPTION = click.option(
+    '--workload-file',
+    help='Path to the unified test format workload file.',
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    required=True)
 
 XUNITOUTPUT_OPTION = click.option(
     '--xunit-output', type=click.STRING, default="xunit-output",
@@ -446,6 +452,7 @@ def atlas_tests():
 @atlas_tests.command('run-one')
 @click.argument("spec_test_file", type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
+@WORKLOAD_FILE_OPTION
 @WORKLOADEXECUTOR_OPTION
 @DBUSERNAME_OPTION
 @DBPASSWORD_OPTION
@@ -460,14 +467,15 @@ def atlas_tests():
 @NOCREATE_FLAG
 @EXECUTORSTARTUPTIME_OPTION
 @click.pass_context
-def run_atlas_test(ctx, spec_test_file, workload_executor,
+def run_atlas_test(ctx, spec_test_file, workload_file, workload_executor,
                     db_username, db_password, org_name, org_id, project_name,
                     cluster_name_salt, polling_timeout, polling_frequency,
                     xunit_output, no_delete, no_create, startup_time):
     """
     Runs one APM test.
     This is the main entry point for running APM tests in headless environments.
-    This command runs the test found in the SPEC_TEST_FILE.
+    This command runs the test scenario from the spec test file and the driver
+    workload from the workload file.
     """
     # Step-0: construct test configuration object and log configuration.
     config = TestCaseConfiguration(
@@ -493,6 +501,7 @@ def run_atlas_test(ctx, spec_test_file, workload_executor,
             client=ctx.obj.client,
             admin_client=ctx.obj.admin_client,
             test_locator_token=spec_test_file,
+            workload_file=workload_file,
             configuration=config,
             xunit_output=xunit_output,
             persist_clusters=no_delete,
@@ -533,6 +542,7 @@ def run_atlas_test(ctx, spec_test_file, workload_executor,
 @atlas_tests.command('get-logs')
 @click.argument("spec_test_file", type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
+@WORKLOAD_FILE_OPTION
 @ATLASORGANIZATIONID_OPTION
 @ATLASPROJECTNAME_OPTION
 @CLUSTERNAMESALT_OPTION
@@ -540,7 +550,7 @@ def run_atlas_test(ctx, spec_test_file, workload_executor,
 @POLLINGFREQUENCY_OPTION
 @ONLYONFAILURE_FLAG
 @click.pass_context
-def get_logs_cmd(ctx, spec_test_file, org_id, project_name,
+def get_logs_cmd(ctx, spec_test_file, workload_file, org_id, project_name,
                     cluster_name_salt, polling_timeout, polling_frequency,
                     only_on_failure,
                     ):
@@ -561,8 +571,9 @@ def get_logs_cmd(ctx, spec_test_file, org_id, project_name,
             # Retrieve logs because tests may have timed out
 
     # Step-1: determine the cluster name for the given test.
-    cluster_name = get_cluster_name(get_test_name_from_spec_file(
-        spec_test_file), cluster_name_salt)
+    cluster_name = get_cluster_name(
+        get_test_name(spec_test_file, workload_file),
+        cluster_name_salt)
     
     organization = cmd.get_organization_by_id(
         client=ctx.obj.client,
@@ -577,11 +588,12 @@ def get_logs_cmd(ctx, spec_test_file, org_id, project_name,
 @atlas_tests.command('delete-cluster')
 @click.argument("spec_test_file", type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
+@WORKLOAD_FILE_OPTION
 @ATLASORGANIZATIONID_OPTION
 @ATLASPROJECTNAME_OPTION
 @CLUSTERNAMESALT_OPTION
 @click.pass_context
-def delete_test_cluster(ctx, spec_test_file, org_id, project_name,
+def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name,
                         cluster_name_salt):
     """
     Deletes the cluster used by the APM test.
@@ -589,8 +601,9 @@ def delete_test_cluster(ctx, spec_test_file, org_id, project_name,
     This command does not error if a cluster bearing the expected name is not found.
     """
     # Step-1: determine the cluster name for the given test.
-    cluster_name = get_cluster_name(get_test_name_from_spec_file(
-        spec_test_file), cluster_name_salt)
+    cluster_name = get_cluster_name(
+        get_test_name(spec_test_file, workload_file),
+        cluster_name_salt)
 
     # Step-2: delete the cluster.
     organization = cmd.get_organization_by_id(
@@ -674,11 +687,7 @@ def kubernetes_tests():
 @click.argument(
     "spec_test_file",
     type=click.Path(exists=True, dir_okay=False, resolve_path=True))
-@click.option(
-    '--workload-file',
-    help='Path to the unified test format workload file.',
-    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
-    required=True)
+@WORKLOAD_FILE_OPTION
 @WORKLOADEXECUTOR_OPTION
 @CONNECTION_STRING_OPTION
 @XUNITOUTPUT_OPTION
@@ -693,8 +702,8 @@ def run_kubernetes_test(
     """
     LOGGER.info(f"Running test {spec_test_file}, workload {workload_file}, driver {workload_executor}")
 
-    # The test name is "{spec test file}.yml-{workload file}.yml"
-    name = f"{os.path.basename(spec_test_file)}-{os.path.basename(workload_file)}"
+    # The test name is "{spec test filename}-{workload filename}".
+    name = get_test_name(spec_test_file, workload_file)
     test = KubernetesTest(
         name=name,
         spec_test_file=spec_test_file,

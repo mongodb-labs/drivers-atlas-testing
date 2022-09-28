@@ -1,0 +1,16 @@
+initialConfiguration:
+  clusterConfiguration:
+    clusterType: SHARDED
+    providerSettings:
+      providerName: AWS
+      regionName: US_WEST_1
+      instanceSizeName: M10
+  processArgs: {}
+
+operations:
+  - 
+    testFailover: true
+  - 
+    sleep: 10
+  - 
+    waitForIdle: true

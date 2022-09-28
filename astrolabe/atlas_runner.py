@@ -35,7 +35,7 @@ from astrolabe.commands import (ensure_admin_user,
 from astrolabe.exceptions import PollingTimeoutError
 from astrolabe.utils import (DriverWorkloadSubprocessRunner,
                              SingleTestXUnitLogger, assert_subset,
-                             get_cluster_name, get_test_name_from_spec_file, parse_iso8601_time)
+                             get_cluster_name, get_test_name, parse_iso8601_time)
 
 from .timer import Timer
 from .utils import mongo_client
@@ -44,14 +44,24 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AtlasTestCase:
-    def __init__(self, *, client, admin_client, test_name, cluster_name, specification,
-                 configuration):
+    def __init__(
+        self,
+        *,
+        client,
+        admin_client,
+        test_name,
+        cluster_name,
+        specification,
+        workload,
+        configuration):
+
         # Initialize.
         self.client = client
         self.admin_client = admin_client
         self.id = test_name
         self.cluster_name = cluster_name
         self.spec = specification
+        self.workload = workload
         self.config = configuration
         self.failed = False
         self.expect_failure = specification.get('expectFailure', False)
@@ -160,7 +170,7 @@ class AtlasTestCase:
         self.workload_runner.spawn(
             workload_executor=self.config.workload_executor,
             connection_string=self.get_connection_string(),
-            driver_workload=self.spec.driverWorkload,
+            driver_workload=self.workload,
             startup_time=startup_time)
 
         try:
@@ -369,8 +379,19 @@ class AtlasTestCase:
 
 class SpecTestRunnerBase:
     """Base class for spec test runners."""
-    def __init__(self, *, client, admin_client, test_locator_token, configuration, xunit_output,
-                 persist_clusters, no_create, workload_startup_time):
+    def __init__(
+        self,
+        *,
+        client,
+        admin_client,
+        test_locator_token,
+        workload_file,
+        configuration,
+        xunit_output,
+        persist_clusters,
+        no_create,
+        workload_startup_time):
+
         self.cases = []
         self.client = client
         self.admin_client = admin_client
@@ -395,23 +416,28 @@ class SpecTestRunnerBase:
         if not no_create:
             self.clean_old_projects(org.id)                             
 
+        with open(workload_file) as f:
+            workload = JSONObject.from_dict(yaml.safe_load(f))
+
         for full_path in self.find_spec_tests(test_locator_token):
             # Step-1: load test specification.
             with open(full_path, 'r') as spec_file:
-                test_spec = JSONObject.from_dict(
-                    yaml.safe_load(spec_file))
+                test_spec = JSONObject.from_dict(yaml.safe_load(spec_file))
 
             # Step-2: generate test name.
-            test_name = get_test_name_from_spec_file(full_path)
+            test_name = get_test_name(full_path, workload_file)
 
             # Step-3: generate unique cluster name.
             cluster_name = get_cluster_name(test_name, self.config.name_salt)
 
-            atlas_test_case = AtlasTestCase(client=self.client, admin_client=self.admin_client,
-                              test_name=test_name,
-                              cluster_name=cluster_name,
-                              specification=test_spec,
-                              configuration=self.config)
+            atlas_test_case = AtlasTestCase(
+                client=self.client,
+                admin_client=self.admin_client,
+                test_name=test_name,
+                cluster_name=cluster_name,
+                specification=test_spec,
+                workload=workload,
+                configuration=self.config)
             self.cases.append(atlas_test_case)
         
             # Set up Atlas for tests.

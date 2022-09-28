@@ -147,7 +147,7 @@ functions:
 
   "run atlas test":
     # Run the Atlas Planned Maintenance Test.
-    - command: subprocess.exec
+    - command: shell.exec
       type: test
       params:
         working_dir: astrolabe-src
@@ -163,8 +163,12 @@ functions:
           ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
-        command: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests run-one --no-delete tests/atlas/${TEST_NAME}.yml -e integrations/${DRIVER_DIRNAME}/workload-executor
+        script: |
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
+            run-one ${TEST_FILE} \
+            --workload-file ${WORKLOAD_FILE} \
+            --workload-executor integrations/${DRIVER_DIRNAME}/workload-executor \
+            --no-delete
     - command: subprocess.exec
       type: setup
       params:
@@ -202,7 +206,10 @@ functions:
             exit 0
           fi
 
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests get-logs --only-on-failure tests/atlas/${TEST_NAME}.yml
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
+            get-logs ${TEST_FILE} \
+            --workload-file ${WORKLOAD_FILE} \
+            --only-on-failure
 
   "delete atlas cluster":
     # Delete the Atlas cluster that was used to run the test.
@@ -227,7 +234,9 @@ functions:
             exit 0
           fi
 
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests delete-cluster tests/atlas/${TEST_NAME}.yml
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
+            delete-cluster ${TEST_FILE} \
+            --workload-file ${WORKLOAD_FILE}
 
   "create kind cluster":
     - command: shell.exec
@@ -387,141 +396,156 @@ tasks:
 
   # Atlas test tasks
   # ================
-  # Use .evergreen/generate-tasks.sh to generate this list.
   - name: atlas-failure-read
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: failure-read
+          WORKLOAD_FILE: workloads/reads.yml
+          TEST_FILE: tests/atlas/failure.yml
           ATLAS: "true"
   - name: atlas-failure-write
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: failure-write
+          WORKLOAD_FILE: workloads/writes.yml
+          TEST_FILE: tests/atlas/failure.yml
           ATLAS: "true"
   - name: atlas-retryReads-move-sharded
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-move-sharded
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/move-sharded.yml
           ATLAS: "true"
   - name: atlas-retryReads-move
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-move
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/move.yml
           ATLAS: "true"
   - name: atlas-retryReads-primaryRemoval
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-primaryRemoval
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/primaryRemoval.yml
           ATLAS: "true"
   - name: atlas-retryReads-primaryTakeover
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-primaryTakeover
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/primaryTakeover.yml
           ATLAS: "true"
   - name: atlas-retryReads-processRestart-sharded
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-processRestart-sharded
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/processRestart-sharded.yml
           ATLAS: "true"
   - name: atlas-retryReads-processRestart
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-processRestart
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/processRestart.yml
           ATLAS: "true"
   - name: atlas-retryReads-resizeCluster
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-resizeCluster
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/resizeCluster.yml
           ATLAS: "true"
   - name: atlas-retryReads-testFailover-sharded
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-testFailover-sharded
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/testFailover-sharded.yml
           ATLAS: "true"
   - name: atlas-retryReads-testFailover
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-testFailover
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/testFailover.yml
           ATLAS: "true"
   - name: atlas-retryReads-toggleServerSideJS
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-toggleServerSideJS
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/toggleServerSideJS.yml
           ATLAS: "true"
   - name: atlas-retryReads-vmRestart-sharded
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-vmRestart-sharded
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/vmRestart-sharded.yml
           ATLAS: "true"
   - name: atlas-retryReads-vmRestart
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryReads-vmRestart
+          WORKLOAD_FILE: workloads/retryReads.yml
+          TEST_FILE: tests/atlas/vmRestart.yml
           ATLAS: "true"
   - name: atlas-retryWrites-resizeCluster
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryWrites-resizeCluster
+          WORKLOAD_FILE: workloads/retryWrites.yml
+          TEST_FILE: tests/atlas/resizeCluster.yml
           ATLAS: "true"
   - name: atlas-retryWrites-toggleServerSideJS
     tags: ["all"]
     commands:
       - func: "run atlas test"
         vars:
-          TEST_NAME: retryWrites-toggleServerSideJS
+          WORKLOAD_FILE: workloads/retryWrites.yml
+          TEST_FILE: tests/atlas/toggleServerSideJS.yml
           ATLAS: "true"
 
   # Kind test tasks
   # ===============
-  - name: kind-reads-baseline
+  - name: kind-retryReads-baseline
     tags: ["all", "kind"]
     commands:
       - func: "download kubernetes tools"
       - func: "create kind cluster"
       - func: "run kind test"
         vars:
-          WORKLOAD_FILE: workloads/reads.yml
+          WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/kubernetes/kind/baseline.yml
       - func: "retrieve kind logs"
       - func: "delete kind cluster"
-  - name: kind-writes-baseline
+  - name: kind-retryWrites-baseline
     tags: ["all", "kind"]
     commands:
       - func: "download kubernetes tools"
       - func: "create kind cluster"
       - func: "run kind test"
         vars:
-          WORKLOAD_FILE: workloads/writes.yml
+          WORKLOAD_FILE: workloads/retryWrites.yml
           TEST_FILE: tests/kubernetes/kind/baseline.yml
       - func: "retrieve kind logs"
       - func: "delete kind cluster"
@@ -532,8 +556,8 @@ tasks:
       - func: "create kind cluster"
       - func: "run kind test"
         vars:
+          WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/kubernetes/kind/deletePod.yml
-          WORKLOAD_FILE: workloads/reads.yml
       - func: "retrieve kind logs"
       - func: "delete kind cluster"
   - name: kind-retryReads-upgrade
@@ -543,8 +567,8 @@ tasks:
       - func: "create kind cluster"
       - func: "run kind test"
         vars:
+          WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/kubernetes/kind/upgrade.yml
-          WORKLOAD_FILE: workloads/reads.yml
       - func: "retrieve kind logs"
       - func: "delete kind cluster"
   - name: kind-retryWrites-upgrade
@@ -554,8 +578,8 @@ tasks:
       - func: "create kind cluster"
       - func: "run kind test"
         vars:
+          WORKLOAD_FILE: workloads/retryWrites.yml
           TEST_FILE: tests/kubernetes/kind/upgrade.yml
-          WORKLOAD_FILE: workloads/writes.yml
       - func: "retrieve kind logs"
       - func: "delete kind cluster"
   - name: kind-retryReads-scaleDown

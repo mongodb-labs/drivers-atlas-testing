@@ -1,14 +1,38 @@
-.. _atlas-test-scenario-format:
+All Astrolabe tests are composed of two separate YAML documents:
 
-Atlas Planned Maintenance Test Scenario Format
-==============================================
+* :ref:`test-scenario` - defines initial conditions and a set of operations that
+  modify the runtime conditions of a MongoDB cluster.
 
-.. note:: Detailed information about terms that are italicized in this section can be found in the
-   :ref:`terms-technical-design` section.
+* :ref:`workload` - defines the operations that the workload executor (i.e. the
+  driver under test) should perform while Astrolabe is modifying the runtime
+  conditions of the MongoDB cluster.
 
-The YAML file format described in this section is used to define platform-independent *Atlas Planned Maintenance Tests* in
-YAML-formatted *Test Scenario Files*. Each Test Scenario File describes exactly one Atlas Planned Maintenance Test.
-A Test Scenario File has the following keys:
+The combination of one *Test Scenario* and one *Workload* defines a unique
+Astrolabe test. The following sections describe the format for each type of
+document.
+
+.. _test-scenario:
+
+Test Scenario
+=============
+
+There are two distinct *Test Scenario* file formats:
+
+* :ref:`atlas-test-scenario` - scenarios for testing drivers while Atlas
+  "planned maintenance" operations are running.
+
+* :ref:`kubernetes-test-scenario` - scenarios for testing drivers while
+  Kubernetes container orchestration operations are running.
+
+.. _atlas-test-scenario:
+
+Atlas Planned Maintenance Test Scenario
+---------------------------------------
+
+An *Atlas Planned Maintenance Test Scenario* defines an initial state and a
+sequence of "planned maintenance" operations that modify the running conditions
+of a MongoDB cluster running in Atlas. An *Atlas Planned Maintenance Test
+Scenario* YAML file has the following keys:
 
 * initialConfiguration (document): Description of *Cluster Configuration Options* to be used for initializing the
   test cluster. This document MUST contain the following keys:
@@ -118,62 +142,15 @@ A Test Scenario File has the following keys:
   not being updated for a potentially long time, the test SHOULD add an
   explicit ``sleep`` operation for at least 30 seconds.
 
-* driverWorkload (document): Description of the driver workload to execute
-  The document must be a complete test as defined by the
-  `Unified Test Format specification <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
-  
-  The workload MUST use a single test, as defined in the unified test format
-  specification.
-  
-  The workload MUST use the ``loop`` unified test format operation to
-  define the MongoDB operations to execute during maintenance. There MUST
-  be exactly one ``loop`` operation per scenario, and it SHOULD be the last
-  operation in the scenario.
 
-  The scenario MUST use ``storeErrorsAsEntity``, ``storeSuccessesAsEntity``,
-  and ``storeIterationsAsEntity`` operation arguments to allow the workload
-  executor to retrieve errors, failures, and operation and iteration counts for
-  the executed workload. The entity names for these options MUST be as follows:
+.. _kubernetes-test-scenario:
 
-  - ``storeErrorsAsEntity``: ``errors``
-  - ``storeSuccessesAsEntity``: ``successes``
-  - ``storeIterationsAsEntity``: ``iterations``
+Kubernetes Test Scenario
+------------------------
 
-  The scenario MUST NOT use ``storeFailuresAsEntity`` to ensure that all errors
-  and failures are reported under a single ``errors`` entity irrespective of how
-  a test runner might distinguish errors and failures (if at all). Note that
-  some ValidateWorkloadExecutor tests may still use ``storeFailuresAsEntity``
-  with the entity name ``failures`` to assert workload executor correctness.
-
-  The scenario MUST use ``storeEventsAsEntities`` operation argument
-  when defining MongoClients to record CMAP and command events published
-  during maintenance. All events MUST be stored in an entity named ``events``.
-  When this option is used, ``astrolabe`` will retrieve the collected events and
-  store them as an Evergreen build artifact, and will also calculate statistics
-  for command execution time and connection counts.
-
-.. note:: A previous version of this document specified a top-level
-  ``uriOptions`` for specifying URI options for the MongoClient under test.
-  In the current version, options can be specified using the ``uriOptions``
-  key of the unified test format when creating a client entity.
-
-
-.. _kubernetes-test-scenario-format:
-
-Kubernetes Test Scenario Format
-===============================
-
-Kubernetes Tests use two separate YAML document formats: the *Kubernetes Test
-Scenario File* and the *Workload File*. The combination of one *Kubernetes Test
-Scenario File* and one *Workload File* defines a unique Kubernetes Test. The
-following sections describe the format for each type of document.
-
-Kubernetes Test Scenario File
------------------------------
-
-A *Kubernetes Test Scenario File* describes a sequence of operations that modify
-the running conditions or configuration of a MongoDB cluster running in
-Kubernetes. A *Kubernetes Test Scenario File* has the following keys:
+A *Kubernetes Test Scenario* defines a sequence of operations that modify the
+running conditions or configuration of a MongoDB cluster running in Kubernetes.
+A *Kubernetes Test Scenario* YAML file has the following keys:
 
 * operations (array): List of operations to be performed. The possible
   operations are:
@@ -194,18 +171,40 @@ Kubernetes. A *Kubernetes Test Scenario File* has the following keys:
 
       sleep: 10
 
-Workload File
--------------
+.. _workload:
 
-A *Workload File* describes a set of operations that the MongoDB driver under
-test will run while connected to the MongoDB cluster in Kubernetes.
+Workload
+========
 
-The document must be a complete test as defined by the `Unified Test Format
-specification <https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
+A *Workload* defines a set of operations that the workload executor (i.e.
+the MongoDB driver under test) will run while connected to the MongoDB cluster.
+The YAML document must be a single complete test as defined by the `Unified Test
+Format specification
+<https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst>`_.
 
--------
-Changes
--------
+The workload MUST use the ``loop`` unified test format operation to define the
+MongoDB operations to execute during maintenance. There MUST be exactly one
+``loop`` operation per scenario, and it SHOULD be the last operation in the
+scenario.
 
-* 2020-04-22: Move the test format specification into a separate file.
-* 2022-08-08: Add specification for Kubernetes tests.
+The scenario MUST use ``storeErrorsAsEntity``, ``storeSuccessesAsEntity``, and
+``storeIterationsAsEntity`` operation arguments to allow the workload executor
+to retrieve errors, failures, and operation and iteration counts for the
+executed workload. The entity names for these options MUST be as follows:
+
+- ``storeErrorsAsEntity``: ``errors``
+- ``storeSuccessesAsEntity``: ``successes``
+- ``storeIterationsAsEntity``: ``iterations``
+
+The scenario MUST NOT use ``storeFailuresAsEntity`` to ensure that all errors
+and failures are reported under a single ``errors`` entity irrespective of how
+a test runner might distinguish errors and failures (if at all). Note that some
+ValidateWorkloadExecutor tests may still use ``storeFailuresAsEntity`` with the
+entity name ``failures`` to assert workload executor correctness.
+
+The scenario MUST use ``storeEventsAsEntities`` operation argument when defining
+MongoClients to record CMAP and command events published during maintenance. All
+events MUST be stored in an entity named ``events``. When this option is used,
+``astrolabe`` will retrieve the collected events and store them as an Evergreen
+build artifact, and will also calculate statistics for command execution time
+and connection counts.

@@ -123,7 +123,7 @@ into their continuous integration workflow - see the :ref:`integration-guide` fo
 Test Scenario Format
 --------------------
 
-.. attention:: This section has been moved to :ref:`atlas-test-scenario-format`.
+.. attention:: This section has been moved to :ref:`atlas-test-scenario`.
 
 -----------------
 Workload Executor
@@ -206,20 +206,23 @@ Then, the Test Orchestrator can be implemented as follows::
     # The testOrchestrator function accepts the path to a scenario YAML file
     # and the path to the workload executor executable. This function will be invoked with arguments
     # parsed from the command-line invocation of the test orchestrator binary.
-    function testOrchestrator(scenarioFile: string, workloadExecutorPath: string): void {
+    function testOrchestrator(scenarioFile: string, workloadFile: string, workloadExecutorPath: string): void {
 
         # Initialize Atlas controller.
         const atlasController = AtlasController();
 
-        # Parse the maintenance scenario and the driver workload from the file.
-        maintenanceScenario, driverWorkload = parseScenario(scenarioFile);
+        # Parse the maintenance scenario from the test scenario file.
+        maintenanceScenario = parseScenario(scenarioFile);
+
+        # Parse the driver workload from the workload file.
+        workload = parseWorkload(workloadFile);
 
         # Create a cluster and wait for it to be ready for running operations.
         connectionString = atlasController.createNewCluster(maintenanceScenario);
         atlasController.waitUntilClusterIdle();
 
         # Initiate the driver workload in a subprocess.
-        workloadSubprocess = spawnProcess([workloadExecutorPath, connectionString, driverWorkload]);
+        workloadSubprocess = spawnProcess([workloadExecutorPath, connectionString, workload]);
 
         # Implement maintenance plan and wait for completion.
         atlasController.triggerMaintenance(maintenanceScenario);

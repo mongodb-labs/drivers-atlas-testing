@@ -1,11 +1,11 @@
-# Runs "find" in a loop with "retryReads" disabled and collects events.
-description: "Find"
+# Runs "insert" in a loop with "retryWrites" enabled and collects events.
+description: "Insert"
 schemaVersion: "1.2"
 createEntities:
   - client:
       id: &client0 client0
       uriOptions:
-        retryReads: false
+        retryWrites: true
       storeEventsAsEntities:
         - id: events
           events:
@@ -32,16 +32,8 @@ createEntities:
       database: *database0
       collectionName: &collection0Name dat
 
-initialData:
-  - collectionName: *collection0Name
-    databaseName: *database0Name
-    documents:
-      - {_id: 1, x: 11}
-      - {_id: 2, x: 22}
-      - {_id: 3, x: 33}
-
 tests:
-  - description: "Find one"
+  - description: "Insert one"
     operations:
       - name: loop
         object: testRunner
@@ -50,13 +42,14 @@ tests:
           storeIterationsAsEntity: iterations
           storeSuccessesAsEntity: successes
           operations:
+            - name: insertOne
+              object: *collection0
+              arguments:
+                document: { data: 100 }
+            # Introduce some latency in the insert loop to prevent the number of recorded events
+            # from becoming too large, especially for local Kind deployments that have a very short
+            # round trip time.
             - name: find
               object: *collection0
               arguments:
-                filter: { _id: { $gt: 1 }}
-                sort: { _id: 1 }
-              expectResult:
-                - _id: 2
-                  x: 22
-                - _id: 3
-                  x: 33
+                filter: { $where: 'sleep(25)' }
