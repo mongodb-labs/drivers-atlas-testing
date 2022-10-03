@@ -280,6 +280,8 @@ class AtlasTestCase:
             # Step-5: interrupt driver workload and capture streams
             stats = self.workload_runner.stop()
 
+            LOGGER.info(f"Workload Statistics: {stats}")
+
             # Stop the timer
             timer.stop()
 
@@ -287,9 +289,18 @@ class AtlasTestCase:
             junit_test = junitparser.TestCase(self.id)
             junit_test.time = timer.elapsed
 
-            if (stats['numErrors'] != 0 or stats['numFailures'] != 0 or
-                    stats['numSuccesses'] == 0):
-                LOGGER.info("FAILED: {!r}".format(self.id))
+            # Log that this test case expects workload failures.
+            if self.expect_failure:
+                LOGGER.info(f"Test case {self.id!r} expects failures.")
+
+            # Check for workload failures.
+            failure = stats['numErrors'] != 0 or stats['numFailures'] != 0 or stats['numSuccesses'] == 0
+
+            # If there are workload failures and the test case doesn't expect workload failures OR
+            # if there are no failures and the test case does expect workload failures, mark the
+            # test case as failed.
+            if failure != self.expect_failure:
+                LOGGER.info(f"FAILED: {self.id!r}; Workload failure: {failure}; Expect failure: {self.expect_failure}")
                 self.failed = True
                 # Write xunit logs for failed tests.
                 junit_test.result = junitparser.Failure(str(stats))
@@ -297,8 +308,6 @@ class AtlasTestCase:
                 LOGGER.info("SUCCEEDED: {!r}".format(self.id))
                 # Directly log output of successful tests as xunit output
                 # is only visible for failed tests.
-
-            LOGGER.info("Workload Statistics: {}".format(stats))
             
             # Step 7: download logs asynchronously and delete cluster.
             # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4
@@ -522,17 +531,12 @@ class SpecTestRunnerBase:
                 filename=active_case.id)
             # Remove completed case from list.
             remaining_test_cases.remove(active_case)
-            
-            if active_case.expect_failure:
-                ok = active_case.failed
-            else:
-                ok = not active_case.failed
-            
+
             # Update tracker.
-            if not ok:
+            if active_case.failed:
                 all_ok = False
 
-            print('done: %s, %s, %s' % (active_case.failed,ok,all_ok))
+            LOGGER.info(f"Test case {active_case.id!r} done; Failed: {active_case.failed}, All OK: {all_ok}")
 
         return not all_ok
 
