@@ -683,7 +683,7 @@ axes:
         run_on: ubuntu1804-drivers-atlas-testing
         batchtime: 10080  # 7 days
         variables:
-          PYTHON3_BINARY: "/opt/mongodbtoolchain/v4/bin/python3.9"
+          PYTHON3_BINARY: "/opt/python/3.9/bin/python3"
           PYTHON_BIN_DIR: "bin"
           # Set locale to unicode - needed for astrolabe to function correctly.
           LC_ALL: "C.UTF-8"
@@ -704,7 +704,7 @@ axes:
       - id: python39
         display_name: CPython-3
         variables:
-          PYTHON_BINARY: "/opt/mongodbtoolchain/v4/bin/python3.9"
+          PYTHON_BINARY: "/opt/python/3.9/bin/python3"
       - id: python37-windows
         display_name: CPython-3.7-Windows
         variables:
@@ -725,7 +725,6 @@ axes:
         display_name: Java 17
         variables:
           JAVA_HOME: "/opt/java/jdk17"
-          PYTHON_BINARY: "/opt/mongodbtoolchain/v4/bin/python3.9"
       - id: dotnet-async-netcoreapp2.1
         display_name: dotnet-async-netcoreapp2.1
         variables:
@@ -741,7 +740,6 @@ axes:
         variables:
           GOROOT: /opt/golang/go1.15
           GOPATH: /home/ubuntu/go
-          PYTHON_BINARY: "/opt/mongodbtoolchain/v4/bin/python3.9"
       - id: php-74
         display_name: PHP 7.4
         variables:
