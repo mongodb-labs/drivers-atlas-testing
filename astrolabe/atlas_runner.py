@@ -492,8 +492,15 @@ class SpecTestRunnerBase:
                     project_timestamp = project.name.split('-')[-1]
                 if project_timestamp.isnumeric() and \
                     int(project_timestamp) < current_timestamp - self.project_expiration_threshold_seconds:
-                    delete_project(client=self.client, project_id=project.id)
-                    LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id)) 
+                    try:
+                        delete_project(client=self.client, project_id=project.id)
+                        LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id)) 
+                    except AtlasApiError as esc:
+                        # the project may have been deleted by another test just now.
+                        if esc.error_code == 'GROUP_NOT_FOUND':
+                            LOGGER.warn(esc)
+                        else:
+                            raise
 
     def get_printable_test_plan(self):
         table_data = []
