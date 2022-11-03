@@ -663,7 +663,7 @@ axes:
           DRIVER_DIRNAME: "php"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-php-library"
           DRIVER_REVISION: "master"
-          PHPC_REPOSITORY: "https://github.com/mongodb/mongo-php-driver"
+          PHPC_REPO: "https://github.com/mongodb/mongo-php-driver"
           PHPC_BRANCH: "master"
       - id: rust-main
         display_name: "Rust (main)"
