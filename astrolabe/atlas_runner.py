@@ -338,7 +338,14 @@ class AtlasTestCase:
         wanted_state = 'idle'
         last_notified = 0
         while timer.elapsed < timeout:
-            cluster_info = self.cluster_url.get().data
+            sleep(1.0 / self.config.polling_frequency)
+
+            try:
+                cluster_info = self.cluster_url.get().data
+            except AtlasClientError as e:
+                LOGGER.error(f"Error getting cluster status: {e}")
+                continue
+
             actual_state = cluster_info.stateName.lower()
             if actual_state == wanted_state:
                 ok = True
@@ -352,8 +359,6 @@ class AtlasTestCase:
                 LOGGER.info(msg)
             else:
                 LOGGER.debug(msg)
-            
-            sleep(1.0 / self.config.polling_frequency)
         if not ok:
             raise PollingTimeoutError("Polling timed out after %s seconds" % timeout)
             
