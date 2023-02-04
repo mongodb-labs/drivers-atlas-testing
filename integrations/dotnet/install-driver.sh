@@ -3,7 +3,7 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Environment variables used as input:
-#   FRAMEWORK                       Set to specify .NET framework to test against. Values: "netcoreapp2.1"
+#   FRAMEWORK                       Set to specify .NET framework to test against. Values: "net6.0"
 
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
@@ -26,10 +26,7 @@ if [[ "$OS" =~ Windows|windows ]]; then
         -o integrations/dotnet/dotnet-install.ps1 \
         https://dot.net/v1/dotnet-install.ps1
 
-    # Install the v6.0 SDK to build the driver and the v2.1 SDK to run the published workload
-    # executor binaries.
     powershell.exe '.\integrations\dotnet\dotnet-install.ps1 -Channel 6.0 -InstallDir .dotnet -NoPath'
-    powershell.exe '.\integrations\dotnet\dotnet-install.ps1 -Channel 2.1 -InstallDir .dotnet -NoPath'
 else
     # Download the dotnet installation script, retrying up to 5 times on any errors.
     curl -sSL \
@@ -40,10 +37,7 @@ else
         -o integrations/dotnet/dotnet-install.sh \
         https://dot.net/v1/dotnet-install.sh
 
-    # Install the v6.0 SDK to build the driver and the v2.1 SDK to run the published workload
-    # executor binaries.
     bash ./integrations/dotnet/dotnet-install.sh -Channel 6.0 --install-dir .dotnet --no-path
-    bash ./integrations/dotnet/dotnet-install.sh -Channel 2.1 --install-dir .dotnet --no-path
 fi
 
 # /p required to get around https://github.com/dotnet/sdk/issues/12159

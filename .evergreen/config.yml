@@ -716,16 +716,16 @@ axes:
         display_name: Java 17
         variables:
           JAVA_HOME: "/opt/java/jdk17"
-      - id: dotnet-async-netcoreapp2.1
-        display_name: dotnet-async-netcoreapp2.1
+      - id: dotnet-async-net6
+        display_name: dotnet-async-net6
         variables:
           ASYNC: "true"
-          FRAMEWORK: "netcoreapp2.1"
-      - id: "dotnet-sync-netcoreapp2.1"
-        display_name: dotnet-sync-netcoreapp2.1
+          FRAMEWORK: "net6.0"
+      - id: dotnet-sync-net6
+        display_name: dotnet-sync-net6
         variables:
           ASYNC: "false"
-          FRAMEWORK: "netcoreapp2.1"
+          FRAMEWORK: "net6.0"
       - id: go-20
         display_name: Go v1.20
         variables:
@@ -801,8 +801,8 @@ buildvariants:
     driver: ["dotnet-master"]
     platform: ["windows-64"]
     runtime:
-      - "dotnet-async-netcoreapp2.1"
-      - "dotnet-sync-netcoreapp2.1"
+      - "dotnet-async-net6"
+      - "dotnet-sync-net6"
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
@@ -812,8 +812,8 @@ buildvariants:
     driver: ["dotnet-master"]
     platform: ["ubuntu-18.04"]
     runtime:
-      - "dotnet-async-netcoreapp2.1"
-      - "dotnet-sync-netcoreapp2.1"
+      - "dotnet-async-net6"
+      - "dotnet-sync-net6"
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Only run the Kind tasks for the .NET driver on Linux.
