@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+echo "Running C Driver workload-executor..."
+
+declare script_dir
+script_dir="$(pwd)" || exit
+declare -r script_dir
+
+declare -r connection_string="${1:?}"
+declare -r workload_spec="${2:?}"
+
+# Populated via install-driver.sh.
+pushd mongo-c-driver || exit
+
+declare test_binary
+test_binary="$(pwd)/src/libmongoc/test-atlas-executor" || exit
+
+# Ensure required binary is present.
+command -V "${test_binary}" >/dev/null || exit
+
+export ASAN_OPTIONS="abort_on_error=1:symbolize=1"
+export UBSAN_OPTIONS="abort_on_error=1:print_stacktrace=1"
+export LSAN_OPTIONS="suppressions=.lsan-suppressions"
+
+export MONGOC_TEST_ATLAS="ON"
+export MONGOC_TEST_URI="${connection_string}"
+
+# Normally test-atlas-executor should always succeed and report failures/errors via generated files.
+# However, if it failed to do so (e.g. due to an assertion failure), communicate execution failure to astrolabe directly.
+if ! "${test_binary}" "${workload_spec}"; then
+  cat >|events.json <<DOC
+{
+  "events": [],
+  "errors": [{"error": "test-atlas-executor encountered an unexpected error", "time": 0}],
+  "failures": []
+}
+DOC
+
+  cat >|results.json <<DOC
+{
+  "numErrors": 1,
+  "numFailures": 0,
+  "numIterations": 0,
+  "numSuccesses": 0
+}
+DOC
+fi
+
+# Print stacktraces if any.
+# shellcheck disable=SC2016
+find . -type f -name '*.core' -print0 |
+  xargs -0 -I {} \
+    bash -c 'echo "backtrace full" | gdb -q -iex "set auto-load safe-path" "${test_binary}" "{}"'
+
+# Generated files are expected to be placed in original directory.
+# Use jq to improve readability of generated JSON.
+jq . events.json >|"${script_dir}/events.json" || exit
+jq . results.json >|"${script_dir}/results.json" || exit
+
+popd || exit # mongo-c-driver
+
+echo "Running C Driver workload-executor... done!"
