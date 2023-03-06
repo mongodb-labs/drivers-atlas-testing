@@ -159,7 +159,7 @@ class ValidateWorkloadExecutor(TestCase):
             self.fail("The workload executor didn't record errors as an array.")
 
         if not isinstance(events['failures'], list):
-            self.fail("The workload executor didn't record failrues as an array.")
+            self.fail("The workload executor didn't record failures as an array.")
 
         # If hasEvents is true, assert that the array is non-empty and that each
         # object within contains essential fields. If hasEvents is false, the
