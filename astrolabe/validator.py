@@ -164,9 +164,6 @@ class ValidateWorkloadExecutor(TestCase):
         # If hasEvents is true, assert that the array is non-empty and that each
         # object within contains essential fields. If hasEvents is false, the
         # array should be empty.
-        #
-        # Note: we do not assert the type of events observed since not all
-        # drivers implement CMAP and thus might only log Command events.
         if hasEvents:
             if not events['events']:
                 self.fail("The workload executor recorded no events but some were expected")
