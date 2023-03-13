@@ -164,16 +164,9 @@ class ValidateWorkloadExecutor(TestCase):
         # If hasEvents is true, assert that the array is non-empty and that each
         # object within contains essential fields. If hasEvents is false, the
         # array should be empty.
-        #
-        # Note: we do not assert the type of events observed since not all
-        # drivers implement CMAP and thus might only log Command events.
         if hasEvents:
             if not events['events']:
                 self.fail("The workload executor recorded no events but some were expected")
-
-            numConnectionEvents = 0
-            numPoolEvents = 0
-            numCommandEvents = 0
 
             for event in events['events']:
                 if ('name' not in event) or (not event['name'].endswith('Event')):
@@ -181,24 +174,6 @@ class ValidateWorkloadExecutor(TestCase):
 
                 if 'observedAt' not in event:
                     self.fail("The workload executor didn't record event observation time as expected.")
-
-                if event['name'].startswith('Connection'):
-                    numConnectionEvents += 1
-
-                if event['name'].startswith('Pool'):
-                    numPoolEvents += 1
-
-                if event['name'].startswith('Command'):
-                    numCommandEvents += 1
-
-            if numConnectionEvents == 0:
-                self.fail("The workload executor recorded no CMAP connection events but some were expected")
-
-            if numPoolEvents == 0:
-                self.fail("The workload executor recorded no CMAP connection pool events but some were expected")
-
-            if numCommandEvents == 0:
-                self.fail("The workload executor recorded no command monitoring events but some were expected")
         else:
             if events['events']:
                 self.fail("The workload executor recorded %d events but none were expected" % len(events['events']))
