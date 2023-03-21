@@ -54,8 +54,10 @@ find . -type f -name '*.core' -print0 |
 
 # Generated files are expected to be placed in original directory.
 # Use jq to improve readability of generated JSON.
+echo "Formatting events.json and results.json..."
 jq . events.json >|"${script_dir}/events.json" || exit
 jq . results.json >|"${script_dir}/results.json" || exit
+echo "Formatting events.json and results.json... done."
 
 popd || exit # mongo-c-driver
 
