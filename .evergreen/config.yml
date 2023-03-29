@@ -672,6 +672,12 @@ axes:
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-rust-driver"
           DRIVER_REVISION: "main"
           ASTROLABE_EXECUTOR_STARTUP_TIME: 10
+      - id: c-master
+        display_name: "C (master)"
+        variables:
+          DRIVER_DIRNAME: "c"
+          DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-c-driver"
+          DRIVER_REVISION: "master"
 
   # The 'platform' axis specifies the evergreen host distro to use.
   # Platforms MUST specify the PYTHON3_BINARY variable as this is required to install astrolabe.
@@ -746,6 +752,17 @@ axes:
           PHP_VERSION: 7.4
       - id: rust-latest
         display_name: Rust Latest
+      - id: "c-clang"
+        display_name: Clang
+        variables:
+          CC: /opt/mongodbtoolchain/v4/bin/clang
+          CXX: /opt/mongodbtoolchain/v4/bin/clang++
+          ASAN_SYMBOLIZER_PATH: /opt/mongodbtoolchain/v4/bin/llvm-symbolizer
+      - id: "c-gcc"
+        display_name: GCC
+        variables:
+          CC: /opt/mongodbtoolchain/v4/bin/gcc
+          CXX: /opt/mongodbtoolchain/v4/bin/g++
 
 buildvariants:
 - matrix_name: "tests-ruby"
@@ -842,3 +859,10 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
    - ".all"
+- matrix_name: "tests-c"
+  display_name: "${driver} ${platform} ${runtime}"
+  matrix_spec:
+    driver: ["c-master"]
+    platform: ["ubuntu-18.04"]
+    runtime: ["c-gcc", "c-clang"]
+  tasks: [".all"]
