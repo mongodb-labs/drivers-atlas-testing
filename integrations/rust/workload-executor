@@ -25,6 +25,6 @@ export WORKLOAD_EXECUTOR_WORKING_DIRECTORY=$WORKING_DIRECTORY
 cd mongo-rust-driver
 
 # Write the test executable name to exe_name.txt
-cargo test get_exe_name --release
+cargo test get_exe_name --release -- --ignored
 
 RUST_BACKTRACE=1 $(cat exe_name.txt) workload_executor --nocapture -- --release
