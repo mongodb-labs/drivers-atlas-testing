@@ -78,7 +78,21 @@ class Logger
     }
 }
 
-$uri = $argv[1];
+function appendToQueryString(string $uri, $option): string
+{
+    $parts = parse_url($uri);
+
+    if (isset($parts['query'])) {
+        return $uri . '&' . $option;
+    } elseif (isset($parts['path'])) {
+        return $uri . '?' . $option;
+    } else {
+        return $uri . '/?' . $option;
+    }
+}
+
+// Atlas testing expects all drivers to use a server selection loop
+$uri = appendToQueryString($argv[1], 'serverSelectionTryOnce=false');
 $json = toPHP(fromJSON($argv[2]));
 
 $logger = new Logger;
