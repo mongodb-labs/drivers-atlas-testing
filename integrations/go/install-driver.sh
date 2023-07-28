@@ -8,4 +8,5 @@ cd integrations/$DRIVER_DIRNAME
 export PATH=$GOROOT/bin:$PATH
 
 go get go.mongodb.org/mongo-driver@master
+go mod tidy
 go test -c workload_executor_test.go -o executor

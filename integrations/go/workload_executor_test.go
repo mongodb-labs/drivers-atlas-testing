@@ -57,7 +57,7 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 	}()
 
 	// killAllSessions will return an auth error if it's run
-	fileReqs, testCases := unified.ParseTestFile(t, workloadSpec)
+	fileReqs, testCases := unified.ParseTestFile(t, workloadSpec, false)
 	// a workload must use a single test
 	if len(testCases) != 1 {
 		t.Fatalf("expected 1 test case, got %v", len(testCases))

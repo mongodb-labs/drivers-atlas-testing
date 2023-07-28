@@ -741,10 +741,10 @@ axes:
         variables:
           ASYNC: "false"
           FRAMEWORK: "netcoreapp2.1"
-      - id: go-15
-        display_name: Go v1.15
+      - id: go-20
+        display_name: Go v1.20
         variables:
-          GOROOT: /opt/golang/go1.15
+          GOROOT: /opt/golang/go1.20
           GOPATH: /home/ubuntu/go
       - id: php-74
         display_name: PHP 7.4
@@ -839,7 +839,7 @@ buildvariants:
   matrix_spec:
     driver: ["go-master"]
     platform: ubuntu-18.04
-    runtime: go-15
+    runtime: go-20
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
