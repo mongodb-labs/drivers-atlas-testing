@@ -33,6 +33,7 @@ declare -a cmake_config_vars=(
   "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
   "-DCMAKE_INSTALL_PREFIX=${c_install_dir}"
   "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
+  "-DENABLE_EXTRA_ALIGNMENT=OFF" # Interferes with ASAN.
 )
 
 # Unable to compile with ASAN/UBSAN using GCC on ubuntu1804-drivers-atlas-testing.
