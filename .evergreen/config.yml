@@ -609,12 +609,13 @@ axes:
           DRIVER_DIRNAME: "ruby"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-ruby-driver"
           DRIVER_REVISION: "master"
-      - id: node-master
-        display_name: "Node (master)"
+      - id: node-main
+        display_name: "Node (main)"
         variables:
           DRIVER_DIRNAME: "node"
           DRIVER_REPOSITORY: "https://github.com/mongodb/node-mongodb-native"
-          DRIVER_REVISION: "master"
+          DRIVER_REVISION: "NODE-3049"
+          ASTROLABE_EXECUTOR_STARTUP_TIME: 10
       - id: java-master
         display_name: "Java (master)"
         variables:
@@ -699,18 +700,18 @@ axes:
         display_name: CPython-3.7-Windows
         variables:
           PYTHON_BINARY: "C:/python/Python37/python.exe"
-      - id: node-carbon
-        display_name: Node v8 Carbon
+      - id: node-16
+        display_name: Node v16
         variables:
-          NODE_LTS_NAME: "carbon"
-      - id: node-dubnium
-        display_name: Node v10 Dubnium
+          NODE_LTS_VERSION: 16
+      - id: node-18
+        display_name: Node v18
         variables:
-          NODE_LTS_NAME: "dubnium"
-      - id: node-erbium
-        display_name: Node v12 Erbium
+          NODE_LTS_VERSION: 18
+      - id: node-20
+        display_name: Node v20
         variables:
-          NODE_LTS_NAME: "erbium"
+          NODE_LTS_VERSION: 20
       - id: java17
         display_name: Java 17
         variables:
@@ -775,20 +776,18 @@ buildvariants:
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
     - ".all !.kind"
-# TODO(NODE-3049): Re-enable Node builds once the Node driver and/or workload executor have been
-# updated to be able to run the new unified-format tests.
-#- matrix_name: tests-node
-#  matrix_spec:
-#    driver:
-#      - node-master
-#    platform:
-#      - ubuntu-18.04
-#    runtime:
-#      - node-dubnium
-#      - node-erbium
-#  display_name: "${driver} ${platform} ${runtime}"
-#  tasks:
-#    - .all
+# TODO(BUILD-17806): GLIBC on Ubuntu 20 is too low (2.27) for Node 18 and Node 20 (2.28) 
+- matrix_name: tests-node
+  matrix_spec:
+    driver:
+      - node-main
+    platform:
+      - ubuntu-18.04
+    runtime:
+      - node-16
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - .all
 - matrix_name: "tests-java"
   matrix_spec:
     driver: ["java-master"]
