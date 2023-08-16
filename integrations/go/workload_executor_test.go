@@ -67,7 +67,6 @@ func TestAtlasPlannedMaintenance(t *testing.T) {
 		RunOn(fileReqs...).
 		CreateClient(false)
 	mt := mtest.New(t, mtOpts)
-	defer mt.Close()
 
 	testCase := testCases[0]
 	testOpts := mtest.NewOptions().
