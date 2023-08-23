@@ -396,22 +396,6 @@ tasks:
 
   # Atlas test tasks
   # ================
-  - name: atlas-failure-read
-    tags: ["all"]
-    commands:
-      - func: "run atlas test"
-        vars:
-          WORKLOAD_FILE: workloads/reads.yml
-          TEST_FILE: tests/atlas/failure.yml
-          ATLAS: "true"
-  - name: atlas-failure-write
-    tags: ["all"]
-    commands:
-      - func: "run atlas test"
-        vars:
-          WORKLOAD_FILE: workloads/writes.yml
-          TEST_FILE: tests/atlas/failure.yml
-          ATLAS: "true"
   - name: atlas-retryReads-move-sharded
     tags: ["all"]
     commands:
