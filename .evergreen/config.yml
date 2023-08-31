@@ -615,7 +615,7 @@ axes:
           DRIVER_DIRNAME: "node"
           DRIVER_REPOSITORY: "https://github.com/mongodb/node-mongodb-native"
           DRIVER_REVISION: "main"
-          ASTROLABE_EXECUTOR_STARTUP_TIME: 10
+          ASTROLABE_EXECUTOR_STARTUP_TIME: 15
       - id: java-master
         display_name: "Java (master)"
         variables:
