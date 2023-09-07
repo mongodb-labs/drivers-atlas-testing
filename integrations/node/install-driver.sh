@@ -5,6 +5,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 export PROJECT_DIRECTORY="$(pwd)/node-mongodb-native"
 export NODE_LTS_VERSION="$NODE_LTS_VERSION"
+export NPM_VERSION=9
 
 cd ${PROJECT_DIRECTORY}
 . .evergreen/install-dependencies.sh
