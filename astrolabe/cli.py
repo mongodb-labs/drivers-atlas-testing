@@ -616,6 +616,9 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
     if project:
         print("trying to delete")
         try:
+            print(ctx.obj.client.groups[project.id].clusters)
+            print(dir(ctx.obj.client.groups[project.id].clusters))
+            print(dir(ctx.obj.client.groups[project.id]))
             ctx.obj.client.groups[project.id].clusters[cluster_name].delete()
             print("deleted!")
         except AtlasApiBaseError as e:
