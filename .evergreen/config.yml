@@ -154,7 +154,7 @@ functions:
         # Next commands will exit with appropriate status
         continue_on_err: true
         env:
-          ATLAS_PROJECT_NAME: ${project}
+          ATLAS_PROJECT_NAME: "${project}-${execution}"
           CLUSTER_NAME_SALT: ${build_id}
           ATLAS_API_USERNAME: ${atlas_key}
           ATLAS_API_PASSWORD: ${atlas_secret}
@@ -190,7 +190,7 @@ functions:
       params:
         working_dir: astrolabe-src
         env:
-          ATLAS_PROJECT_NAME: ${project}
+          ATLAS_PROJECT_NAME: "${project}-${execution}"
           CLUSTER_NAME_SALT: ${build_id}
           ATLAS_API_USERNAME: ${atlas_key}
           ATLAS_API_PASSWORD: ${atlas_secret}
@@ -218,7 +218,7 @@ functions:
       params:
         working_dir: astrolabe-src
         env:
-          ATLAS_PROJECT_NAME: ${project}
+          ATLAS_PROJECT_NAME: "${project}-${execution}"
           CLUSTER_NAME_SALT: ${build_id}
           ATLAS_API_USERNAME: ${atlas_key}
           ATLAS_API_PASSWORD: ${atlas_secret}
