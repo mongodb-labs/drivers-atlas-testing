@@ -228,6 +228,7 @@ functions:
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         script: |
+          set -eux
           # Only run after Atlas tasks.
           if [ "${ATLAS}" != "true" ]; then
             echo "Skipping Atlas cluster cleanup because it's not a Atlas task."
@@ -776,7 +777,7 @@ buildvariants:
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
     - ".all !.kind"
-# TODO(BUILD-17806): GLIBC on Ubuntu 18 is too low (2.27) for Node 18 and Node 20 (2.28) 
+# TODO(BUILD-17806): GLIBC on Ubuntu 18 is too low (2.27) for Node 18 and Node 20 (2.28)
 - matrix_name: tests-node
   matrix_spec:
     driver:

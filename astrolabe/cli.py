@@ -143,7 +143,7 @@ def cli(ctx, atlas_base_url, atlas_api_username,
             timeout=http_timeout)
     else:
         admin_client = None
-    
+
     ctx.obj = ContextStore(client, admin_client)
 
     # Configure logging.
@@ -558,7 +558,7 @@ def get_logs_cmd(ctx, spec_test_file, workload_file, org_id, project_name,
     Retrieves logs for the cluster and saves them in logs.tar.gz in the
     current working directory.
     """
-    
+
     if only_on_failure:
         if os.path.exists('status'):
             with open('status') as fp:
@@ -574,7 +574,7 @@ def get_logs_cmd(ctx, spec_test_file, workload_file, org_id, project_name,
     cluster_name = get_cluster_name(
         get_test_name(spec_test_file, workload_file),
         cluster_name_salt)
-    
+
     organization = cmd.get_organization_by_id(
         client=ctx.obj.client,
         org_id=org_id)
@@ -615,6 +615,10 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
             ctx.obj.client.groups[project.id].clusters[cluster_name].delete()
         except AtlasApiBaseError:
             pass
+    else:
+        print('project not found!')
+        import sys
+        sys.exit(1)
 
 
 @atlas_tests.command('run')
