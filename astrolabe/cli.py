@@ -606,7 +606,7 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
     cluster_name = get_cluster_name(
         get_test_name(spec_test_file, workload_file),
         cluster_name_salt)
-    print(f"{cluster_name=}")
+    print(f"{cluster_name=}, {project_name=}")
     # Step-2: delete the cluster.
     organization = cmd.get_organization_by_id(
         client=ctx.obj.client, org_id=org_id)
@@ -623,6 +623,7 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
             print("deleted!")
         except AtlasApiBaseError as e:
             print("failed", e)
+            import sys
             sys.exit(1)
     else:
         print('project not found!')
