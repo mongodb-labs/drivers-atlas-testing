@@ -65,7 +65,7 @@ functions:
         working_dir: astrolabe-src
         command: |
           astrolabevenv/${PYTHON_BIN_DIR}/pip install -e .
-    # Handle the project id
+    # Handle the project name.
     - command: shell.exec
       type: setup
       params:
@@ -85,7 +85,7 @@ functions:
           echo "ATLAS_PROJECT_NAME:$project-$unique_id" > atlas_project_name.yml
     - command: expansions.update
       params:
-        file: atlas_project_name.yml
+        file: astrolabe-src/atlas_project_name.yml
 
   "install driver":
     # Clone driver source code into the 'astrolabe-src/<driver-repo-name>' directory.
