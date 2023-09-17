@@ -74,9 +74,7 @@ class AtlasTestCase:
 
         # Generate a unique project name with timestamp & random suffix
         current_timestamp = int(_time.time())
-        timestamp_suffix = '-' + str(current_timestamp)            
-        random_suffix = '-' + str(int(random.random() * 1_000_000_000))
-        self.project_name = self.config.project_name + timestamp_suffix + random_suffix
+        self.project_name = self.config.project_name
         self.project = None
 
     @property
@@ -116,7 +114,7 @@ class AtlasTestCase:
         Initialize a cluster with the configuration required by the test
         specification.
         """
-        
+
         if no_create:
             try:
                 # If --no-create was specified and the cluster exists, skip
@@ -130,7 +128,7 @@ class AtlasTestCase:
                     LOGGER.warn('Cluster was not found, will create one')
             except AssertionError as exc:
                 LOGGER.warn('Configuration did not match: %s. Recreating the cluster' % exc)
-            
+
         LOGGER.info("Initializing cluster {!r}".format(self.cluster_name))
 
         cluster_config = self.spec.initialConfiguration.\
@@ -158,7 +156,7 @@ class AtlasTestCase:
     def run(self, persist_cluster=False, startup_time=1):
         LOGGER.info("Running test {!r} on cluster {!r}".format(
             self.id, self.cluster_name))
-        
+
         # Step-1: sanity-check the cluster configuration.
         self.verify_cluster_configuration_matches(self.spec.initialConfiguration)
 
@@ -177,9 +175,9 @@ class AtlasTestCase:
             for operation in self.spec.operations:
                 if len(operation) != 1:
                     raise ValueError("Operation must have exactly one key: %s" % operation)
-                    
+
                 op_name, op_spec = list(operation.items())[0]
-                
+
                 if op_name == 'setClusterConfiguration':
                     # Step-3: begin maintenance routine.
                     final_config = op_spec
@@ -201,7 +199,7 @@ class AtlasTestCase:
                     self.wait_for_idle()
                     self.verify_cluster_configuration_matches(final_config)
                     LOGGER.info("Cluster maintenance complete")
-                    
+
                 elif op_name == 'testFailover':
                     timer = Timer()
                     timer.start()
@@ -235,48 +233,48 @@ class AtlasTestCase:
 
                     self.wait_for_planning(start_time)
                     self.wait_for_idle()
-                    
+
                 elif op_name == 'sleep':
                     _time.sleep(op_spec)
-                    
+
                 elif op_name == 'waitForIdle':
                     self.wait_for_idle()
-                    
+
                 elif op_name == 'restartVms':
                     rv = self.admin_client.nds.groups[self.project.id].clusters[self.cluster_name].reboot.post(api_version='private')
-                    
+
                     self.wait_for_idle()
-                    
+
                 elif op_name == 'assertPrimaryRegion':
                     region = op_spec['region']
-                    
+
                     cluster_config = self.cluster_url.get().data
                     timer = Timer()
                     timer.start()
                     timeout = op_spec.get('timeout', 90)
-                    
+
                     with mongo_client(self.get_connection_string()) as mc:
                         while True:
                             rsc = mc.admin.command('replSetGetConfig')
                             member = [m for m in rsc['config']['members']
                                 if m['horizons']['PUBLIC'] == '%s:%s' % mc.primary][0]
                             member_region = member['tags']['region']
-                        
+
                             if region == member_region:
                                 break
-                                
+
                             if timer.elapsed > timeout:
                                 raise Exception("Primary in cluster not in expected region '%s' (actual region '%s')" % (region, member_region))
                             else:
                                 sleep(5)
-                    
+
                 else:
                     raise Exception('Unrecognized operation %s' % op_name)
 
             # Wait 10 seconds to ensure that the driver is not experiencing any
             # errors after the maintenance has concluded.
             sleep(10)
-            
+
             # Step-5: interrupt driver workload and capture streams
             stats = self.workload_runner.stop()
 
@@ -308,7 +306,7 @@ class AtlasTestCase:
                 LOGGER.info("SUCCEEDED: {!r}".format(self.id))
                 # Directly log output of successful tests as xunit output
                 # is only visible for failed tests.
-            
+
             # Step 7: download logs asynchronously and delete cluster.
             # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4
             if not persist_cluster:
@@ -319,7 +317,7 @@ class AtlasTestCase:
             return junit_test
         finally:
             self.workload_runner.terminate()
-        
+
     def wait_for_idle(self):
         # Small delay to account for Atlas not updating cluster state
         # synchronously potentially in all maintenance operations
@@ -350,7 +348,7 @@ class AtlasTestCase:
             if actual_state == wanted_state:
                 ok = True
                 break
-            
+
             msg = "Cluster %s: current state: %s; wanted state: %s; waited for %.1f sec" % (self.cluster_name, actual_state, wanted_state, timer.elapsed)
             now = monotonic()
             # Notify once a minute, see DRIVERS-2013.
@@ -361,7 +359,7 @@ class AtlasTestCase:
                 LOGGER.debug(msg)
         if not ok:
             raise PollingTimeoutError("Polling timed out after %s seconds" % timeout)
-            
+
     def wait_for_planning(self, start_time):
         timer = Timer()
         timer.start()
@@ -375,7 +373,7 @@ class AtlasTestCase:
             if planning_time > start_time:
                 ok = True
                 break
-            
+
             msg = "Cluster %s: last planned: %s; wanted after: %s; waited for %.1f sec" % (self.cluster_name, planning_time, start_time, timer.elapsed)
             now = monotonic()
             # Notify once a minute, see DRIVERS-2013.
@@ -384,9 +382,9 @@ class AtlasTestCase:
                 LOGGER.info(msg)
             else:
                 LOGGER.debug(msg)
-            
+
             _time.sleep(5)
-        
+
         if not ok:
             raise PollingTimeoutError("Timed out waiting for planning after %s seconds" % timeout)
 
@@ -428,7 +426,7 @@ class SpecTestRunnerBase:
 
         # Step-2: clean old projects with same name base from organization.
         if not no_create:
-            self.clean_old_projects(org.id)                             
+            self.clean_old_projects(org.id)
 
         with open(workload_file) as f:
             workload = JSONObject.from_dict(yaml.safe_load(f))
@@ -453,7 +451,7 @@ class SpecTestRunnerBase:
                 workload=workload,
                 configuration=self.config)
             self.cases.append(atlas_test_case)
-        
+
             # Set up Atlas for tests.
             # Step-1: check that the project exists or else create it.
             pro_name = atlas_test_case.project_name
@@ -499,7 +497,7 @@ class SpecTestRunnerBase:
                     int(project_timestamp) < current_timestamp - self.project_expiration_threshold_seconds:
                     try:
                         delete_project(client=self.client, project_id=project.id)
-                        LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id)) 
+                        LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id))
                     except AtlasApiError as esc:
                         # the project may have been deleted by another test just now.
                         if esc.error_code == 'GROUP_NOT_FOUND':
