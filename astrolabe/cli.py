@@ -601,7 +601,7 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
     This command does not error if a cluster bearing the expected name is not found.
     """
     # Step-1: determine the cluster name for the given test.
-    print("\n\n\nHELLO THERE"
+    print("\n\n\nHELLO THERE")
     print(f"{=spec_test_file}, {=workload_file}, {=cluster_name_salt}")
     cluster_name = get_cluster_name(
         get_test_name(spec_test_file, workload_file),
