@@ -82,10 +82,12 @@ functions:
           # - we convert it to hex encoding because cluster names must be alphanumeric (hyphens are allowed)
           transform="process.stdout.write(require('crypto').createHash('md5').update(process.argv[1]).digest().toString('hex'))"
           unique_id=$(node -e $transform "${task_id}-${execution}")
-          echo "ATLAS_PROJECT_NAME:$project-$unique_id" > atlas_project_name.yml
+          cat <<EOT > expansion.yml
+          ATLAS_PROJECT_NAME: "$project-$unique_id"
+          EOT
     - command: expansions.update
       params:
-        file: astrolabe-src/atlas_project_name.yml
+        file: astrolabe-src/expansion.yml
 
   "install driver":
     # Clone driver source code into the 'astrolabe-src/<driver-repo-name>' directory.
