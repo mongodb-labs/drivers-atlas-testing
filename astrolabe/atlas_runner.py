@@ -72,8 +72,6 @@ class AtlasTestCase:
         # Initialize wrapper class for running workload executor.
         self.workload_runner = DriverWorkloadSubprocessRunner()
 
-        # Generate a unique project name with timestamp & random suffix
-        current_timestamp = int(_time.time())
         self.project_name = self.config.project_name
         self.project = None
 
