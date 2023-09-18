@@ -601,34 +601,25 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
     This command does not error if a cluster bearing the expected name is not found.
     """
     # Step-1: determine the cluster name for the given test.
-    print("\n\n\nHELLO THERE")
-    print(f"{spec_test_file=}, {workload_file=}, {cluster_name_salt=}")
     cluster_name = get_cluster_name(
         get_test_name(spec_test_file, workload_file),
         cluster_name_salt)
-    print(f"{cluster_name=}, {project_name=}")
+    msg = f"Deleting cluster {cluster_name} in project {project_name}..."
+    print(msg)
+
     # Step-2: delete the cluster.
     organization = cmd.get_organization_by_id(
         client=ctx.obj.client, org_id=org_id)
     project = cmd.get_project(
         client=ctx.obj.client, project_name=project_name, organization_id=organization.id)
-    print(f"{project=}")
     if project:
-        print("trying to delete")
         try:
-            print(ctx.obj.client.groups[project.id].clusters)
-            print(dir(ctx.obj.client.groups[project.id].clusters))
-            print(dir(ctx.obj.client.groups[project.id]))
             ctx.obj.client.groups[project.id].clusters[cluster_name].delete()
-            print("deleted!")
+            print(f"{msg} done.")
         except AtlasApiBaseError as e:
-            print("failed", e)
-            import sys
-            sys.exit(1)
+            pprint(e)
     else:
-        print('project not found!')
-        import sys
-        sys.exit(1)
+        print(f"Project {project_name} not found!")
 
 
 @atlas_tests.command('run')
