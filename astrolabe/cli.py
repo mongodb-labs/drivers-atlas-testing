@@ -14,6 +14,7 @@
 
 import logging
 import os
+import time
 import unittest
 from pprint import pprint
 from urllib.parse import unquote_plus
@@ -628,11 +629,18 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
     msg = f"Deleting project {project_name}..."
     if project:
         print(msg)
-        try:
-            client.groups[project.id].delete().data
-            print(f"{msg} done.")
-        except AtlasApiBaseError as e:
-            pprint(e.detail)
+        while 1:
+            try:
+                client.groups[project.id].delete().data
+                print(f"{msg} done.")
+                break
+            except AtlasApiBaseError as e:
+                if e.error_code == 409:
+                    print(e.datail)
+                    time.sleep(10)
+                else:
+                    pprint(e.detail)
+                    break
 
 
 @atlas_tests.command('run')
