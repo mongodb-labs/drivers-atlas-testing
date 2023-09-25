@@ -188,7 +188,7 @@ functions:
         add_expansions_to_env: true
         script: |
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe projects \
-            delete-all ${atlas_organization_id}
+            delete-all --org-id=${atlas_organization_id}
 
           # astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
           #   run-one ${TEST_FILE} \
