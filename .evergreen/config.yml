@@ -188,6 +188,10 @@ functions:
         add_expansions_to_env: true
         script: |
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
+            delete-all ${TEST_FILE} \
+            --workload-file ${WORKLOAD_FILE}
+
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
             run-one ${TEST_FILE} \
             --workload-file ${WORKLOAD_FILE} \
             --workload-executor integrations/${DRIVER_DIRNAME}/workload-executor \
