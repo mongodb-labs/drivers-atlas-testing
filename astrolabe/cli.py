@@ -610,13 +610,14 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
     print(msg)
 
     # Step-2: delete the cluster.
+    client =ctx.obj.client
     organization = cmd.get_organization_by_id(
-        client=ctx.obj.client, org_id=org_id)
+        client=client, org_id=org_id)
     project = cmd.get_project(
-        client=ctx.obj.client, project_name=project_name, organization_id=organization.id)
+        client=client, project_name=project_name, organization_id=organization.id)
     if project:
         try:
-            ctx.obj.client.groups[project.id].clusters[cluster_name].delete()
+            client.groups[project.id].clusters[cluster_name].delete().data
             print(f"{msg} done.")
         except AtlasApiBaseError as e:
             pprint(e)
@@ -626,8 +627,9 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
     # Step-3: delete the project.
     msg = f"Deleting project {project_name}..."
     if project:
+        print(msg)
         try:
-            ctx.obj.client.groups[project.id].delete()
+            client.groups[project.id].delete().data
             print(f"{msg} done.")
         except AtlasApiBaseError as e:
             pprint(e)

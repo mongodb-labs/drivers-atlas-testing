@@ -187,14 +187,11 @@ functions:
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
         add_expansions_to_env: true
         script: |
-          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe projects \
-            delete-all --org-id=${atlas_organization_id}
-
-          # astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
-          #   run-one ${TEST_FILE} \
-          #   --workload-file ${WORKLOAD_FILE} \
-          #   --workload-executor integrations/${DRIVER_DIRNAME}/workload-executor \
-          #   --no-delete
+          astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
+            run-one ${TEST_FILE} \
+            --workload-file ${WORKLOAD_FILE} \
+            --workload-executor integrations/${DRIVER_DIRNAME}/workload-executor \
+            --no-delete
     - command: subprocess.exec
       type: setup
       params:
