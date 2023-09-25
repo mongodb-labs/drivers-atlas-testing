@@ -225,9 +225,11 @@ def delete_all_projects(ctx, org_id):
     """Delete all Atlas Projects in organization."""
     projects_res = cmd.list_projects_in_org(client=ctx.obj.client, org_id=org_id)
     for project in projects_res['results']:
-        cmd.delete_project(client=ctx.obj.client, project_id=project.id)
-        LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id))
-
+        try:
+            cmd.delete_project(client=ctx.obj.client, project_id=project.id)
+            LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id))
+        except Exception as e:
+            LOGGER.exception(e)
 
 @atlas_projects.command('get-one')
 @ATLASPROJECTNAME_OPTION
