@@ -621,6 +621,15 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
     else:
         print(f"Project {project_name} not found!")
 
+    # Step-3: delete the project.
+    msg = f"Deleting project {project_name}..."
+    if project:
+        try:
+            ctx.obj.client.groups[project.id].delete()
+            print(f"{msg} done.")
+        except AtlasApiBaseError as e:
+            pprint(e)
+
 
 @atlas_tests.command('run')
 @click.argument("spec_tests_directory", type=click.Path(
