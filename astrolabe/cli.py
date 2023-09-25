@@ -632,7 +632,7 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
             client.groups[project.id].delete().data
             print(f"{msg} done.")
         except AtlasApiBaseError as e:
-            pprint(e)
+            pprint(e.detail)
 
 
 @atlas_tests.command('run')
