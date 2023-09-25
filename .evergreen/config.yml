@@ -259,7 +259,7 @@ functions:
           fi
 
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
-            delete-project ${TEST_FILE} \
+            delete-cluster ${TEST_FILE} \
             --workload-file ${WORKLOAD_FILE}
 
   "create kind cluster":
