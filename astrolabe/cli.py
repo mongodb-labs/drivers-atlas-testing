@@ -642,7 +642,9 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
                     print(e.datail)
                     time.sleep(10)
                 else:
+                    pprint(dir(e))
                     pprint(e.detail)
+                    pprint(e.error_code)
                     break
 
 
