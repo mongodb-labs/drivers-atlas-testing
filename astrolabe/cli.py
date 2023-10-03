@@ -635,11 +635,10 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
                 print(f"{msg} done.")
                 break
             except AtlasApiBaseError as e:
-                # The API returns error code 409 when the project cannot be
-                # deleted because there is a cluster still running, we
-                # sleep to allow the cluster to shut down.
-                if e.error_code == 409:
-                    print(e.datail)
+                # https://www.mongodb.com/docs/atlas/reference/api-errors/
+                # Cannot close group while it has active clusters; please terminate all clusters.
+                if e.error_code == "CANNOT_CLOSE_GROUP_ACTIVE_ATLAS_CLUSTERS":
+                    print(e.detail, "sleeping 10 seconds...")
                     time.sleep(10)
                 else:
                     pprint(e.detail)
