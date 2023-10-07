@@ -14,7 +14,6 @@
 
 import logging
 import os
-import time
 import unittest
 from pprint import pprint
 from urllib.parse import unquote_plus
@@ -144,7 +143,7 @@ def cli(ctx, atlas_base_url, atlas_api_username,
             timeout=http_timeout)
     else:
         admin_client = None
-
+    
     ctx.obj = ContextStore(client, admin_client)
 
     # Configure logging.
@@ -226,11 +225,9 @@ def delete_all_projects(ctx, org_id):
     """Delete all Atlas Projects in organization."""
     projects_res = cmd.list_projects_in_org(client=ctx.obj.client, org_id=org_id)
     for project in projects_res['results']:
-        try:
-            cmd.delete_project(client=ctx.obj.client, project_id=project.id)
-            LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id))
-        except Exception as e:
-            LOGGER.exception(e)
+        cmd.delete_project(client=ctx.obj.client, project_id=project.id)
+        LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id))
+
 
 @atlas_projects.command('get-one')
 @ATLASPROJECTNAME_OPTION
@@ -561,7 +558,7 @@ def get_logs_cmd(ctx, spec_test_file, workload_file, org_id, project_name,
     Retrieves logs for the cluster and saves them in logs.tar.gz in the
     current working directory.
     """
-
+    
     if only_on_failure:
         if os.path.exists('status'):
             with open('status') as fp:
@@ -577,7 +574,7 @@ def get_logs_cmd(ctx, spec_test_file, workload_file, org_id, project_name,
     cluster_name = get_cluster_name(
         get_test_name(spec_test_file, workload_file),
         cluster_name_salt)
-
+    
     organization = cmd.get_organization_by_id(
         client=ctx.obj.client,
         org_id=org_id)
@@ -607,42 +604,17 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
     cluster_name = get_cluster_name(
         get_test_name(spec_test_file, workload_file),
         cluster_name_salt)
-    msg = f"Deleting cluster {cluster_name} in project {project_name}..."
-    print(msg)
 
     # Step-2: delete the cluster.
-    client =ctx.obj.client
     organization = cmd.get_organization_by_id(
-        client=client, org_id=org_id)
+        client=ctx.obj.client, org_id=org_id)
     project = cmd.get_project(
-        client=client, project_name=project_name, organization_id=organization.id)
+        client=ctx.obj.client, project_name=project_name, organization_id=organization.id)
     if project:
         try:
-            client.groups[project.id].clusters[cluster_name].delete().data
-            print(f"{msg} done.")
-        except AtlasApiBaseError as e:
-            pprint(e)
-    else:
-        print(f"Project {project_name} not found!")
-
-    # Step-3: delete the project.
-    msg = f"Deleting project {project_name}..."
-    if project:
-        print(msg)
-        while 1:
-            try:
-                client.groups[project.id].delete().data
-                print(f"{msg} done.")
-                break
-            except AtlasApiBaseError as e:
-                # https://www.mongodb.com/docs/atlas/reference/api-errors/
-                # Cannot close group while it has active clusters; please terminate all clusters.
-                if e.error_code == "CANNOT_CLOSE_GROUP_ACTIVE_ATLAS_CLUSTERS":
-                    print(e.detail, "sleeping 10 seconds...")
-                    time.sleep(10)
-                else:
-                    pprint(e.detail)
-                    break
+            ctx.obj.client.groups[project.id].clusters[cluster_name].delete()
+        except AtlasApiBaseError:
+            pass
 
 
 @atlas_tests.command('run')
