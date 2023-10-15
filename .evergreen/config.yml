@@ -628,27 +628,28 @@ axes:
           DRIVER_DIRNAME: "ruby"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-ruby-driver"
           DRIVER_REVISION: "master"
+          ASTROLABE_EXECUTOR_STARTUP_TIME: 30
       - id: node-main
         display_name: "Node (main)"
         variables:
           DRIVER_DIRNAME: "node"
           DRIVER_REPOSITORY: "https://github.com/mongodb/node-mongodb-native"
           DRIVER_REVISION: "main"
-          ASTROLABE_EXECUTOR_STARTUP_TIME: 15
+          ASTROLABE_EXECUTOR_STARTUP_TIME: 45
       - id: java-master
         display_name: "Java (master)"
         variables:
           DRIVER_DIRNAME: "java/sync"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-java-driver"
           DRIVER_REVISION: "master"
-          ASTROLABE_EXECUTOR_STARTUP_TIME: 3
+          ASTROLABE_EXECUTOR_STARTUP_TIME: 15
       - id: dotnet-master
         display_name: "dotnet (master)"
         variables:
           DRIVER_DIRNAME: "dotnet"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-csharp-driver"
           DRIVER_REVISION: "master"
-          ASTROLABE_EXECUTOR_STARTUP_TIME: 40
+          ASTROLABE_EXECUTOR_STARTUP_TIME: 60
           # The .NET driver currently doesn't support loading TLS and CA certs from connection
           # string params, so override the standard Kind connection string with one that uses
           # "tlsInsecure=true" to ignore the validity of the custom CA and TLS certs that the Kind
@@ -691,6 +692,16 @@ axes:
       - id: ubuntu-18.04
         display_name: "Ubuntu 18.04"
         run_on: ubuntu1804-drivers-atlas-testing
+        batchtime: 10080  # 7 days
+        variables:
+          PYTHON3_BINARY: "/opt/python/3.9/bin/python3"
+          PYTHON_BIN_DIR: "bin"
+          # Set locale to unicode - needed for astrolabe to function correctly.
+          LC_ALL: "C.UTF-8"
+          LANG: "C.UTF-8"
+      - id: ubuntu-22.04
+        display_name: "Ubuntu 22.04"
+        run_on: ubuntu2204-drivers-atlas-testing
         batchtime: 10080  # 7 days
         variables:
           PYTHON3_BINARY: "/opt/python/3.9/bin/python3"
@@ -795,8 +806,7 @@ buildvariants:
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
     - ".all !.kind"
-# TODO(BUILD-17806): GLIBC on Ubuntu 18 is too low (2.27) for Node 18 and Node 20 (2.28)
-- matrix_name: tests-node
+- matrix_name: tests-node-ubuntu-18
   matrix_spec:
     driver:
       - node-main
@@ -804,6 +814,18 @@ buildvariants:
       - ubuntu-18.04
     runtime:
       - node-16
+  display_name: "${driver} ${platform} ${runtime}"
+  tasks:
+    - .all
+- matrix_name: tests-node-ubuntu-22
+  matrix_spec:
+    driver:
+      - node-main
+    platform:
+      - ubuntu-22.04
+    runtime:
+      - node-18
+      - node-20
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - .all
