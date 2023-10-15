@@ -81,9 +81,10 @@ functions:
           #   enough that hashing suffices here)
           # - we convert it to hex encoding because cluster names must be alphanumeric (hyphens are allowed)
           transform="process.stdout.write(require('crypto').createHash('md5').update(process.argv[1]).digest().toString('hex'))"
-          unique_id=$(node -e $transform "${task_id}-${execution}")
+          salt=$(node -e $transform "${task_id}-${execution}")
+          timestamp=$(date +%s)
           cat <<EOT > expansion.yml
-          ATLAS_PROJECT_NAME: "$project-$unique_id"
+          ATLAS_PROJECT_NAME: "$project-$timestamp-$salt"
           EOT
     - command: expansions.update
       params:

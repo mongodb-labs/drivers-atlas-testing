@@ -625,25 +625,6 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
     else:
         print(f"Project {project_name} not found!")
 
-    # Step-3: delete the project.
-    msg = f"Deleting project {project_name}..."
-    if project:
-        print(msg)
-        while 1:
-            try:
-                client.groups[project.id].delete().data
-                print(f"{msg} done.")
-                break
-            except AtlasApiBaseError as e:
-                # https://www.mongodb.com/docs/atlas/reference/api-errors/
-                # Cannot close group while it has active clusters; please terminate all clusters.
-                if e.error_code == "CANNOT_CLOSE_GROUP_ACTIVE_ATLAS_CLUSTERS":
-                    print(e.detail, "sleeping 10 seconds...")
-                    time.sleep(10)
-                else:
-                    pprint(e.detail)
-                    break
-
 
 @atlas_tests.command('run')
 @click.argument("spec_tests_directory", type=click.Path(
