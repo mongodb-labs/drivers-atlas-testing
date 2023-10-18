@@ -2,7 +2,8 @@
 set -o xtrace
 
 # User configurable-options
-export MONGODB_VERSION="4.2"
+# Each distro in the download script has a latest download.
+export MONGODB_VERSION="rapid"
 export TOPOLOGY="server"
 
 # Setup variables
