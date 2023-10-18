@@ -165,6 +165,24 @@ functions:
 
   "run atlas test":
     # Run the Atlas Planned Maintenance Test.
+
+    # First set up the expansion variables for teardown tasks.
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: astrolabe-src
+        script: |
+          cat <<EOT > expansion.yml
+          ATLAS: true
+          WORKLOAD_FILE: ${WORKLOAD_FILE}
+          TEST_FILE: ${TEST_FILE}
+          EOT
+          # See what we variables we've set.
+          cat expansion.yml
+    - command: expansions.update
+      params:
+        file: astrolabe-src/expansion.yml
+    # Then run the test.
     - command: shell.exec
       type: test
       params:
@@ -422,7 +440,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/move-sharded.yml
-          ATLAS: "true"
   - name: atlas-retryReads-move
     tags: ["all"]
     commands:
@@ -430,7 +447,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/move.yml
-          ATLAS: "true"
   - name: atlas-retryReads-primaryRemoval
     tags: ["all"]
     commands:
@@ -438,7 +454,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/primaryRemoval.yml
-          ATLAS: "true"
   - name: atlas-retryReads-primaryTakeover
     tags: ["all"]
     commands:
@@ -446,7 +461,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/primaryTakeover.yml
-          ATLAS: "true"
   - name: atlas-retryReads-processRestart-sharded
     tags: ["all"]
     commands:
@@ -454,7 +468,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/processRestart-sharded.yml
-          ATLAS: "true"
   - name: atlas-retryReads-processRestart
     tags: ["all"]
     commands:
@@ -462,7 +475,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/processRestart.yml
-          ATLAS: "true"
   - name: atlas-retryReads-resizeCluster
     tags: ["all"]
     commands:
@@ -470,7 +482,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/resizeCluster.yml
-          ATLAS: "true"
   - name: atlas-retryReads-testFailover-sharded
     tags: ["all"]
     commands:
@@ -478,7 +489,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/testFailover-sharded.yml
-          ATLAS: "true"
   - name: atlas-retryReads-testFailover
     tags: ["all"]
     commands:
@@ -486,7 +496,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/testFailover.yml
-          ATLAS: "true"
   - name: atlas-retryReads-toggleServerSideJS
     tags: ["all"]
     commands:
@@ -494,7 +503,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/toggleServerSideJS.yml
-          ATLAS: "true"
   - name: atlas-retryReads-vmRestart-sharded
     tags: ["all"]
     commands:
@@ -502,7 +510,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/vmRestart-sharded.yml
-          ATLAS: "true"
   - name: atlas-retryReads-vmRestart
     tags: ["all"]
     commands:
@@ -510,7 +517,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/vmRestart.yml
-          ATLAS: "true"
   - name: atlas-retryWrites-resizeCluster
     tags: ["all"]
     commands:
@@ -518,7 +524,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryWrites.yml
           TEST_FILE: tests/atlas/resizeCluster.yml
-          ATLAS: "true"
   - name: atlas-retryWrites-toggleServerSideJS
     tags: ["all"]
     commands:
@@ -526,7 +531,6 @@ tasks:
         vars:
           WORKLOAD_FILE: workloads/retryWrites.yml
           TEST_FILE: tests/atlas/toggleServerSideJS.yml
-          ATLAS: "true"
 
   # Kind test tasks
   # ===============
