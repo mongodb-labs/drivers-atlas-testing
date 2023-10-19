@@ -846,7 +846,7 @@ buildvariants:
 - matrix_name: "tests-python"
   matrix_spec:
     driver: ["pymongo-master"]
-    platform: ["ubuntu-18.04"]
+    platform: ["ubuntu-22.04"]
     runtime: ["python39"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
@@ -916,7 +916,7 @@ buildvariants:
 - matrix_name: "tests-go"
   matrix_spec:
     driver: ["go-master"]
-    platform: ubuntu-18.04
+    platform: ubuntu-22.04
     runtime: go-20
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
@@ -932,7 +932,7 @@ buildvariants:
 - matrix_name: "tests-rust"
   matrix_spec:
     driver: ["rust-main"]
-    platform: ubuntu-18.04
+    platform: ubuntu-22.04
     runtime: rust-latest
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
@@ -941,7 +941,7 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   matrix_spec:
     driver: ["c-master"]
-    platform: ["ubuntu-18.04"]
+    platform: ["ubuntu-22.04"]
     runtime: ["c-gcc", "c-clang"]
   tasks: 
     - ".all"
