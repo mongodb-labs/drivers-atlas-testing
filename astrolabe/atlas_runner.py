@@ -424,7 +424,11 @@ class SpecTestRunnerBase:
 
         # Step-2: clean old projects with same name base from organization.
         if not no_create:
+            LOGGER.info("Cleaning old projects")
             self.clean_old_projects(org.id)
+            LOGGER.info("Successfully old projects")
+        else:
+            LOGGER.info("Skipping cleaning old projects")
 
         with open(workload_file) as f:
             workload = JSONObject.from_dict(yaml.safe_load(f))
@@ -485,6 +489,7 @@ class SpecTestRunnerBase:
     def clean_old_projects(self, org_id):
         current_timestamp = int(_time.time())
         projects_res = list_projects_in_org(client=self.client, org_id=org_id)
+        LOGGER.info(f"looking for {self.config.project_base_name}")
         for project in projects_res['results']:
             if project.name.startswith(self.config.project_base_name):
                 try:
@@ -494,6 +499,7 @@ class SpecTestRunnerBase:
                 if project_timestamp.isnumeric() and \
                     int(project_timestamp) < current_timestamp - self.project_expiration_threshold_seconds:
                     try:
+                        LOGGER.info("Deleting project {!r}, id: {!r}".format(project.name, project.id))
                         delete_project(client=self.client, project_id=project.id)
                         LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id))
                     except AtlasApiError as esc:
@@ -502,6 +508,8 @@ class SpecTestRunnerBase:
                             LOGGER.warn(esc)
                         else:
                             raise
+                else:
+                    LOGGER.info("Skipping deleting project {!r}, id: {!r}".format(project.name, project.id))
 
     def get_printable_test_plan(self):
         table_data = []
