@@ -52,6 +52,8 @@ ATLASORGANIZATIONID_OPTION = create_click_option(
 
 ATLASPROJECTNAME_OPTION = create_click_option(CONFIGOPTS.ATLAS_PROJECT_NAME)
 
+ATLASPROJECTBASENAME_OPTION = create_click_option(CONFIGOPTS.ATLAS_PROJECT_BASE_NAME)
+
 POLLINGTIMEOUT_OPTION = create_click_option(CONFIGOPTS.ATLAS_POLLING_TIMEOUT)
 
 POLLINGFREQUENCY_OPTION = create_click_option(
@@ -462,6 +464,7 @@ def atlas_tests():
 @ATLASORGANIZATIONNAME_OPTION
 @ATLASORGANIZATIONID_OPTION
 @ATLASPROJECTNAME_OPTION
+@ATLASPROJECTBASENAME_OPTION
 @CLUSTERNAMESALT_OPTION
 @POLLINGTIMEOUT_OPTION
 @POLLINGFREQUENCY_OPTION
@@ -472,8 +475,9 @@ def atlas_tests():
 @click.pass_context
 def run_atlas_test(ctx, spec_test_file, workload_file, workload_executor,
                     db_username, db_password, org_name, org_id, project_name,
-                    cluster_name_salt, polling_timeout, polling_frequency,
-                    xunit_output, no_delete, no_create, startup_time):
+                    project_base_name, cluster_name_salt, polling_timeout, 
+                    polling_frequency, xunit_output, no_delete, no_create, 
+                    startup_time):
     """
     Runs one APM test.
     This is the main entry point for running APM tests in headless environments.
@@ -485,6 +489,7 @@ def run_atlas_test(ctx, spec_test_file, workload_file, workload_executor,
         organization_name=org_name,
         organization_id=org_id,
         project_name=project_name,
+        project_base_name=project_base_name,
         name_salt=cluster_name_salt,
         polling_timeout=polling_timeout,
         polling_frequency=polling_frequency,
