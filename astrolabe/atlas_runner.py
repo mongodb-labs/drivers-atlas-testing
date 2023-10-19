@@ -486,7 +486,7 @@ class SpecTestRunnerBase:
         current_timestamp = int(_time.time())
         projects_res = list_projects_in_org(client=self.client, org_id=org_id)
         for project in projects_res['results']:
-            if project.name.startswith(self.config.project_name):
+            if project.name.startswith(self.config.project_base_name):
                 try:
                     project_timestamp = project.name.split('-')[-2]
                 except:

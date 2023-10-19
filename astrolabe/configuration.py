@@ -23,7 +23,11 @@ from atlasclient.utils import JSONObject
 # Mapping used to generate configurable options for Astrolabe.
 # See astrolabe.utils.create_click_option for details.
 CONFIGURATION_OPTIONS = JSONObject({
-    'ATLAS_PROJECT_NAME': {         # ${project} in EVG
+    'ATLAS_PROJECT_BASE_NAME': {         # ${project} in EVG
+        'help': 'Base of the Atlas Project.',
+        'cliopt': '--project-base-name',
+        'envvar': 'ATLAS_PROJECT_BASE_NAME'},
+    'ATLAS_PROJECT_NAME': {         # ${project}-timestamp-random_id in EVG
         'help': 'Name of the Atlas Project.',
         'cliopt': '--project-name',
         'envvar': 'ATLAS_PROJECT_NAME'},
@@ -112,6 +116,6 @@ CONFIGURATION_OPTIONS = JSONObject({
 # Convenience class for storing settings related to polling.
 TestCaseConfiguration = namedtuple(
     "AtlasPlannedMaintenanceTestConfiguration",
-    ["organization_name", "organization_id", "project_name", "name_salt", "polling_timeout",
+    ["organization_name", "organization_id", "project_name", "project_base_name", "name_salt", "polling_timeout",
      "polling_frequency", "database_username", "database_password",
      "workload_executor"])
