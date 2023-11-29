@@ -611,7 +611,7 @@ tasks:
       - func: "run kind test"
         vars:
           TEST_FILE: tests/kubernetes/kind/scaleDown.yml
-          WORKLOAD_FILE: workloads/writes.yml
+          WORKLOAD_FILE: workloads/retryWrites.yml
       - func: "retrieve kind logs"
       - func: "delete kind cluster"
 
