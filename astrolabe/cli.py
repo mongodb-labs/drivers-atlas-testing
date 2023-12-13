@@ -627,8 +627,9 @@ def delete_test_cluster(ctx, spec_test_file, workload_file, org_id, project_name
             print(f"{msg} done.")
         except AtlasApiBaseError as e:
             pprint(e)
+            raise
     else:
-        print(f"Project {project_name} not found!")
+        raise AtlasClientError(f"Project {project_name} not found!")
 
 
 @atlas_tests.command('run')

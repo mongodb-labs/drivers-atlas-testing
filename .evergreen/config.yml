@@ -5,8 +5,9 @@
 # Run previous commits to pinpoint a failure's origin.
 stepback: true
 
-# Fail builds when pre tasks fail.
+# Fail builds when pre and post tasks fail.
 pre_error_fails_task: true
+post_error_fails_task: true
 
 # Mark failures other than test failures with a purple box.
 command_type: system
