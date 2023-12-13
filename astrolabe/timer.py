@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Timer utility.'''
+"""Timer utility."""
 
 from time import monotonic
 
 
 class Timer:
     """Class to simplify timing operations."""
+
     def __init__(self):
         self._start = None
         self._end = None

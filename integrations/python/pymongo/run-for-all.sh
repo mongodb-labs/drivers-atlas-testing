@@ -9,4 +9,3 @@ do
       python3 workload-executor.py "mongodb://user:password@localhost" "$file"
    fi
 done
-

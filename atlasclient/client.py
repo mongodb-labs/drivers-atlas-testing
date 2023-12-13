@@ -18,33 +18,35 @@ import logging
 
 import requests
 
-from atlasclient.configuration import (
-    ClientConfiguration, CONFIG_DEFAULTS as DEFAULTS)
+from atlasclient.configuration import ClientConfiguration, CONFIG_DEFAULTS as DEFAULTS
 from atlasclient.exceptions import (
-    AtlasAuthenticationError, AtlasClientError, AtlasApiError,
-    AtlasRateLimitError)
+    AtlasAuthenticationError,
+    AtlasClientError,
+    AtlasApiError,
+    AtlasRateLimitError,
+)
 from atlasclient.utils import JSONObject
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-_EMPTY_PATH_ERR_MSG_TEMPLATE = ('Calling {} on an empty API path is not '
-                                'supported.')
+_EMPTY_PATH_ERR_MSG_TEMPLATE = "Calling {} on an empty API path is not " "supported."
 
 
 class _ApiComponent:
     """Private class for dynamically constructing resource paths."""
+
     def __init__(self, client, path=None):
         self._client = client
         self._path = path
 
     def __repr__(self):
-        return '<ApiComponent: %s>' % self._path
+        return "<ApiComponent: %s>" % self._path
 
     def __getitem__(self, path):
         if self._path is not None:
-            path = '%s/%s' % (self._path, path)
+            path = "%s/%s" % (self._path, path)
         return _ApiComponent(self._client, path)
 
     def __getattr__(self, path):
@@ -52,23 +54,23 @@ class _ApiComponent:
 
     def get(self, **params):
         if self._path is None:
-            raise TypeError(_EMPTY_PATH_ERR_MSG_TEMPLATE.format('get()'))
-        return self._client.request('GET', self._path, **params)
+            raise TypeError(_EMPTY_PATH_ERR_MSG_TEMPLATE.format("get()"))
+        return self._client.request("GET", self._path, **params)
 
     def patch(self, **params):
         if self._path is None:
-            raise TypeError(_EMPTY_PATH_ERR_MSG_TEMPLATE.format('patch()'))
-        return self._client.request('PATCH', self._path, **params)
+            raise TypeError(_EMPTY_PATH_ERR_MSG_TEMPLATE.format("patch()"))
+        return self._client.request("PATCH", self._path, **params)
 
     def post(self, **params):
         if self._path is None:
-            raise TypeError(_EMPTY_PATH_ERR_MSG_TEMPLATE.format('post()'))
-        return self._client.request('POST', self._path, **params)
+            raise TypeError(_EMPTY_PATH_ERR_MSG_TEMPLATE.format("post()"))
+        return self._client.request("POST", self._path, **params)
 
     def delete(self, **params):
         if self._path is None:
-            raise TypeError(_EMPTY_PATH_ERR_MSG_TEMPLATE.format('delete()'))
-        return self._client.request('DELETE', self._path, **params)
+            raise TypeError(_EMPTY_PATH_ERR_MSG_TEMPLATE.format("delete()"))
+        return self._client.request("DELETE", self._path, **params)
 
     def get_path(self):
         return self._path
@@ -76,6 +78,7 @@ class _ApiComponent:
 
 class _ApiResponse:
     """Private wrapper class for processing HTTP responses."""
+
     def __init__(self, response, request_method, json_data):
         self.response = response
         self.resource_url = response.url
@@ -85,17 +88,26 @@ class _ApiResponse:
         self.data = json_data
 
     def __repr__(self):
-        return '<{}: {} {}, [HTTP status code: {}]>'.format(
-            self.__class__.__name__, self.request_method,
-            self.resource_url, self.status_code)
+        return "<{}: {} {}, [HTTP status code: {}]>".format(
+            self.__class__.__name__,
+            self.request_method,
+            self.resource_url,
+            self.status_code,
+        )
 
 
 class AtlasClient:
-    """An easy-to-use MongoDB Atlas API client for Python. """
-    def __init__(self, *, username, password,
-                 base_url=DEFAULTS.ATLAS_API_BASE_URL,
-                 api_version=DEFAULTS.ATLAS_API_VERSION,
-                 timeout=DEFAULTS.ATLAS_HTTP_TIMEOUT):
+    """An easy-to-use MongoDB Atlas API client for Python."""
+
+    def __init__(
+        self,
+        *,
+        username,
+        password,
+        base_url=DEFAULTS.ATLAS_API_BASE_URL,
+        api_version=DEFAULTS.ATLAS_API_VERSION,
+        timeout=DEFAULTS.ATLAS_HTTP_TIMEOUT,
+    ):
         """
         Client for the `MongoDB Atlas API
         <https://docs.atlas.mongodb.com/api/>`_.
@@ -153,11 +165,13 @@ class AtlasClient:
           - `timeout` (float, optional): time, in seconds, after which an
             HTTP request to the Atlas API should timeout. Default: 10.0.
         """
-        self.username=username
+        self.username = username
         self.config = ClientConfiguration(
-            base_url=base_url, api_version=api_version,
-            timeout=timeout, auth=requests.auth.HTTPDigestAuth(
-                username=username, password=password))
+            base_url=base_url,
+            api_version=api_version,
+            timeout=timeout,
+            auth=requests.auth.HTTPDigestAuth(username=username, password=password),
+        )
 
     def __getattr__(self, path):
         return _ApiComponent(self, path)
@@ -170,7 +184,7 @@ class AtlasClient:
         This needs special handling because empty paths are not otherwise
         supported by the Fluent API implementation.
         """
-        return _ApiComponent(self, '')
+        return _ApiComponent(self, "")
 
     def request(self, method, path, **params):
         """
@@ -190,47 +204,46 @@ class AtlasClient:
         """
         method = method.upper()
         url = self.construct_resource_url(
-            path, api_version=params.pop('api_version', None))
+            path, api_version=params.pop("api_version", None)
+        )
 
         query_params = {}
         for param_name in ("pretty", "envelope", "itemsPerPage", "pageNum"):
             if param_name in params:
                 query_params[param_name] = params.pop(param_name)
 
-        raw_json = params.pop('json', None)
+        raw_json = params.pop("json", None)
         if raw_json:
             params = raw_json
 
         request_kwargs = {
-            'auth': self.config.auth,
-            'params': query_params,
-            'json': params,
-            'timeout': self.config.timeout}
+            "auth": self.config.auth,
+            "params": query_params,
+            "json": params,
+            "timeout": self.config.timeout,
+        }
 
         LOGGER.debug("Request ({} {} {})".format(method, url, request_kwargs))
 
         try:
             response = requests.request(method, url, **request_kwargs)
         except requests.RequestException as e:
-            raise AtlasClientError(
-                str(e),
-                resource_url=url,
-                request_method=method
-            )
+            raise AtlasClientError(str(e), resource_url=url, request_method=method)
 
         return self.handle_response(method, response)
 
     def construct_resource_url(self, path, api_version=None):
         url_template = "{base_url}/{version}/{resource_path}"
-        if path and path[0] == '/':
-            url_template = '{base_url}{resource_path}'
+        if path and path[0] == "/":
+            url_template = "{base_url}{resource_path}"
         base_url = self.config.base_url
         # Allow trailing slash like https://cloud-dev.mongodb.com/ in the base URL
-        base_url = base_url.rstrip('/')
+        base_url = base_url.rstrip("/")
         return url_template.format(
             base_url=base_url,
             version=api_version or self.config.api_version,
-            resource_path=path)
+            resource_path=path,
+        )
 
     @staticmethod
     def handle_response(method, response):
@@ -245,36 +258,42 @@ class AtlasClient:
             return _ApiResponse(response, method, data)
 
         if response.status_code == 429:
-            raise AtlasRateLimitError('Too many requests', response=response,
-                                      request_method=method, error_code=429)
+            raise AtlasRateLimitError(
+                "Too many requests",
+                response=response,
+                request_method=method,
+                error_code=429,
+            )
 
         if data is None and False:
-            raise AtlasApiError('Unable to decode JSON response.',
-                                response=response, request_method=method)
+            raise AtlasApiError(
+                "Unable to decode JSON response.",
+                response=response,
+                request_method=method,
+            )
 
         kwargs = {
-            'response': response,
-            'request_method': method,
+            "response": response,
+            "request_method": method,
         }
-        
+
         if data is not None:
-            kwargs['detail'] = data.get('detail')
-            kwargs['error_code'] = data.get('errorCode')
+            kwargs["detail"] = data.get("detail")
+            kwargs["error_code"] = data.get("errorCode")
 
         if response.status_code == 400:
-            raise AtlasApiError('400: Bad Request.', **kwargs)
+            raise AtlasApiError("400: Bad Request.", **kwargs)
 
         if response.status_code == 401:
-            raise AtlasAuthenticationError('401: Unauthorized.', **kwargs)
+            raise AtlasAuthenticationError("401: Unauthorized.", **kwargs)
 
         if response.status_code == 403:
-            raise AtlasApiError('403: Forbidden.', **kwargs)
+            raise AtlasApiError("403: Forbidden.", **kwargs)
 
         if response.status_code == 404:
-            raise AtlasApiError('404: Not Found.', **kwargs)
+            raise AtlasApiError("404: Not Found.", **kwargs)
 
         if response.status_code == 409:
-            raise AtlasApiError('409: Conflict.', **kwargs)
+            raise AtlasApiError("409: Conflict.", **kwargs)
 
-        raise AtlasApiError('{}: Unknown.'.format(response.status_code),
-                            **kwargs)
+        raise AtlasApiError("{}: Unknown.".format(response.status_code), **kwargs)

@@ -46,7 +46,7 @@ Scenario* YAML file has the following keys:
 * operations (array): List of operations to be performed, representing the
   maintenance event. Each operation is a document containing one key which is
   the name of the operation. The possible operations are:
-  
+
   * setClusterConfiguration: set the cluster configuration to the specified
     *Cluster Configuration Options* as defined in initialConfiguration.
     The value must be the *Cluster Configuration Options* which MUST contain
@@ -59,9 +59,9 @@ Scenario* YAML file has the following keys:
       `Modify One Cluster <https://docs.atlas.mongodb.com/reference/api/clusters-modify-one/>`_ endpoint.
     * processArgs (document): Document containing final *Advanced Configuration Option* values.
       This MAY be an empty document if the maintenance plan does not require modifying the Advanced Configuration Options.
-      
+
     Example::
-    
+
       setClusterConfiguration:
         clusterConfiguration:
           providerSettings:
@@ -72,23 +72,23 @@ Scenario* YAML file has the following keys:
 
   * testFailover: trigger an election in the cluster using the "test failover"
     API endpoint. The value MUST be ``true``.
-    
+
     The workload executor MUST ignore the value of this key, so that
     the value can be changed to a hash in the future to provide options
     to the operation.
-    
+
     testFailover SHOULD be followed by sleep and waitForIdle operations
     because it does not update maintenance state synchronously (see
     `PRODTRIAGE-1232 <https://jira.mongodb.org/browse/PRODTRIAGE-1232>`_).
 
     Example::
-    
+
       testFailover: true
 
   * restartVms: perform a rolling restart of all nodes in the cluster.
     This operation requires Atlas Global Operator API key to be set when
     invoking ``astrolabe``. The value MUST be ``true``.
-    
+
     The workload executor MUST ignore the value of this key, so that
     the value can be changed to a hash in the future to provide options
     to the operation.
@@ -102,7 +102,7 @@ Scenario* YAML file has the following keys:
 
   * assertPrimaryRegion: assert that the primary in the deployment is in the
     specified region. The value MUST be a hash with the following keys:
-    
+
     * region (string, required): the region name as defined in Atlas API,
       e.g. ``US_WEST_1``.
     * timeout (floating-point number, optional): the maximum time, in
@@ -113,21 +113,21 @@ Scenario* YAML file has the following keys:
     a sharded cluster.
 
     Example::
-    
+
       assertPrimaryRegion:
         region: US_WEST_1
         timeout: 15
-    
+
   * sleep: do nothing for the specified duration. The value MUST be the duration
     to sleep for, in seconds.
 
     Example::
-    
+
       sleep: 10
-    
+
   * waitForIdle: wait for cluster maintenance state to become "idle".
     The value MUST be ``true``.
-    
+
     The workload executor MUST ignore the value of this key, so that
     the value can be changed to a hash in the future to provide options
     to the operation.

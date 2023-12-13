@@ -13,8 +13,3 @@
 # limitations under the License.
 
 """Python client for the MongoDB Atlas API."""
-
-from atlasclient.client import AtlasClient
-from atlasclient.exceptions import (
-    AtlasApiError, AtlasRateLimitError, AtlasClientError, AtlasApiBaseError)
-from atlasclient.utils import JSONObject

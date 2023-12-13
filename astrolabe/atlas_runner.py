@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import datetime
-import random
 import logging
 import os
 import re
@@ -27,15 +26,23 @@ from atlasclient import AtlasApiError, JSONObject
 from atlasclient.exceptions import AtlasClientError
 from tabulate import tabulate
 
-from astrolabe.commands import (ensure_admin_user,
-                                ensure_connect_from_anywhere, ensure_project,
-                                get_organization_by_id,
-                                list_projects_in_org,
-                                delete_project)
+from astrolabe.commands import (
+    ensure_admin_user,
+    ensure_connect_from_anywhere,
+    ensure_project,
+    get_organization_by_id,
+    list_projects_in_org,
+    delete_project,
+)
 from astrolabe.exceptions import PollingTimeoutError
-from astrolabe.utils import (DriverWorkloadSubprocessRunner,
-                             SingleTestXUnitLogger, assert_subset,
-                             get_cluster_name, get_test_name, parse_iso8601_time)
+from astrolabe.utils import (
+    DriverWorkloadSubprocessRunner,
+    SingleTestXUnitLogger,
+    assert_subset,
+    get_cluster_name,
+    get_test_name,
+    parse_iso8601_time,
+)
 
 from .timer import Timer
 from .utils import mongo_client
@@ -53,8 +60,8 @@ class AtlasTestCase:
         cluster_name,
         specification,
         workload,
-        configuration):
-
+        configuration,
+    ):
         # Initialize.
         self.client = client
         self.admin_client = admin_client
@@ -64,7 +71,7 @@ class AtlasTestCase:
         self.workload = workload
         self.config = configuration
         self.failed = False
-        self.expect_failure = specification.get('expectFailure', False)
+        self.expect_failure = specification.get("expectFailure", False)
 
         # Initialize attribute used for memoization of connection string.
         self.__connection_string = None
@@ -77,15 +84,17 @@ class AtlasTestCase:
 
     @property
     def cluster_url(self):
-        return self.client.groups[self.project.id].clusters[
-            self.cluster_name]
+        return self.client.groups[self.project.id].clusters[self.cluster_name]
 
     def get_connection_string(self):
         if self.__connection_string is None:
             cluster = self.cluster_url.get().data
-            uri = re.sub(r'://',
-                '://%s:%s@' % (self.config.database_username, self.config.database_password),
-                cluster.srvAddress)
+            uri = re.sub(
+                r"://",
+                "://%s:%s@"
+                % (self.config.database_username, self.config.database_password),
+                cluster.srvAddress,
+            )
             self.__connection_string = uri
         return self.__connection_string
 
@@ -100,12 +109,9 @@ class AtlasTestCase:
         """Verify that the cluster config is what we expect it to be (based on
         maintenance status). Raises AssertionError."""
         cluster_config = self.cluster_url.get().data
-        assert_subset(
-            cluster_config,
-            expected_configuration.clusterConfiguration)
+        assert_subset(cluster_config, expected_configuration.clusterConfiguration)
         process_args = self.cluster_url.processArgs.get().data
-        assert_subset(
-            process_args, expected_configuration.processArgs)
+        assert_subset(process_args, expected_configuration.processArgs)
 
     def initialize(self, no_create=False):
         """
@@ -119,41 +125,46 @@ class AtlasTestCase:
                 # initialization. If the cluster does not exist, continue
                 # with normal creation.
                 self.cluster_url.get().data
-                self.verify_cluster_configuration_matches(self.spec.initialConfiguration)
+                self.verify_cluster_configuration_matches(
+                    self.spec.initialConfiguration
+                )
                 return
             except AtlasApiError as exc:
-                if exc.error_code != 'CLUSTER_NOT_FOUND':
-                    LOGGER.warn('Cluster was not found, will create one')
+                if exc.error_code != "CLUSTER_NOT_FOUND":
+                    LOGGER.warn("Cluster was not found, will create one")
             except AssertionError as exc:
-                LOGGER.warn('Configuration did not match: %s. Recreating the cluster' % exc)
+                LOGGER.warn(
+                    "Configuration did not match: %s. Recreating the cluster" % exc
+                )
 
         LOGGER.info("Initializing cluster {!r}".format(self.cluster_name))
 
-        cluster_config = self.spec.initialConfiguration.\
-            clusterConfiguration.copy()
+        cluster_config = self.spec.initialConfiguration.clusterConfiguration.copy()
         cluster_config["name"] = self.cluster_name
         try:
-            self.client.groups[self.project.id].clusters.post(
-                **cluster_config)
+            self.client.groups[self.project.id].clusters.post(**cluster_config)
         except AtlasApiError as exc:
-            if exc.error_code == 'DUPLICATE_CLUSTER_NAME':
+            if exc.error_code == "DUPLICATE_CLUSTER_NAME":
                 # Cluster already exists. Simply re-configure it.
                 # Cannot send cluster name when updating existing cluster.
                 cluster_config.pop("name")
-                self.client.groups[self.project.id].\
-                    clusters[self.cluster_name].patch(**cluster_config)
+                self.client.groups[self.project.id].clusters[self.cluster_name].patch(
+                    **cluster_config
+                )
             else:
                 raise
 
         # Apply processArgs if provided.
         process_args = self.spec.initialConfiguration.processArgs
         if process_args:
-            self.client.groups[self.project.id].\
-                clusters[self.cluster_name].processArgs.patch(**process_args)
+            self.client.groups[self.project.id].clusters[
+                self.cluster_name
+            ].processArgs.patch(**process_args)
 
     def run(self, persist_cluster=False, startup_time=1):
-        LOGGER.info("Running test {!r} on cluster {!r}".format(
-            self.id, self.cluster_name))
+        LOGGER.info(
+            "Running test {!r} on cluster {!r}".format(self.id, self.cluster_name)
+        )
 
         # Step-1: sanity-check the cluster configuration.
         self.verify_cluster_configuration_matches(self.spec.initialConfiguration)
@@ -167,16 +178,19 @@ class AtlasTestCase:
             workload_executor=self.config.workload_executor,
             connection_string=self.get_connection_string(),
             driver_workload=self.workload,
-            startup_time=startup_time)
+            startup_time=startup_time,
+        )
 
         try:
             for operation in self.spec.operations:
                 if len(operation) != 1:
-                    raise ValueError("Operation must have exactly one key: %s" % operation)
+                    raise ValueError(
+                        "Operation must have exactly one key: %s" % operation
+                    )
 
                 op_name, op_spec = list(operation.items())[0]
 
-                if op_name == 'setClusterConfiguration':
+                if op_name == "setClusterConfiguration":
                     # Step-3: begin maintenance routine.
                     final_config = op_spec
                     cluster_config = final_config.clusterConfiguration
@@ -198,7 +212,7 @@ class AtlasTestCase:
                     self.verify_cluster_configuration_matches(final_config)
                     LOGGER.info("Cluster maintenance complete")
 
-                elif op_name == 'testFailover':
+                elif op_name == "testFailover":
                     timer = Timer()
                     timer.start()
                     timeout = 300
@@ -217,57 +231,69 @@ class AtlasTestCase:
                     # CLUSTER_RESTART_INVALID error is returned from the call
                     while True:
                         try:
-                            self.cluster_url['restartPrimaries'].post()
+                            self.cluster_url["restartPrimaries"].post()
                         except AtlasApiError as exc:
-                            if exc.error_code != 'CLUSTER_RESTART_INVALID':
+                            if exc.error_code != "CLUSTER_RESTART_INVALID":
                                 raise
                         else:
                             break
 
                         if timer.elapsed > timeout:
-                            raise PollingTimeoutError("Could not test failover as cluster wasn't ready")
+                            raise PollingTimeoutError(
+                                "Could not test failover as cluster wasn't ready"
+                            )
                         else:
                             sleep(5)
 
                     self.wait_for_planning(start_time)
                     self.wait_for_idle()
 
-                elif op_name == 'sleep':
+                elif op_name == "sleep":
                     _time.sleep(op_spec)
 
-                elif op_name == 'waitForIdle':
+                elif op_name == "waitForIdle":
                     self.wait_for_idle()
 
-                elif op_name == 'restartVms':
-                    rv = self.admin_client.nds.groups[self.project.id].clusters[self.cluster_name].reboot.post(api_version='private')
+                elif op_name == "restartVms":
+                    rv = (
+                        self.admin_client.nds.groups[self.project.id]
+                        .clusters[self.cluster_name]
+                        .reboot.post(api_version="private")
+                    )
 
                     self.wait_for_idle()
 
-                elif op_name == 'assertPrimaryRegion':
-                    region = op_spec['region']
+                elif op_name == "assertPrimaryRegion":
+                    region = op_spec["region"]
 
                     cluster_config = self.cluster_url.get().data
                     timer = Timer()
                     timer.start()
-                    timeout = op_spec.get('timeout', 90)
+                    timeout = op_spec.get("timeout", 90)
 
                     with mongo_client(self.get_connection_string()) as mc:
                         while True:
-                            rsc = mc.admin.command('replSetGetConfig')
-                            member = [m for m in rsc['config']['members']
-                                if m['horizons']['PUBLIC'] == '%s:%s' % mc.primary][0]
-                            member_region = member['tags']['region']
+                            rsc = mc.admin.command("replSetGetConfig")
+                            member = [
+                                m
+                                for m in rsc["config"]["members"]
+                                if m["horizons"]["PUBLIC"] == "%s:%s" % mc.primary
+                            ][0]
+                            member_region = member["tags"]["region"]
 
                             if region == member_region:
                                 break
 
                             if timer.elapsed > timeout:
-                                raise Exception("Primary in cluster not in expected region '%s' (actual region '%s')" % (region, member_region))
+                                raise Exception(
+                                    "Primary in cluster not in expected region '%s' (actual region '%s')"
+                                    % (region, member_region)
+                                )
                             else:
                                 sleep(5)
 
                 else:
-                    raise Exception('Unrecognized operation %s' % op_name)
+                    raise Exception("Unrecognized operation %s" % op_name)
 
             # Wait 10 seconds to ensure that the driver is not experiencing any
             # errors after the maintenance has concluded.
@@ -290,13 +316,19 @@ class AtlasTestCase:
                 LOGGER.info(f"Test case {self.id!r} expects failures.")
 
             # Check for workload failures.
-            failure = stats['numErrors'] != 0 or stats['numFailures'] != 0 or stats['numSuccesses'] == 0
+            failure = (
+                stats["numErrors"] != 0
+                or stats["numFailures"] != 0
+                or stats["numSuccesses"] == 0
+            )
 
             # If there are workload failures and the test case doesn't expect workload failures OR
             # if there are no failures and the test case does expect workload failures, mark the
             # test case as failed.
             if failure != self.expect_failure:
-                LOGGER.info(f"FAILED: {self.id!r}; Workload failure: {failure}; Expect failure: {self.expect_failure}")
+                LOGGER.info(
+                    f"FAILED: {self.id!r}; Workload failure: {failure}; Expect failure: {self.expect_failure}"
+                )
                 self.failed = True
                 # Write xunit logs for failed tests.
                 junit_test.result = junitparser.Failure(str(stats))
@@ -309,8 +341,9 @@ class AtlasTestCase:
             # TODO: https://github.com/mongodb-labs/drivers-atlas-testing/issues/4
             if not persist_cluster:
                 self.cluster_url.delete()
-                LOGGER.info("Cluster {!r} marked for deletion.".format(
-                    self.cluster_name))
+                LOGGER.info(
+                    "Cluster {!r} marked for deletion.".format(self.cluster_name)
+                )
 
             return junit_test
         finally:
@@ -331,7 +364,7 @@ class AtlasTestCase:
         timer.start()
         ok = False
         timeout = self.config.polling_timeout
-        wanted_state = 'idle'
+        wanted_state = "idle"
         last_notified = 0
         while timer.elapsed < timeout:
             sleep(1.0 / self.config.polling_frequency)
@@ -347,7 +380,10 @@ class AtlasTestCase:
                 ok = True
                 break
 
-            msg = "Cluster %s: current state: %s; wanted state: %s; waited for %.1f sec" % (self.cluster_name, actual_state, wanted_state, timer.elapsed)
+            msg = (
+                "Cluster %s: current state: %s; wanted state: %s; waited for %.1f sec"
+                % (self.cluster_name, actual_state, wanted_state, timer.elapsed)
+            )
             now = monotonic()
             # Notify once a minute, see DRIVERS-2013.
             if now - last_notified >= 60:
@@ -366,13 +402,20 @@ class AtlasTestCase:
         LOGGER.info("Waiting for planning for cluster %s" % self.cluster_name)
         last_notified = 0
         while timer.elapsed < timeout:
-            data = self.admin_client.nds.groups[self.project.id].get(api_version='private').data
-            planning_time = parse_iso8601_time(data['lastPlanningDate'])
+            data = (
+                self.admin_client.nds.groups[self.project.id]
+                .get(api_version="private")
+                .data
+            )
+            planning_time = parse_iso8601_time(data["lastPlanningDate"])
             if planning_time > start_time:
                 ok = True
                 break
 
-            msg = "Cluster %s: last planned: %s; wanted after: %s; waited for %.1f sec" % (self.cluster_name, planning_time, start_time, timer.elapsed)
+            msg = (
+                "Cluster %s: last planned: %s; wanted after: %s; waited for %.1f sec"
+                % (self.cluster_name, planning_time, start_time, timer.elapsed)
+            )
             now = monotonic()
             # Notify once a minute, see DRIVERS-2013.
             if now - last_notified >= 60:
@@ -384,11 +427,14 @@ class AtlasTestCase:
             _time.sleep(5)
 
         if not ok:
-            raise PollingTimeoutError("Timed out waiting for planning after %s seconds" % timeout)
+            raise PollingTimeoutError(
+                "Timed out waiting for planning after %s seconds" % timeout
+            )
 
 
 class SpecTestRunnerBase:
     """Base class for spec test runners."""
+
     def __init__(
         self,
         *,
@@ -400,8 +446,8 @@ class SpecTestRunnerBase:
         xunit_output,
         persist_clusters,
         no_create,
-        workload_startup_time):
-
+        workload_startup_time,
+    ):
         self.cases = []
         self.client = client
         self.admin_client = admin_client
@@ -418,8 +464,7 @@ class SpecTestRunnerBase:
         # Note: organizations can only be created by via the web UI.
         org_id = self.config.organization_id
         LOGGER.info("Verifying organization id: {!r}".format(org_id))
-        org = get_organization_by_id(
-            client=self.client, org_id=org_id)
+        org = get_organization_by_id(client=self.client, org_id=org_id)
         LOGGER.info("Successfully verified organization {!r}".format(org.name))
 
         # Step-2: clean old projects with same name base from organization.
@@ -435,7 +480,7 @@ class SpecTestRunnerBase:
 
         for full_path in self.find_spec_tests(test_locator_token):
             # Step-1: load test specification.
-            with open(full_path, 'r') as spec_file:
+            with open(full_path, "r") as spec_file:
                 test_spec = JSONObject.from_dict(yaml.safe_load(spec_file))
 
             # Step-2: generate test name.
@@ -451,7 +496,8 @@ class SpecTestRunnerBase:
                 cluster_name=cluster_name,
                 specification=test_spec,
                 workload=workload,
-                configuration=self.config)
+                configuration=self.config,
+            )
             self.cases.append(atlas_test_case)
 
             # Set up Atlas for tests.
@@ -459,7 +505,8 @@ class SpecTestRunnerBase:
             pro_name = atlas_test_case.project_name
             LOGGER.info("Verifying project {!r}".format(pro_name))
             project = ensure_project(
-                client=self.client, project_name=pro_name, organization_id=org.id)
+                client=self.client, project_name=pro_name, organization_id=org.id
+            )
             atlas_test_case.project = project
             LOGGER.info("Successfully verified project {!r}".format(pro_name))
 
@@ -468,16 +515,23 @@ class SpecTestRunnerBase:
             uname = self.config.database_username
             LOGGER.info("Verifying user {!r}".format(uname))
             ensure_admin_user(
-                client=self.client, project_id=project.id,
-                username=uname, password=self.config.database_password)
+                client=self.client,
+                project_id=project.id,
+                username=uname,
+                password=self.config.database_password,
+            )
             LOGGER.info("Successfully verified user {!r}".format(uname))
 
             # Step-3: populate project IP whitelist to allow access from anywhere.
-            LOGGER.info("Enabling access from anywhere on project "
-                        "{!r}".format(pro_name))
+            LOGGER.info(
+                "Enabling access from anywhere on project " "{!r}".format(pro_name)
+            )
             ensure_connect_from_anywhere(client=self.client, project_id=project.id)
-            LOGGER.info("Successfully enabled access from anywhere on project "
-                        "{!r}".format(pro_name))
+            LOGGER.info(
+                "Successfully enabled access from anywhere on project " "{!r}".format(
+                    pro_name
+                )
+            )
 
         # Log test plan.
         LOGGER.info(self.get_printable_test_plan())
@@ -490,35 +544,52 @@ class SpecTestRunnerBase:
         current_timestamp = int(_time.time())
         projects_res = list_projects_in_org(client=self.client, org_id=org_id)
         LOGGER.info(f"looking for {self.config.project_base_name}")
-        for project in projects_res['results']:
+        for project in projects_res["results"]:
             if project.name.startswith(self.config.project_base_name):
                 try:
-                    project_timestamp = project.name.split('-')[-2]
+                    project_timestamp = project.name.split("-")[-2]
                 except:
-                    project_timestamp = project.name.split('-')[-1]
-                if project_timestamp.isnumeric() and \
-                    int(project_timestamp) < current_timestamp - self.project_expiration_threshold_seconds:
+                    project_timestamp = project.name.split("-")[-1]
+                if (
+                    project_timestamp.isnumeric()
+                    and int(project_timestamp)
+                    < current_timestamp - self.project_expiration_threshold_seconds
+                ):
                     try:
-                        LOGGER.info("Deleting project {!r}, id: {!r}".format(project.name, project.id))
+                        LOGGER.info(
+                            "Deleting project {!r}, id: {!r}".format(
+                                project.name, project.id
+                            )
+                        )
                         delete_project(client=self.client, project_id=project.id)
-                        LOGGER.info("Successfully deleted project {!r}, id: {!r}".format(project.name, project.id))
+                        LOGGER.info(
+                            "Successfully deleted project {!r}, id: {!r}".format(
+                                project.name, project.id
+                            )
+                        )
                     except AtlasApiError as esc:
                         # the project may have been deleted by another test just now.
-                        if esc.error_code == 'GROUP_NOT_FOUND':
+                        if esc.error_code == "GROUP_NOT_FOUND":
                             LOGGER.warn(esc)
                         else:
                             raise
                 else:
-                    LOGGER.info("Skipping deleting project {!r}, id: {!r}".format(project.name, project.id))
+                    LOGGER.info(
+                        "Skipping deleting project {!r}, id: {!r}".format(
+                            project.name, project.id
+                        )
+                    )
 
     def get_printable_test_plan(self):
         table_data = []
         for test_case in self.cases:
             table_data.append([test_case.id, test_case.cluster_name])
         table_txt = "Astrolabe Test Plan\n{}\n"
-        return table_txt.format(tabulate(
-            table_data, headers=["Test name", "Atlas cluster name"],
-            tablefmt="rst"))
+        return table_txt.format(
+            tabulate(
+                table_data, headers=["Test name", "Atlas cluster name"], tablefmt="rst"
+            )
+        )
 
     def run(self):
         # Step-0: sentinel flag to track failure/success.
@@ -535,16 +606,15 @@ class SpecTestRunnerBase:
 
             # Select a case whose cluster is ready.
             active_case.wait_for_idle()
-            LOGGER.info("Test cluster {!r} is ready".format(
-                active_case.cluster_name))
+            LOGGER.info("Test cluster {!r} is ready".format(active_case.cluster_name))
 
             # Run the case.
-            xunit_test = active_case.run(persist_cluster=self.persist_clusters,
-                                         startup_time=self.workload_startup_time)
+            xunit_test = active_case.run(
+                persist_cluster=self.persist_clusters,
+                startup_time=self.workload_startup_time,
+            )
             # Write xunit entry for case.
-            self.xunit_logger.write_xml(
-                test_case=xunit_test,
-                filename=active_case.id)
+            self.xunit_logger.write_xml(test_case=xunit_test, filename=active_case.id)
             # Remove completed case from list.
             remaining_test_cases.remove(active_case)
 
@@ -552,38 +622,41 @@ class SpecTestRunnerBase:
             if active_case.failed:
                 all_ok = False
 
-            LOGGER.info(f"Test case {active_case.id!r} done; Failed: {active_case.failed}, All OK: {all_ok}")
+            LOGGER.info(
+                f"Test case {active_case.id!r} done; Failed: {active_case.failed}, All OK: {all_ok}"
+            )
 
         return not all_ok
 
 
 class SingleTestRunner(SpecTestRunnerBase):
     """Run the spec test file named ``test_locator_token``."""
+
     @staticmethod
     def find_spec_tests(test_locator_token):
         """
         Verify that the given file is a spec test file and return its
         absolute path.
         """
-        LOGGER.info("Loading spec test from file {!r}".format(
-            test_locator_token))
+        LOGGER.info("Loading spec test from file {!r}".format(test_locator_token))
         full_path = os.path.realpath(test_locator_token)
-        if (os.path.isfile(full_path) and
-                test_locator_token.lower().endswith(('.yml', 'yaml'))):
+        if os.path.isfile(full_path) and test_locator_token.lower().endswith(
+            (".yml", "yaml")
+        ):
             yield full_path
 
 
 class MultiTestRunner(SpecTestRunnerBase):
     """Run all spec test files in the ``test_locator_token`` directory."""
+
     @staticmethod
     def find_spec_tests(test_locator_token):
-        LOGGER.info("Scanning directory {!r} for spec tests".format(
-            test_locator_token))
+        LOGGER.info("Scanning directory {!r} for spec tests".format(test_locator_token))
         for root, dirs, files in os.walk(test_locator_token):
             for file in files:
                 full_path = os.path.join(root, file)
-                if (os.path.isfile(full_path) and
-                        file.lower().endswith(('.yml', 'yaml'))):
-                    LOGGER.debug("Loading spec test from file {!r}".format(
-                        full_path))
+                if os.path.isfile(full_path) and file.lower().endswith(
+                    (".yml", "yaml")
+                ):
+                    LOGGER.debug("Loading spec test from file {!r}".format(full_path))
                     yield full_path

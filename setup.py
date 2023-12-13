@@ -6,38 +6,45 @@ from setuptools import setup
 
 
 # Single source the version.
-version_file = os.path.realpath(os.path.join(
-    os.path.dirname(__file__), 'astrolabe', 'version.py'))
+version_file = os.path.realpath(
+    os.path.join(os.path.dirname(__file__), "astrolabe", "version.py")
+)
 version = {}
-with io.open(version_file, 'rt', encoding='utf-8') as fp:
+with io.open(version_file, "rt", encoding="utf-8") as fp:
     exec(fp.read(), version)
 
 
 # Dynamically generate long-description.
-readme_file = os.path.realpath('README.rst')
+readme_file = os.path.realpath("README.rst")
 if os.path.exists(readme_file) and os.path.isfile(readme_file):
-    with io.open('README.rst', 'rt', encoding='utf-8') as fp:
+    with io.open("README.rst", "rt", encoding="utf-8") as fp:
         readme_content = fp.read()
 else:
-    readme_content = ''
+    readme_content = ""
 
 
 # Dynamically generate requirements.
 install_requires = [
-    'click>=7,<8', 'requests>=2,<3',
-    'pymongo>=3.10,<4', 'dnspython>=1.16,<2',
-    'pyyaml>=5,<7', 'tabulate>=0.8,<0.9',
-    'numpy<2',
-    'junitparser>=1,<2']
-if sys.platform == 'win32':
-    install_requires.append('certifi')
+    "click>=7,<8",
+    "requests>=2,<3",
+    "pymongo>=3.10,<4",
+    "dnspython>=1.16,<2",
+    "pyyaml>=5,<7",
+    "tabulate>=0.8,<0.9",
+    "numpy<2",
+    "junitparser>=1,<2",
+]
+if sys.platform == "win32":
+    install_requires.append("certifi")
 
 
 setup(
-    name='astrolabe',
-    version=version['__version__'],
-    description=("Command-line utility for testing Drivers against MongoDB "
-                 "Atlas <https://www.mongodb.com/cloud/atlas>"),
+    name="astrolabe",
+    version=version["__version__"],
+    description=(
+        "Command-line utility for testing Drivers against MongoDB "
+        "Atlas <https://www.mongodb.com/cloud/atlas>"
+    ),
     long_description=readme_content,
     author="Prashant Mital",
     author_email="mongodb-user@googlegroups.com",
@@ -47,8 +54,7 @@ setup(
     python_requires=">=3.7",
     packages=["atlasclient", "astrolabe"],
     install_requires=install_requires,
-    entry_points={
-        'console_scripts': ['astrolabe=astrolabe.cli:cli']},
+    entry_points={"console_scripts": ["astrolabe=astrolabe.cli:cli"]},
     classifiers=[
         "Development Status :: 1 - Planning",
         "Intended Audience :: Developers",
@@ -58,4 +64,6 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: Implementation :: CPython",
-        "Topic :: Software Development :: Testing"])
+        "Topic :: Software Development :: Testing",
+    ],
+)
