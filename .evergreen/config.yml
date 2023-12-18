@@ -813,7 +813,7 @@ axes:
           CXX: /opt/mongodbtoolchain/v4/bin/g++
 
 task_groups:
-  lint_and_format_task_group:
+  - name: lint_and_format_task_group
     setup_group:
       - func: "fetch source"
     tasks:
