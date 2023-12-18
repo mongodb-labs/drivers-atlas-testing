@@ -15,6 +15,4 @@
 """Python client for the MongoDB Atlas API."""
 
 from atlasclient.client import AtlasClient  # noqa: F401
-from atlasclient.exceptions import (
-    AtlasApiError, AtlasRateLimitError, AtlasClientError, AtlasApiBaseError)   # noqa: F401
-from atlasclient.utils import JSONObject    # noqa: F401
+from atlasclient.utils import JSONObject  # noqa: F401

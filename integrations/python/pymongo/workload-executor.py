@@ -14,7 +14,7 @@ import pymongo
 # pymongo (this works because pymongo is installed with pip flag -e)
 test_path = os.path.dirname(os.path.dirname(inspect.getfile(pymongo)))
 sys.path.insert(0, test_path)
-from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop
+from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop  # noqa: E402
 
 WIN32 = sys.platform in ("win32", "cygwin")
 

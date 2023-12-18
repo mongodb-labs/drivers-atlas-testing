@@ -255,7 +255,7 @@ class AtlasTestCase:
                     self.wait_for_idle()
 
                 elif op_name == "restartVms":
-                    rv = (
+                    _ = (
                         self.admin_client.nds.groups[self.project.id]
                         .clusters[self.cluster_name]
                         .reboot.post(api_version="private")
@@ -548,7 +548,7 @@ class SpecTestRunnerBase:
             if project.name.startswith(self.config.project_base_name):
                 try:
                     project_timestamp = project.name.split("-")[-2]
-                except:
+                except Exception:
                     project_timestamp = project.name.split("-")[-1]
                 if (
                     project_timestamp.isnumeric()

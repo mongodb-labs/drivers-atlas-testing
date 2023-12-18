@@ -49,7 +49,7 @@ class KubernetesTest:
           - `spec_test_file` (string): path to the Kubernetes test file
           - `workload_file` (string): path to the workload file
           - `workload_executor` (string): path to the workload executor binary or script
-          - `connection_string` (string): the MongoDB connection string to give to the workload exeuctor
+          - `connection_string` (string): the MongoDB connection string to give to the workload executor
         """
 
         self.name = name

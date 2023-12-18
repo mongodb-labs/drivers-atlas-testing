@@ -16,7 +16,7 @@ referred to as admin credentials.
 
 ``astrolabe`` can be configured to use API keys in one of 2 ways:
 
-* Using the `-u/--username` and `-p/--password` command options::
+* Using the ``-u/--username`` and ``-p/--password`` command options::
 
     $ astrolabe -u <publicKey> -p <privateKey> --atlas-admin-api-username <publicKey> --atlas-admin-api-password <privateKey> check-connection
 

@@ -187,7 +187,6 @@ def aggregate_statistics():
     ]
     counts = defaultdict(lambda: 0)
     max_counts = defaultdict(lambda: 0)
-    conn_count = max_conn_count = 0
     for e in conn_events:
         if e["name"] == "ConnectionCreatedEvent":
             counts[e["address"]] += 1
