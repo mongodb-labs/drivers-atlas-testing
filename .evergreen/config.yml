@@ -113,9 +113,7 @@ functions:
         binary: bash
         script: |
           set -eux
-          ${PYTHON3_BINARY} -m venv .venv
-          source .venv/bin/activate
-          python -m pip install -q -U pip
+          astrolabevenv/bin/activate
           python -m pip install -q pre-commit
           pre-commit run --all-files --hook-stage=manual
  
@@ -811,6 +809,8 @@ buildvariants:
   expansions:
     PYTHON3_BINARY: "/opt/python/3.9/bin/python3"
     PYTHON_BIN_DIR: "bin"
+    DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-python-driver"
+    DRIVER_REVISION: "master"
   run_on:
     - rhel8.7-large
   tasks:
