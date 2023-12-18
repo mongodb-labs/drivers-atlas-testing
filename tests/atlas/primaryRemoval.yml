@@ -21,7 +21,7 @@ initialConfiguration:
 operations:
   - assertPrimaryRegion:
       region: US_EAST_1
-  
+
   - setClusterConfiguration:
       clusterConfiguration:
         clusterType: REPLICASET

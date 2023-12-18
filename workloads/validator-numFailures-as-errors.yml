@@ -38,7 +38,7 @@ tests:
               object: *collection0
               arguments:
                 filter: { $where: 'sleep(250)' }
-            
+
             - name: find
               object: *collection0
               arguments:

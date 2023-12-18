@@ -20,12 +20,15 @@ from atlasclient.utils import JSONObject
 
 
 ClientConfiguration = namedtuple(
-    "AtlasClientConfiguration",
-    ["base_url", "api_version", "auth", "timeout"])
+    "AtlasClientConfiguration", ["base_url", "api_version", "auth", "timeout"]
+)
 
 
 # Default configuration values.
-CONFIG_DEFAULTS = JSONObject.from_dict({
-    "ATLAS_HTTP_TIMEOUT": 30.0,
-    "ATLAS_API_VERSION": "atlas/v1.0",
-    "ATLAS_API_BASE_URL": "https://cloud.mongodb.com/api"})
+CONFIG_DEFAULTS = JSONObject.from_dict(
+    {
+        "ATLAS_HTTP_TIMEOUT": 30.0,
+        "ATLAS_API_VERSION": "atlas/v1.0",
+        "ATLAS_API_BASE_URL": "https://cloud.mongodb.com/api",
+    }
+)

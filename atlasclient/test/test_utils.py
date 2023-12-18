@@ -21,11 +21,10 @@ from atlasclient.utils import JSONObject
 
 class TestJSONDecoder(unittest.TestCase):
     def test_simple(self):
-        json_data = {'foo': 1, 'bar': 'hello world'}
+        json_data = {"foo": 1, "bar": "hello world"}
 
         # Test both __init__ and from_dict constructors.
-        for mapping_obj in (
-                JSONObject(json_data), JSONObject.from_dict(json_data)):
+        for mapping_obj in (JSONObject(json_data), JSONObject.from_dict(json_data)):
             for key, value in mapping_obj.items():
                 self.assertEqual(getattr(mapping_obj, key), json_data[key])
                 self.assertEqual(getattr(mapping_obj, key), value)
@@ -36,7 +35,7 @@ class TestJSONDecoder(unittest.TestCase):
             json_obj.a
 
     def test_nested(self):
-        json_data = {'a': {'b': {'c': 1}}}
+        json_data = {"a": {"b": {"c": 1}}}
 
         # Using __init__ only enables dot-access of top level fields.
         json_obj = JSONObject(json_data)
@@ -45,5 +44,5 @@ class TestJSONDecoder(unittest.TestCase):
 
         # Using from_dict enables dot-access at all nesting levels.
         json_obj = JSONObject.from_dict(json_data)
-        self.assertEqual(json_obj.a.b, {'c': 1})
+        self.assertEqual(json_obj.a.b, {"c": 1})
         self.assertEqual(json_obj.a.b.c, 1)

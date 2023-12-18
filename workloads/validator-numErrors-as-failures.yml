@@ -38,12 +38,12 @@ tests:
               object: *collection0
               arguments:
                 filter: { $where: 'sleep(250)' }
-            
+
             - name: updateOne
               object: *collection0
               arguments:
                 filter: { _id: validation_sentinel}
-                update: 
+                update:
                   $inc:
                     count: 1
             - name: doesNotExist

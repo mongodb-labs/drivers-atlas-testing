@@ -17,8 +17,17 @@
 
 class AtlasApiBaseError(Exception):
     """Base Exception class for all ``atlasclient`` errors."""
-    def __init__(self, msg, resource_url=None, request_method=None, detail=None,
-                 status_code=None, error_code=None, headers=None):
+
+    def __init__(
+        self,
+        msg,
+        resource_url=None,
+        request_method=None,
+        detail=None,
+        status_code=None,
+        error_code=None,
+        headers=None,
+    ):
         self._msg = msg
         self.request_method = request_method
         self.resource_url = resource_url
@@ -30,12 +39,17 @@ class AtlasApiBaseError(Exception):
     def __str__(self):
         if self.request_method and self.resource_url:
             if self.error_code:
-                return '{} Error Code: {!r}: {} ({} {})'.format(
-                    self._msg, self.error_code, self.detail, self.request_method,
-                    self.resource_url)
+                return "{} Error Code: {!r}: {} ({} {})".format(
+                    self._msg,
+                    self.error_code,
+                    self.detail,
+                    self.request_method,
+                    self.resource_url,
+                )
             else:
-                return '{} ({} {})'.format(
-                    self._msg, self.request_method, self.resource_url)
+                return "{} ({} {})".format(
+                    self._msg, self.request_method, self.resource_url
+                )
         return self._msg
 
 
@@ -44,16 +58,24 @@ class AtlasClientError(AtlasApiBaseError):
 
 
 class AtlasApiError(AtlasApiBaseError):
-    def __init__(self, msg, response=None, request_method=None, detail=None,
-                 error_code=None):
-        kwargs = {'request_method': request_method, 'detail': detail,
-                  'error_code': error_code}
+    def __init__(
+        self, msg, response=None, request_method=None, detail=None, error_code=None
+    ):
+        kwargs = {
+            "request_method": request_method,
+            "detail": detail,
+            "error_code": error_code,
+        }
 
         # Parse remaining fields from response object.
         if response is not None:
-            kwargs.update({'status_code': response.status_code,
-                           'resource_url': response.url,
-                           'headers': response.headers})
+            kwargs.update(
+                {
+                    "status_code": response.status_code,
+                    "resource_url": response.url,
+                    "headers": response.headers,
+                }
+            )
 
         super().__init__(msg, **kwargs)
 

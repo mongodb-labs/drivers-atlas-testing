@@ -19,11 +19,11 @@ import json
 
 class JSONObject(dict):
     """Dictionary object with dot-notation read access."""
+
     def __getattr__(self, name):
         if name in self:
             return self[name]
-        raise AttributeError('{} has no property named {}.'.format(
-            self, name))
+        raise AttributeError("{} has no property named {}.".format(self, name))
 
     @classmethod
     def from_dict(cls, raw_dict):

@@ -26,6 +26,7 @@ LOGGER = logging.getLogger(__name__)
 
 class PollerBase:
     """Base class for implementing a poller."""
+
     def __init__(self, *, frequency, timeout):
         self.interval = 1.0 / frequency
         self.timeout = timeout
@@ -50,8 +51,7 @@ class PollerBase:
                 return_value = self._check_ready(obj, attribute, args, kwargs)
                 if return_value:
                     return obj
-            LOGGER.debug("Waiting {:.2f} seconds before retrying".format(
-                self.interval))
+            LOGGER.debug("Waiting {:.2f} seconds before retrying".format(self.interval))
             sleep(self.interval)
         raise PollingTimeoutError("Polling timed out after %s seconds" % self.timeout)
 
@@ -59,6 +59,7 @@ class PollerBase:
 class BooleanCallablePoller(PollerBase):
     """A poller that selects objects based on the boolean return value of one
     its methods."""
+
     @staticmethod
     def _check_ready(obj, attribute, args=(), kwargs={}):
         """A readiness check that evaluates to True if the `attribute`
@@ -66,12 +67,13 @@ class BooleanCallablePoller(PollerBase):
         the provided args and kwargs."""
         return bool(getattr(obj, attribute)(*args, **kwargs))
 
+
 def poll(check, timeout, subject):
     timer = Timer()
     timer.start()
     ok = False
     while timer.elapsed < timeout:
-        LOGGER.info('Waiting for %s; elapsed: %.1f sec' % (subject, timer.elapsed))
+        LOGGER.info("Waiting for %s; elapsed: %.1f sec" % (subject, timer.elapsed))
         if check():
             ok = True
             break
