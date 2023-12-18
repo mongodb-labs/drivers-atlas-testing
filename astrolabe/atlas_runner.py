@@ -22,17 +22,15 @@ from time import monotonic, sleep
 
 import junitparser
 import yaml
-from atlasclient import AtlasApiError, JSONObject
-from atlasclient.exceptions import AtlasClientError
 from tabulate import tabulate
 
 from astrolabe.commands import (
+    delete_project,
     ensure_admin_user,
     ensure_connect_from_anywhere,
     ensure_project,
     get_organization_by_id,
     list_projects_in_org,
-    delete_project,
 )
 from astrolabe.exceptions import PollingTimeoutError
 from astrolabe.utils import (
@@ -43,6 +41,8 @@ from astrolabe.utils import (
     get_test_name,
     parse_iso8601_time,
 )
+from atlasclient import AtlasApiError, JSONObject
+from atlasclient.exceptions import AtlasClientError
 
 from .timer import Timer
 from .utils import mongo_client
@@ -99,7 +99,7 @@ class AtlasTestCase:
         return self.__connection_string
 
     def __repr__(self):
-        return "<AtlasTestCase: {}>".format(self.id)
+        return f"<AtlasTestCase: {self.id}>"
 
     def is_cluster_state(self, goal_state):
         cluster_info = self.cluster_url.get().data
@@ -131,13 +131,13 @@ class AtlasTestCase:
                 return
             except AtlasApiError as exc:
                 if exc.error_code != "CLUSTER_NOT_FOUND":
-                    LOGGER.warn("Cluster was not found, will create one")
+                    LOGGER.warning("Cluster was not found, will create one")
             except AssertionError as exc:
-                LOGGER.warn(
+                LOGGER.warning(
                     "Configuration did not match: %s. Recreating the cluster" % exc
                 )
 
-        LOGGER.info("Initializing cluster {!r}".format(self.cluster_name))
+        LOGGER.info(f"Initializing cluster {self.cluster_name!r}")
 
         cluster_config = self.spec.initialConfiguration.clusterConfiguration.copy()
         cluster_config["name"] = self.cluster_name
@@ -163,7 +163,7 @@ class AtlasTestCase:
 
     def run(self, persist_cluster=False, startup_time=1):
         LOGGER.info(
-            "Running test {!r} on cluster {!r}".format(self.id, self.cluster_name)
+            f"Running test {self.id!r} on cluster {self.cluster_name!r}"
         )
 
         # Step-1: sanity-check the cluster configuration.
@@ -188,7 +188,7 @@ class AtlasTestCase:
                         "Operation must have exactly one key: %s" % operation
                     )
 
-                op_name, op_spec = list(operation.items())[0]
+                op_name, op_spec = next(iter(operation.items()))
 
                 if op_name == "setClusterConfiguration":
                     # Step-3: begin maintenance routine.
@@ -242,8 +242,7 @@ class AtlasTestCase:
                             raise PollingTimeoutError(
                                 "Could not test failover as cluster wasn't ready"
                             )
-                        else:
-                            sleep(5)
+                        sleep(5)
 
                     self.wait_for_planning(start_time)
                     self.wait_for_idle()
@@ -274,11 +273,11 @@ class AtlasTestCase:
                     with mongo_client(self.get_connection_string()) as mc:
                         while True:
                             rsc = mc.admin.command("replSetGetConfig")
-                            member = [
+                            member = next(
                                 m
                                 for m in rsc["config"]["members"]
                                 if m["horizons"]["PUBLIC"] == "%s:%s" % mc.primary
-                            ][0]
+                            )
                             member_region = member["tags"]["region"]
 
                             if region == member_region:
@@ -289,8 +288,7 @@ class AtlasTestCase:
                                     "Primary in cluster not in expected region '%s' (actual region '%s')"
                                     % (region, member_region)
                                 )
-                            else:
-                                sleep(5)
+                            sleep(5)
 
                 else:
                     raise Exception("Unrecognized operation %s" % op_name)
@@ -333,7 +331,7 @@ class AtlasTestCase:
                 # Write xunit logs for failed tests.
                 junit_test.result = junitparser.Failure(str(stats))
             else:
-                LOGGER.info("SUCCEEDED: {!r}".format(self.id))
+                LOGGER.info(f"SUCCEEDED: {self.id!r}")
                 # Directly log output of successful tests as xunit output
                 # is only visible for failed tests.
 
@@ -342,7 +340,7 @@ class AtlasTestCase:
             if not persist_cluster:
                 self.cluster_url.delete()
                 LOGGER.info(
-                    "Cluster {!r} marked for deletion.".format(self.cluster_name)
+                    f"Cluster {self.cluster_name!r} marked for deletion."
                 )
 
             return junit_test
@@ -463,9 +461,9 @@ class SpecTestRunnerBase:
         # Step-1: ensure validity of the organization.
         # Note: organizations can only be created by via the web UI.
         org_id = self.config.organization_id
-        LOGGER.info("Verifying organization id: {!r}".format(org_id))
+        LOGGER.info(f"Verifying organization id: {org_id!r}")
         org = get_organization_by_id(client=self.client, org_id=org_id)
-        LOGGER.info("Successfully verified organization {!r}".format(org.name))
+        LOGGER.info(f"Successfully verified organization {org.name!r}")
 
         # Step-2: clean old projects with same name base from organization.
         if not no_create:
@@ -480,7 +478,7 @@ class SpecTestRunnerBase:
 
         for full_path in self.find_spec_tests(test_locator_token):
             # Step-1: load test specification.
-            with open(full_path, "r") as spec_file:
+            with open(full_path) as spec_file:
                 test_spec = JSONObject.from_dict(yaml.safe_load(spec_file))
 
             # Step-2: generate test name.
@@ -503,34 +501,32 @@ class SpecTestRunnerBase:
             # Set up Atlas for tests.
             # Step-1: check that the project exists or else create it.
             pro_name = atlas_test_case.project_name
-            LOGGER.info("Verifying project {!r}".format(pro_name))
+            LOGGER.info(f"Verifying project {pro_name!r}")
             project = ensure_project(
                 client=self.client, project_name=pro_name, organization_id=org.id
             )
             atlas_test_case.project = project
-            LOGGER.info("Successfully verified project {!r}".format(pro_name))
+            LOGGER.info(f"Successfully verified project {pro_name!r}")
 
             # Step-2: create a user under the project.
             # Note: all test operations will be run as this user.
             uname = self.config.database_username
-            LOGGER.info("Verifying user {!r}".format(uname))
+            LOGGER.info(f"Verifying user {uname!r}")
             ensure_admin_user(
                 client=self.client,
                 project_id=project.id,
                 username=uname,
                 password=self.config.database_password,
             )
-            LOGGER.info("Successfully verified user {!r}".format(uname))
+            LOGGER.info(f"Successfully verified user {uname!r}")
 
             # Step-3: populate project IP whitelist to allow access from anywhere.
             LOGGER.info(
-                "Enabling access from anywhere on project " "{!r}".format(pro_name)
+                "Enabling access from anywhere on project " f"{pro_name!r}"
             )
             ensure_connect_from_anywhere(client=self.client, project_id=project.id)
             LOGGER.info(
-                "Successfully enabled access from anywhere on project " "{!r}".format(
-                    pro_name
-                )
+                "Successfully enabled access from anywhere on project " f"{pro_name!r}"
             )
 
         # Log test plan.
@@ -557,27 +553,21 @@ class SpecTestRunnerBase:
                 ):
                     try:
                         LOGGER.info(
-                            "Deleting project {!r}, id: {!r}".format(
-                                project.name, project.id
-                            )
+                            f"Deleting project {project.name!r}, id: {project.id!r}"
                         )
                         delete_project(client=self.client, project_id=project.id)
                         LOGGER.info(
-                            "Successfully deleted project {!r}, id: {!r}".format(
-                                project.name, project.id
-                            )
+                            f"Successfully deleted project {project.name!r}, id: {project.id!r}"
                         )
                     except AtlasApiError as esc:
                         # the project may have been deleted by another test just now.
                         if esc.error_code == "GROUP_NOT_FOUND":
-                            LOGGER.warn(esc)
+                            LOGGER.warning(esc)
                         else:
                             raise
                 else:
                     LOGGER.info(
-                        "Skipping deleting project {!r}, id: {!r}".format(
-                            project.name, project.id
-                        )
+                        f"Skipping deleting project {project.name!r}, id: {project.id!r}"
                     )
 
     def get_printable_test_plan(self):
@@ -606,7 +596,7 @@ class SpecTestRunnerBase:
 
             # Select a case whose cluster is ready.
             active_case.wait_for_idle()
-            LOGGER.info("Test cluster {!r} is ready".format(active_case.cluster_name))
+            LOGGER.info(f"Test cluster {active_case.cluster_name!r} is ready")
 
             # Run the case.
             xunit_test = active_case.run(
@@ -638,7 +628,7 @@ class SingleTestRunner(SpecTestRunnerBase):
         Verify that the given file is a spec test file and return its
         absolute path.
         """
-        LOGGER.info("Loading spec test from file {!r}".format(test_locator_token))
+        LOGGER.info(f"Loading spec test from file {test_locator_token!r}")
         full_path = os.path.realpath(test_locator_token)
         if os.path.isfile(full_path) and test_locator_token.lower().endswith(
             (".yml", "yaml")
@@ -651,12 +641,12 @@ class MultiTestRunner(SpecTestRunnerBase):
 
     @staticmethod
     def find_spec_tests(test_locator_token):
-        LOGGER.info("Scanning directory {!r} for spec tests".format(test_locator_token))
-        for root, dirs, files in os.walk(test_locator_token):
+        LOGGER.info(f"Scanning directory {test_locator_token!r} for spec tests")
+        for root, _, files in os.walk(test_locator_token):
             for file in files:
                 full_path = os.path.join(root, file)
                 if os.path.isfile(full_path) and file.lower().endswith(
                     (".yml", "yaml")
                 ):
-                    LOGGER.debug("Loading spec test from file {!r}".format(full_path))
+                    LOGGER.debug(f"Loading spec test from file {full_path!r}")
                     yield full_path

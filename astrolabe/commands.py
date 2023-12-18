@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import defaultdict
-import logging
 import json
+import logging
+from collections import defaultdict
 
 from atlasclient import AtlasApiError
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ LOGGER = logging.getLogger(__name__)
 def get_organization_by_id(*, client, org_id):
     """Get the organization by the given id `org_id`."""
     org = client.orgs[org_id].get().data
-    LOGGER.debug("Organization details: {}".format(org))
+    LOGGER.debug(f"Organization details: {org}")
     return org
 
 
@@ -35,12 +34,12 @@ def get_project(*, client, project_name, organization_id):
         project = client.groups.byName[project_name].get().data
     except AtlasApiError as exc:
         if exc.error_code == "MULTIPLE_GROUPS":
-            LOGGER.warn("There are many projects {!r}".format(project_name))
+            LOGGER.warning(f"There are many projects {project_name!r}")
             projects_res = client.orgs[organization_id].groups.get().data
             project = projects_res["results"][0]
         else:
             raise
-    LOGGER.debug("Project details: {}".format(project))
+    LOGGER.debug(f"Project details: {project}")
     return project
 
 
@@ -51,7 +50,7 @@ def ensure_project(*, client, project_name, organization_id):
         project = client.groups.post(name=project_name, orgId=organization_id).data
     except AtlasApiError as exc:
         if exc.error_code == "GROUP_ALREADY_EXISTS":
-            LOGGER.debug("Project {!r} already exists".format(project_name))
+            LOGGER.debug(f"Project {project_name!r} already exists")
             project = get_project(
                 client=client,
                 project_name=project_name,
@@ -60,9 +59,9 @@ def ensure_project(*, client, project_name, organization_id):
         else:
             raise
     else:
-        LOGGER.debug("Project {!r} successfully created".format(project.name))
+        LOGGER.debug(f"Project {project.name!r} successfully created")
 
-    LOGGER.debug("Project details: {}".format(project))
+    LOGGER.debug(f"Project details: {project}")
     return project
 
 
@@ -70,7 +69,7 @@ def list_projects_in_org(*, client, org_id):
     """List all projects inside organization with id `org_id`."""
     projects_res = client.orgs[org_id].groups.get(itemsPerPage=500).data
     LOGGER.debug(
-        "Retrieved {} projects in org id: {}".format(projects_res.totalCount, org_id)
+        f"Retrieved {projects_res.totalCount} projects in org id: {org_id}"
     )
     return projects_res
 
@@ -86,15 +85,15 @@ def delete_project(*, client, project_id):
         except AtlasApiError as exc:
             # May already have been requested to be deleted earlier but still
             # not deleted, atlas returns an error in this case
-            LOGGER.warn(exc)
+            LOGGER.warning(exc)
 
     try:
         client.groups[project_id].delete().data
-        LOGGER.debug("Deleted project id: {}".format(project_id))
+        LOGGER.debug(f"Deleted project id: {project_id}")
     except AtlasApiError as exc:
         # Some clusters may remain pending deletion, which prevents
         # deleting the project
-        LOGGER.warn(exc)
+        LOGGER.warning(exc)
 
 
 def ensure_admin_user(*, client, project_id, username, password):
@@ -113,7 +112,7 @@ def ensure_admin_user(*, client, project_id, username, password):
         user = client.groups[project_id].databaseUsers.post(**user_details).data
     except AtlasApiError as exc:
         if exc.error_code == "USER_ALREADY_EXISTS":
-            LOGGER.debug("User {!r} already exists".format(username))
+            LOGGER.debug(f"User {username!r} already exists")
             username = user_details.pop("username")
             user = (
                 client.groups[project_id]
@@ -124,9 +123,9 @@ def ensure_admin_user(*, client, project_id, username, password):
         else:
             raise
     else:
-        LOGGER.debug("User {!r} successfully created".format(username))
+        LOGGER.debug(f"User {username!r} successfully created")
 
-    LOGGER.debug("User details: {}".format(user))
+    LOGGER.debug(f"User details: {user}")
     return user
 
 
@@ -139,7 +138,7 @@ def ensure_connect_from_anywhere(
     Atlas project."""
     ip_details_list = [{"cidrBlock": "0.0.0.0/0"}]
     resp = client.groups[project_id].whitelist.post(json=ip_details_list).data
-    LOGGER.debug("Project whitelist details: {}".format(resp))
+    LOGGER.debug(f"Project whitelist details: {resp}")
 
 
 def aggregate_statistics():
@@ -154,12 +153,12 @@ def aggregate_statistics():
     - Peak number of open connections
     """
 
-    with open("results.json", "r") as fp:
+    with open("results.json") as fp:
         stats = json.load(fp)
-    with open("events.json", "r") as fp:
+    with open("events.json") as fp:
         events = json.load(fp)
 
-    import numpy
+    import numpy as np
 
     command_events = [
         event for event in events["events"] if event["name"].startswith("Command")
@@ -176,9 +175,9 @@ def aggregate_statistics():
             _event.update(event)
             correlated_events.append(_event)
     command_times = [c["duration"] for c in correlated_events]
-    stats["avgCommandTime"] = numpy.average(command_times)
-    stats["p95CommandTime"] = numpy.percentile(command_times, 95)
-    stats["p99CommandTime"] = numpy.percentile(command_times, 99)
+    stats["avgCommandTime"] = np.average(command_times)
+    stats["p95CommandTime"] = np.percentile(command_times, 95)
+    stats["p99CommandTime"] = np.percentile(command_times, 99)
 
     conn_events = [
         event

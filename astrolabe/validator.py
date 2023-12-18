@@ -15,12 +15,12 @@
 from time import sleep
 from unittest import TestCase
 
-from pymongo import MongoClient
 import yaml
+from pymongo import MongoClient
 
-from atlasclient import JSONObject
-from astrolabe.exceptions import WorkloadExecutorError, PrematureExitError
+from astrolabe.exceptions import PrematureExitError, WorkloadExecutorError
 from astrolabe.utils import DriverWorkloadSubprocessRunner
+from atlasclient import JSONObject
 
 
 class ValidateWorkloadExecutor(TestCase):
@@ -68,7 +68,7 @@ class ValidateWorkloadExecutor(TestCase):
             self.fail(
                 "The workload executor terminated prematurely before "
                 "receiving the termination signal.\n"
-                "STDOUT: {!r}\nSTDERR: {!r}".format(outs, errs)
+                f"STDOUT: {outs!r}\nSTDERR: {errs!r}"
             )
 
         # Run operations for 5 seconds.
@@ -238,9 +238,7 @@ class ValidateWorkloadExecutor(TestCase):
             for error in events["errors"]:
                 if ("error" not in error) or ("time" not in error):
                     self.fail(
-                        "The workload executor didn't record error as expected: {}".format(
-                            error
-                        )
+                        f"The workload executor didn't record error as expected: {error}"
                     )
         else:
             if events["errors"]:
@@ -261,9 +259,7 @@ class ValidateWorkloadExecutor(TestCase):
             for failure in events["failures"]:
                 if ("error" not in failure) or ("time" not in failure):
                     self.fail(
-                        "The workload executor didn't record failure as expected: {}".format(
-                            failure
-                        )
+                        f"The workload executor didn't record failure as expected: {failure}"
                     )
         else:
             if events["failures"]:

@@ -18,9 +18,9 @@ import time
 
 import junitparser
 import yaml
-from atlasclient.utils import JSONObject
 
 from astrolabe.utils import DriverWorkloadSubprocessRunner
+from atlasclient.utils import JSONObject
 
 from .timer import Timer
 
@@ -102,15 +102,15 @@ class KubernetesTest:
                         f"Operation must have exactly one key: {operation}"
                     )
 
-                op_name, op_val = list(operation.items())[0]
+                op_name, op_val = next(iter(operation.items()))
 
                 if op_name == "kubectl":
                     # The "kubectl" operation runs a command with the kubectl CLI. The value is an
                     # array of the command arguments. Note that the kubectl executable must be in
                     # the system PATH.
-                    command = ["kubectl"] + op_val
+                    command = ["kubectl"] + op_val  # noqa: RUF005
                     LOGGER.info(f"Running command {command}")
-                    subprocess.run(command)
+                    subprocess.run(command, check=False)  # noqa: S603
                 elif op_name == "sleep":
                     # The "sleep" operation sleeps for N seconds.
                     LOGGER.info(f"Sleeping for {op_val}s")

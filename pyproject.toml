@@ -1,0 +1,99 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "astrolabe"
+dynamic = ["version"]
+description = "Command-line utility for testing Drivers against MongoDB Atlas <https://www.mongodb.com/cloud/atlas>"
+readme = "README.rst"
+license = {file="LICENSE"}
+requires-python = ">=3.7"
+authors = [
+    { name = "Prashant Mital", email = "mongodb-user@googlegroups.com" },
+]
+keywords = [
+    "atlas",
+    "mongo",
+    "mongodb",
+    "mongodbatlas",
+]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "click>=7,<8",
+    "dnspython>=1.16,<2",
+    "junitparser>=1,<2",
+    "numpy<2",
+    "pymongo>=3.10,<4",
+    "pyyaml>=5,<7",
+    "requests>=2,<3",
+    "tabulate>=0.8,<0.9",
+]
+
+[project.optional-dependencies]
+docs = ["sphinx"]
+
+[project.scripts]
+astrolabe = "astrolabe.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/mongodb-labs/drivers-atlas-testing"
+
+[tool.setuptools.dynamic]
+version = {attr = "astrolabe._version.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["astrolabe","atlasclient"]
+
+[tool.ruff]
+target-version = "py37"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+  "E", "F", "W", # flake8
+  "B",           # flake8-bugbear
+  "I",           # isort
+  "ARG",         # flake8-unused-arguments
+  "C4",          # flake8-comprehensions
+  "ICN",         # flake8-import-conventions
+  "PGH",         # pygrep-hooks
+  "PIE",         # flake8-pie
+  "PL",          # pylint
+  "RET",         # flake8-return
+  "RUF",         # Ruff-specific
+  "S",           # flake8-bandit
+  "SIM",         # flake8-simplify
+  "T20",         # flake8-print
+  "UP",          # pyupgrade
+  "YTT",         # flake8-2020
+  "EXE",         # flake8-executable
+]
+ignore = [
+  "PLR",   # Design related pylint codes
+  "T20",   # Use of print statement
+  "UP031", # Use format specifiers instead of percent format
+  "E501",  # Line too long (111 > 100)
+  "S101",  # Use of `assert` detected"
+  "SIM105", # Use `contextlib.suppress(FileExistsError)` instead of"
+  "B904",   # Within an `except` clause, raise exceptions with
+  "ARG001", # Unused function argument
+  "C408",   # Unnecessary `dict` call (rewrite as a literal)"
+  "B018",   # Found useless attribute access
+]
+unfixable = [
+  "RUF100", # Unused noqa
+  "T20",  # Removes print statements
+  "F841", # Removes unused variables
+  "F401", # Unused import
+]

@@ -19,7 +19,6 @@ import click
 from atlasclient.configuration import CONFIG_DEFAULTS as CL_DEFAULTS
 from atlasclient.utils import JSONObject
 
-
 # Mapping used to generate configurable options for Astrolabe.
 # See astrolabe.utils.create_click_option for details.
 CONFIGURATION_OPTIONS = JSONObject(

@@ -116,8 +116,9 @@ functions:
         script: |
           set -eux
           astrolabevenv/bin/activate
-          python -m pip install -q pre-commit
+          python -m pip install -q pre-commit check-manifest
           pre-commit run --all-files --hook-stage=manual
+          check-manifest -v
  
   "validate executor":
     # Run a MongoDB instance locally.
@@ -929,7 +930,6 @@ buildvariants:
     runtime: rust-latest
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-   - installation
    - ".all"
 - matrix_name: "tests-c"
   display_name: "${driver} ${platform} ${runtime}"

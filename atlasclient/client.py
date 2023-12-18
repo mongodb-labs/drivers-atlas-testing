@@ -18,15 +18,15 @@ import logging
 
 import requests
 
-from atlasclient.configuration import ClientConfiguration, CONFIG_DEFAULTS as DEFAULTS
+from atlasclient.configuration import CONFIG_DEFAULTS as DEFAULTS
+from atlasclient.configuration import ClientConfiguration
 from atlasclient.exceptions import (
+    AtlasApiError,
     AtlasAuthenticationError,
     AtlasClientError,
-    AtlasApiError,
     AtlasRateLimitError,
 )
 from atlasclient.utils import JSONObject
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -223,7 +223,7 @@ class AtlasClient:
             "timeout": self.config.timeout,
         }
 
-        LOGGER.debug("Request ({} {} {})".format(method, url, request_kwargs))
+        LOGGER.debug(f"Request ({method} {url} {request_kwargs})")
 
         try:
             response = requests.request(method, url, **request_kwargs)
@@ -252,7 +252,7 @@ class AtlasClient:
         except ValueError:
             data = None
 
-        LOGGER.debug("Response ({} {})".format(method, data))
+        LOGGER.debug(f"Response ({method} {data})")
 
         if response.status_code in (200, 201, 202):
             return _ApiResponse(response, method, data)
@@ -265,7 +265,7 @@ class AtlasClient:
                 error_code=429,
             )
 
-        if data is None and False:
+        if data is None:
             raise AtlasApiError(
                 "Unable to decode JSON response.",
                 response=response,
@@ -296,4 +296,4 @@ class AtlasClient:
         if response.status_code == 409:
             raise AtlasApiError("409: Conflict.", **kwargs)
 
-        raise AtlasApiError("{}: Unknown.".format(response.status_code), **kwargs)
+        raise AtlasApiError(f"{response.status_code}: Unknown.", **kwargs)

@@ -46,10 +46,7 @@ class AtlasApiBaseError(Exception):
                     self.request_method,
                     self.resource_url,
                 )
-            else:
-                return "{} ({} {})".format(
-                    self._msg, self.request_method, self.resource_url
-                )
+            return f"{self._msg} ({self.request_method} {self.resource_url})"
         return self._msg
 
 
