@@ -50,7 +50,7 @@ astrolabe = "astrolabe.cli:cli"
 Homepage = "https://github.com/mongodb-labs/drivers-atlas-testing"
 
 [tool.setuptools.dynamic]
-version = {attr = "astrolabe._version.__version__"}
+version = {attr = "astrolabe.version.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["astrolabe","atlasclient"]
