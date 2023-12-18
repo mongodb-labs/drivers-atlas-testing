@@ -812,6 +812,7 @@ buildvariants:
     DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-python-driver"
     DRIVER_REVISION: "master"
     DRIVER_DIRNAME: "python/pymongo"
+    PYMONGO_VIRTUALENV_NAME: "pymongotestvenv"
   run_on:
     - rhel8.7-large
   tasks:
