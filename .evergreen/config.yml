@@ -113,7 +113,7 @@ functions:
         binary: bash
         script: |
           set -eux
-          /opt/python/3.10/bin/python3 -m venv .venv
+          ${PYTHON3_BINARY} -m venv .venv
           source .venv/bin/activate
           python -m pip install -q -U pip
           python -m pip install -q pre-commit
@@ -808,6 +808,8 @@ axes:
 buildvariants:
 - name: lint-and-format
   display_name: "Lint and Format"
+  expansions:
+    PYTHON3_BINARY: "/opt/python/3.9/bin/python3"
   run_on:
     - rhel8.7-large
   tasks:
