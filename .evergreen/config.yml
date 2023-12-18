@@ -430,6 +430,8 @@ functions:
 # Functions to run before the test.
 pre:
   - func: "install source"
+  - func: "install astrolabe"
+  - func: "install driver"  
 
 # Functions to run after the test.
 post:
@@ -810,13 +812,20 @@ axes:
           CC: /opt/mongodbtoolchain/v4/bin/gcc
           CXX: /opt/mongodbtoolchain/v4/bin/g++
 
+task_groups:
+  lint_and_format_task_group:
+    setup_group:
+      - func: "fetch source"
+    tasks:
+      - "lint and format"
+
 buildvariants:
 - name: lint-and-format
   display_name: "Lint and Format"
   run_on:
     - rhel8.7-large
   tasks:
-    - name: "lint-and-format"
+    - name: "lint_and_format_task_group"
 
 - matrix_name: "tests-ruby"
   matrix_spec:
@@ -825,7 +834,6 @@ buildvariants:
     runtime: python39
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - installation
     - ".all"
 
 - matrix_name: "tests-python"
@@ -835,7 +843,6 @@ buildvariants:
     runtime: ["python39"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - installation
     - ".all"
 - matrix_name: "tests-python-windows"
   matrix_spec:
@@ -845,7 +852,6 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
-    - installation
     - ".all !.kind"
 - matrix_name: tests-node-ubuntu-18
   matrix_spec:
@@ -857,7 +863,6 @@ buildvariants:
       - node-16
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - installation
     - .all
 - matrix_name: tests-node-ubuntu-22
   matrix_spec:
@@ -870,7 +875,6 @@ buildvariants:
       - node-20
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - installation
     - .all
 - matrix_name: "tests-java"
   matrix_spec:
@@ -879,7 +883,6 @@ buildvariants:
     runtime: ["java17"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - installation
     - ".all"
 - matrix_name: "tests-dotnet-windows"
   matrix_spec:
@@ -891,7 +894,6 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
-    - installation
     - ".all !.kind"
 - matrix_name: "tests-dotnet-linux"
   matrix_spec:
@@ -903,7 +905,6 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Only run the Kind tasks for the .NET driver on Linux.
-    - installation
     - ".kind"
 - matrix_name: "tests-go"
   matrix_spec:
@@ -912,7 +913,6 @@ buildvariants:
     runtime: go-20
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - installation
     - ".all"
 - matrix_name: "tests-php"
   matrix_spec:
@@ -921,7 +921,6 @@ buildvariants:
     runtime: php-74
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    - installation
     - ".all"
 - matrix_name: "tests-rust"
   matrix_spec:
@@ -939,5 +938,4 @@ buildvariants:
     platform: ["ubuntu-18.04"]
     runtime: ["c-gcc", "c-clang"]
   tasks: 
-    - installation
     - ".all"
