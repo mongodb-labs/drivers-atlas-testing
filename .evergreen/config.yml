@@ -817,7 +817,7 @@ task_groups:
     setup_group:
       - func: "fetch source"
     tasks:
-      - "lint and format"
+      - "lint-and-format"
 
 buildvariants:
 - name: lint-and-format
