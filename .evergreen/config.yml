@@ -23,12 +23,14 @@ timeout:
         ls -la
 
 functions:
-  "install astrolabe":
+  "install source":
     # Clone astrolabe.
     - command: git.get_project
       type: setup
       params:
         directory: astrolabe-src
+
+  "install astrolabe":
     # Make sure virtualenv is installed.
     - command: shell.exec
       type: setup
@@ -425,6 +427,9 @@ functions:
         content_type: ${content_type|application/json}
         display_name: "events.json"
 
+# Functions to run before the test.
+pre:
+  - func: "install source"
 
 # Functions to run after the test.
 post:
