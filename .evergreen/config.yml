@@ -425,10 +425,6 @@ functions:
         content_type: ${content_type|application/json}
         display_name: "events.json"
 
-# Functions to run before the test.
-pre:
-  - func: "install astrolabe"
-  - func: "install driver"
 
 # Functions to run after the test.
 post:
@@ -443,6 +439,12 @@ tasks:
   - name: lint-and-format
     commands:
       - func: "lint and format"
+
+  # Installation:
+  - name: installation
+    commands:
+      - func: "install astrolabe"
+      - func: "install driver"
 
   # Workload executor validation task (patch-only).
   - name: validate-workload-executor
@@ -806,13 +808,6 @@ axes:
 buildvariants:
 - name: lint-and-format
   display_name: "Lint and Format"
-  expansions:
-    PYTHON3_BINARY: "/opt/python/3.9/bin/python3"
-    PYTHON_BIN_DIR: "bin"
-    DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-python-driver"
-    DRIVER_REVISION: "master"
-    DRIVER_DIRNAME: "python/pymongo"
-    PYMONGO_VIRTUALENV_NAME: "pymongotestvenv"
   run_on:
     - rhel8.7-large
   tasks:
@@ -825,6 +820,7 @@ buildvariants:
     runtime: python39
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
+    - installation
     - ".all"
 
 - matrix_name: "tests-python"
@@ -834,6 +830,7 @@ buildvariants:
     runtime: ["python39"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
+    - installation
     - ".all"
 - matrix_name: "tests-python-windows"
   matrix_spec:
@@ -843,6 +840,7 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
+    - installation
     - ".all !.kind"
 - matrix_name: tests-node-ubuntu-18
   matrix_spec:
@@ -854,6 +852,7 @@ buildvariants:
       - node-16
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
+    - installation
     - .all
 - matrix_name: tests-node-ubuntu-22
   matrix_spec:
@@ -866,6 +865,7 @@ buildvariants:
       - node-20
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
+    - installation
     - .all
 - matrix_name: "tests-java"
   matrix_spec:
@@ -874,6 +874,7 @@ buildvariants:
     runtime: ["java17"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
+    - installation
     - ".all"
 - matrix_name: "tests-dotnet-windows"
   matrix_spec:
@@ -885,6 +886,7 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
+    - installation
     - ".all !.kind"
 - matrix_name: "tests-dotnet-linux"
   matrix_spec:
@@ -896,6 +898,7 @@ buildvariants:
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Only run the Kind tasks for the .NET driver on Linux.
+    - installation
     - ".kind"
 - matrix_name: "tests-go"
   matrix_spec:
@@ -904,6 +907,7 @@ buildvariants:
     runtime: go-20
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
+    - installation
     - ".all"
 - matrix_name: "tests-php"
   matrix_spec:
@@ -912,6 +916,7 @@ buildvariants:
     runtime: php-74
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
+    - installation
     - ".all"
 - matrix_name: "tests-rust"
   matrix_spec:
@@ -920,6 +925,7 @@ buildvariants:
     runtime: rust-latest
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
+   - installation
    - ".all"
 - matrix_name: "tests-c"
   display_name: "${driver} ${platform} ${runtime}"
@@ -927,4 +933,6 @@ buildvariants:
     driver: ["c-master"]
     platform: ["ubuntu-18.04"]
     runtime: ["c-gcc", "c-clang"]
-  tasks: [".all"]
+  tasks: 
+    - installation
+    - ".all"
