@@ -810,6 +810,7 @@ buildvariants:
   display_name: "Lint and Format"
   expansions:
     PYTHON3_BINARY: "/opt/python/3.9/bin/python3"
+    PYTHON_BIN_DIR: "bin"
   run_on:
     - rhel8.7-large
   tasks:
