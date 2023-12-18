@@ -23,7 +23,7 @@ timeout:
         ls -la
 
 functions:
-  "install source":
+  "fetch source":
     # Clone astrolabe.
     - command: git.get_project
       type: setup
@@ -429,7 +429,7 @@ functions:
 
 # Functions to run before the test.
 pre:
-  - func: "install source"
+  - func: "fetch source"
   - func: "install astrolabe"
   - func: "install driver"  
 
