@@ -73,7 +73,8 @@ class KubernetesTest:
         """
 
         LOGGER.info(
-            f"Running test {self.name} using test file {self.spec_test_file} and workload file {self.workload_file}"
+            "Running test %s using test file %s and workload file %s",
+            self.name, self.spec_test_file, self.workload_file
         )
 
         with open(self.spec_test_file) as f:
@@ -109,11 +110,11 @@ class KubernetesTest:
                     # array of the command arguments. Note that the kubectl executable must be in
                     # the system PATH.
                     command = ["kubectl"] + op_val  # noqa: RUF005
-                    LOGGER.info(f"Running command {command}")
+                    LOGGER.info("Running command %s", command)
                     subprocess.run(command, check=False)  # noqa: S603
                 elif op_name == "sleep":
                     # The "sleep" operation sleeps for N seconds.
-                    LOGGER.info(f"Sleeping for {op_val}s")
+                    LOGGER.info("Sleeping for %ss", op_val)
                     time.sleep(op_val)
                 else:
                     raise Exception(f"Unrecognized operation {op_name}")
@@ -135,16 +136,16 @@ class KubernetesTest:
                 or stats["numFailures"] != 0
                 or stats["numSuccesses"] == 0
             ):
-                LOGGER.info(f"FAILED: {self.name!r}")
+                LOGGER.info("FAILED: %r", self.name)
                 self.failed = True
                 # Write xunit logs for failed tests.
                 junit_test.result = junitparser.Failure(str(stats))
             else:
-                LOGGER.info(f"SUCCEEDED: {self.name!r}")
+                LOGGER.info("SUCCEEDED: %r", self.name)
                 # Directly log output of successful tests as xunit output
                 # is only visible for failed tests.
 
-            LOGGER.info(f"Workload Statistics: {stats}")
+            LOGGER.info("Workload Statistics: %s", stats)
 
             return junit_test
         finally:

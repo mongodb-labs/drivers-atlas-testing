@@ -24,7 +24,7 @@ LOGGER = logging.getLogger(__name__)
 def get_organization_by_id(*, client, org_id):
     """Get the organization by the given id `org_id`."""
     org = client.orgs[org_id].get().data
-    LOGGER.debug(f"Organization details: {org}")
+    LOGGER.debug("Organization details: %s", org)
     return org
 
 
@@ -34,12 +34,12 @@ def get_project(*, client, project_name, organization_id):
         project = client.groups.byName[project_name].get().data
     except AtlasApiError as exc:
         if exc.error_code == "MULTIPLE_GROUPS":
-            LOGGER.warning(f"There are many projects {project_name!r}")
+            LOGGER.warning("There are many projects %r", project_name)
             projects_res = client.orgs[organization_id].groups.get().data
             project = projects_res["results"][0]
         else:
             raise
-    LOGGER.debug(f"Project details: {project}")
+    LOGGER.debug("Project details: %s", project)
     return project
 
 
@@ -50,7 +50,7 @@ def ensure_project(*, client, project_name, organization_id):
         project = client.groups.post(name=project_name, orgId=organization_id).data
     except AtlasApiError as exc:
         if exc.error_code == "GROUP_ALREADY_EXISTS":
-            LOGGER.debug(f"Project {project_name!r} already exists")
+            LOGGER.debug("Project %r already exists",project_name)
             project = get_project(
                 client=client,
                 project_name=project_name,
@@ -59,9 +59,9 @@ def ensure_project(*, client, project_name, organization_id):
         else:
             raise
     else:
-        LOGGER.debug(f"Project {project.name!r} successfully created")
+        LOGGER.debug("Project %r successfully created", project.name)
 
-    LOGGER.debug(f"Project details: {project}")
+    LOGGER.debug("Project details: %s", project)
     return project
 
 
@@ -69,7 +69,7 @@ def list_projects_in_org(*, client, org_id):
     """List all projects inside organization with id `org_id`."""
     projects_res = client.orgs[org_id].groups.get(itemsPerPage=500).data
     LOGGER.debug(
-        f"Retrieved {projects_res.totalCount} projects in org id: {org_id}"
+        "Retrieved %s projects in org id: %s", projects_res.totalCount, org_id
     )
     return projects_res
 
@@ -79,7 +79,7 @@ def delete_project(*, client, project_id):
 
     clusters = client.groups[project_id].clusters.get()
     for cluster in clusters.data["results"]:
-        LOGGER.debug("Deleting cluster {}".format(cluster["name"]))
+        LOGGER.debug("Deleting cluster %s", cluster["name"])
         try:
             client.groups[project_id].clusters[cluster["name"]].delete().data
         except AtlasApiError as exc:
@@ -89,7 +89,7 @@ def delete_project(*, client, project_id):
 
     try:
         client.groups[project_id].delete().data
-        LOGGER.debug(f"Deleted project id: {project_id}")
+        LOGGER.debug("Deleted project id: %s", project_id)
     except AtlasApiError as exc:
         # Some clusters may remain pending deletion, which prevents
         # deleting the project
@@ -112,7 +112,7 @@ def ensure_admin_user(*, client, project_id, username, password):
         user = client.groups[project_id].databaseUsers.post(**user_details).data
     except AtlasApiError as exc:
         if exc.error_code == "USER_ALREADY_EXISTS":
-            LOGGER.debug(f"User {username!r} already exists")
+            LOGGER.debug("User %r already exists", username)
             username = user_details.pop("username")
             user = (
                 client.groups[project_id]
@@ -123,9 +123,9 @@ def ensure_admin_user(*, client, project_id, username, password):
         else:
             raise
     else:
-        LOGGER.debug(f"User {username!r} successfully created")
+        LOGGER.debug("User %s successfully created", username)
 
-    LOGGER.debug(f"User details: {user}")
+    LOGGER.debug("User details: %s", user)
     return user
 
 
@@ -138,7 +138,7 @@ def ensure_connect_from_anywhere(
     Atlas project."""
     ip_details_list = [{"cidrBlock": "0.0.0.0/0"}]
     resp = client.groups[project_id].whitelist.post(json=ip_details_list).data
-    LOGGER.debug(f"Project whitelist details: {resp}")
+    LOGGER.debug("Project whitelist details: %s", resp)
 
 
 def aggregate_statistics():

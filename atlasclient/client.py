@@ -223,7 +223,7 @@ class AtlasClient:
             "timeout": self.config.timeout,
         }
 
-        LOGGER.debug(f"Request ({method} {url} {request_kwargs})")
+        LOGGER.debug("Request (%s %s %s)", method, url,request_kwargs)
 
         try:
             response = requests.request(method, url, **request_kwargs)
@@ -252,7 +252,7 @@ class AtlasClient:
         except ValueError:
             data = None
 
-        LOGGER.debug(f"Response ({method} {data})")
+        LOGGER.debug("Response (%s %s)", method, data)
 
         if response.status_code in (200, 201, 202):
             return _ApiResponse(response, method, data)

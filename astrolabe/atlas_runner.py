@@ -134,10 +134,10 @@ class AtlasTestCase:
                     LOGGER.warning("Cluster was not found, will create one")
             except AssertionError as exc:
                 LOGGER.warning(
-                    "Configuration did not match: %s. Recreating the cluster" % exc
+                    "Configuration did not match: %s. Recreating the cluster", exc
                 )
 
-        LOGGER.info(f"Initializing cluster {self.cluster_name!r}")
+        LOGGER.info("Initializing cluster %r", self.cluster_name)
 
         cluster_config = self.spec.initialConfiguration.clusterConfiguration.copy()
         cluster_config["name"] = self.cluster_name
@@ -163,7 +163,7 @@ class AtlasTestCase:
 
     def run(self, persist_cluster=False, startup_time=1):
         LOGGER.info(
-            f"Running test {self.id!r} on cluster {self.cluster_name!r}"
+            "Running test %r on cluster %r", self.id, self.cluster_name
         )
 
         # Step-1: sanity-check the cluster configuration.
@@ -300,7 +300,7 @@ class AtlasTestCase:
             # Step-5: interrupt driver workload and capture streams
             stats = self.workload_runner.stop()
 
-            LOGGER.info(f"Workload Statistics: {stats}")
+            LOGGER.info("Workload Statistics: %s", stats)
 
             # Stop the timer
             timer.stop()
@@ -311,7 +311,7 @@ class AtlasTestCase:
 
             # Log that this test case expects workload failures.
             if self.expect_failure:
-                LOGGER.info(f"Test case {self.id!r} expects failures.")
+                LOGGER.info("Test case %r expects failures.", self.id)
 
             # Check for workload failures.
             failure = (
@@ -325,13 +325,13 @@ class AtlasTestCase:
             # test case as failed.
             if failure != self.expect_failure:
                 LOGGER.info(
-                    f"FAILED: {self.id!r}; Workload failure: {failure}; Expect failure: {self.expect_failure}"
+                    "FAILED: %r; Workload failure: %s; Expect failure: %s", self.id, failure, self.expect_failure
                 )
                 self.failed = True
                 # Write xunit logs for failed tests.
                 junit_test.result = junitparser.Failure(str(stats))
             else:
-                LOGGER.info(f"SUCCEEDED: {self.id!r}")
+                LOGGER.info("SUCCEEDED: %r", self.id)
                 # Directly log output of successful tests as xunit output
                 # is only visible for failed tests.
 
@@ -340,7 +340,7 @@ class AtlasTestCase:
             if not persist_cluster:
                 self.cluster_url.delete()
                 LOGGER.info(
-                    f"Cluster {self.cluster_name!r} marked for deletion."
+                    "Cluster %r marked for deletion.", self.cluster_name
                 )
 
             return junit_test
@@ -355,9 +355,9 @@ class AtlasTestCase:
         # (30+ seconds in some circumstances); scenarios that perform
         # VM restarts in sharded clusters should use explicit sleep operations
         # after the restarts until this is fixed.
-        LOGGER.info("Waiting to wait for cluster %s to become idle" % self.cluster_name)
+        LOGGER.info("Waiting to wait for cluster %s to become idle", self.cluster_name)
         sleep(5)
-        LOGGER.info("Waiting for cluster %s to become idle" % self.cluster_name)
+        LOGGER.info("Waiting for cluster %s to become idle", self.cluster_name)
         timer = Timer()
         timer.start()
         ok = False
@@ -370,7 +370,7 @@ class AtlasTestCase:
             try:
                 cluster_info = self.cluster_url.get().data
             except AtlasClientError as e:
-                LOGGER.error(f"Error getting cluster status: {e}")
+                LOGGER.error("Error getting cluster status: %e", e)
                 continue
 
             actual_state = cluster_info.stateName.lower()
@@ -390,14 +390,14 @@ class AtlasTestCase:
             else:
                 LOGGER.debug(msg)
         if not ok:
-            raise PollingTimeoutError("Polling timed out after %s seconds" % timeout)
+            raise PollingTimeoutError("Polling timed out after %s seconds", timeout)
 
     def wait_for_planning(self, start_time):
         timer = Timer()
         timer.start()
         timeout = self.config.polling_timeout
         ok = False
-        LOGGER.info("Waiting for planning for cluster %s" % self.cluster_name)
+        LOGGER.info("Waiting for planning for cluster %s", self.cluster_name)
         last_notified = 0
         while timer.elapsed < timeout:
             data = (
@@ -461,9 +461,9 @@ class SpecTestRunnerBase:
         # Step-1: ensure validity of the organization.
         # Note: organizations can only be created by via the web UI.
         org_id = self.config.organization_id
-        LOGGER.info(f"Verifying organization id: {org_id!r}")
+        LOGGER.info("Verifying organization id: %r", org_id)
         org = get_organization_by_id(client=self.client, org_id=org_id)
-        LOGGER.info(f"Successfully verified organization {org.name!r}")
+        LOGGER.info("Successfully verified organization %r", org.name)
 
         # Step-2: clean old projects with same name base from organization.
         if not no_create:
@@ -501,32 +501,32 @@ class SpecTestRunnerBase:
             # Set up Atlas for tests.
             # Step-1: check that the project exists or else create it.
             pro_name = atlas_test_case.project_name
-            LOGGER.info(f"Verifying project {pro_name!r}")
+            LOGGER.info("Verifying project %r", pro_name)
             project = ensure_project(
                 client=self.client, project_name=pro_name, organization_id=org.id
             )
             atlas_test_case.project = project
-            LOGGER.info(f"Successfully verified project {pro_name!r}")
+            LOGGER.info("Successfully verified project %r", pro_name)
 
             # Step-2: create a user under the project.
             # Note: all test operations will be run as this user.
             uname = self.config.database_username
-            LOGGER.info(f"Verifying user {uname!r}")
+            LOGGER.info("Verifying user %r", uname)
             ensure_admin_user(
                 client=self.client,
                 project_id=project.id,
                 username=uname,
                 password=self.config.database_password,
             )
-            LOGGER.info(f"Successfully verified user {uname!r}")
+            LOGGER.info("Successfully verified user %r", uname)
 
             # Step-3: populate project IP whitelist to allow access from anywhere.
             LOGGER.info(
-                "Enabling access from anywhere on project " f"{pro_name!r}"
+                "Enabling access from anywhere on project %r", pro_name
             )
             ensure_connect_from_anywhere(client=self.client, project_id=project.id)
             LOGGER.info(
-                "Successfully enabled access from anywhere on project " f"{pro_name!r}"
+                "Successfully enabled access from anywhere on project %r",pro_name
             )
 
         # Log test plan.
@@ -539,7 +539,7 @@ class SpecTestRunnerBase:
     def clean_old_projects(self, org_id):
         current_timestamp = int(_time.time())
         projects_res = list_projects_in_org(client=self.client, org_id=org_id)
-        LOGGER.info(f"looking for {self.config.project_base_name}")
+        LOGGER.info("looking for %s", self.config.project_base_name)
         for project in projects_res["results"]:
             if project.name.startswith(self.config.project_base_name):
                 try:
@@ -553,11 +553,11 @@ class SpecTestRunnerBase:
                 ):
                     try:
                         LOGGER.info(
-                            f"Deleting project {project.name!r}, id: {project.id!r}"
+                            "Deleting project %r, id: %r", project.name, project.id
                         )
                         delete_project(client=self.client, project_id=project.id)
                         LOGGER.info(
-                            f"Successfully deleted project {project.name!r}, id: {project.id!r}"
+                            "Successfully deleted project %r, id: %r", project.name, project.id
                         )
                     except AtlasApiError as esc:
                         # the project may have been deleted by another test just now.
@@ -567,7 +567,7 @@ class SpecTestRunnerBase:
                             raise
                 else:
                     LOGGER.info(
-                        f"Skipping deleting project {project.name!r}, id: {project.id!r}"
+                        "Skipping deleting project %r, id: %r", project.name, project.id
                     )
 
     def get_printable_test_plan(self):
@@ -596,7 +596,7 @@ class SpecTestRunnerBase:
 
             # Select a case whose cluster is ready.
             active_case.wait_for_idle()
-            LOGGER.info(f"Test cluster {active_case.cluster_name!r} is ready")
+            LOGGER.info("Test cluster %r is ready", active_case.cluster_name)
 
             # Run the case.
             xunit_test = active_case.run(
@@ -613,7 +613,7 @@ class SpecTestRunnerBase:
                 all_ok = False
 
             LOGGER.info(
-                f"Test case {active_case.id!r} done; Failed: {active_case.failed}, All OK: {all_ok}"
+                "Test case %r done; Failed: %s, All OK: %s", active_case.id, active_case.failed, all_ok
             )
 
         return not all_ok
@@ -628,7 +628,7 @@ class SingleTestRunner(SpecTestRunnerBase):
         Verify that the given file is a spec test file and return its
         absolute path.
         """
-        LOGGER.info(f"Loading spec test from file {test_locator_token!r}")
+        LOGGER.info("Loading spec test from file %r", test_locator_token)
         full_path = os.path.realpath(test_locator_token)
         if os.path.isfile(full_path) and test_locator_token.lower().endswith(
             (".yml", "yaml")
@@ -641,12 +641,12 @@ class MultiTestRunner(SpecTestRunnerBase):
 
     @staticmethod
     def find_spec_tests(test_locator_token):
-        LOGGER.info(f"Scanning directory {test_locator_token!r} for spec tests")
+        LOGGER.info("Scanning directory %r for spec tests",test_locator_token)
         for root, _, files in os.walk(test_locator_token):
             for file in files:
                 full_path = os.path.join(root, file)
                 if os.path.isfile(full_path) and file.lower().endswith(
                     (".yml", "yaml")
                 ):
-                    LOGGER.debug(f"Loading spec test from file {full_path!r}")
+                    LOGGER.debug("Loading spec test from file %r", full_path)
                     yield full_path

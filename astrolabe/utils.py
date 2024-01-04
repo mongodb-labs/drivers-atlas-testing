@@ -204,13 +204,13 @@ class DriverWorkloadSubprocessRunner:
 
         try:
             os.remove(self.sentinel)
-            LOGGER.debug(f"Cleaned up sentinel file at {self.sentinel}")
+            LOGGER.debug("Cleaned up sentinel file at %s", self.sentinel)
         except FileNotFoundError:
             pass
 
         try:
             os.remove(self.events)
-            LOGGER.debug(f"Cleaned up events file at {self.events}")
+            LOGGER.debug("Cleaned up events file at %s", self.events)
         except FileNotFoundError:
             pass
 
@@ -225,14 +225,14 @@ class DriverWorkloadSubprocessRunner:
                 args, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP  # noqa: S603
             )
 
-        LOGGER.debug(f"Subprocess argument list: {args}")
-        LOGGER.info(f"Started workload executor [PID: {self.pid}]")
+        LOGGER.debug("Subprocess argument list: %s", args)
+        LOGGER.info("Started workload executor [PID: %s]", self.pid)
 
         try:
             # Wait for the workload executor to start.
             LOGGER.info(
-                f"Waiting {startup_time} seconds for the workload executor "
-                "subprocess to start"
+                "Waiting %s seconds for the workload executor "
+                "subprocess to start", startup_time
             )
             self.workload_subprocess.wait(timeout=startup_time)
         except subprocess.TimeoutExpired:
@@ -249,7 +249,7 @@ class DriverWorkloadSubprocessRunner:
     def stop(self):
         """Stop the process, verifying it didn't already exit."""
 
-        LOGGER.info(f"Stopping workload executor [PID: {self.pid}]")
+        LOGGER.info("Stopping workload executor [PID: %s]", self.pid)
 
         try:
             if not self.is_windows:
@@ -267,7 +267,7 @@ class DriverWorkloadSubprocessRunner:
         t_wait = 60
         try:
             self.workload_subprocess.wait(timeout=t_wait)
-            LOGGER.info(f"Stopped workload executor [PID: {self.pid}]")
+            LOGGER.info("Stopped workload executor [PID: %s]", self.pid)
         except subprocess.TimeoutExpired:
             raise WorkloadExecutorError(
                 f"The workload executor did not terminate {t_wait} seconds "
@@ -285,10 +285,10 @@ class DriverWorkloadSubprocessRunner:
 
     def read_stats(self):
         try:
-            LOGGER.info(f"Reading sentinel file {self.sentinel!r}")
+            LOGGER.info("Reading sentinel file %s", self.sentinel)
             with open(self.sentinel) as fp:
                 stats = json.load(fp)
-                LOGGER.info("Sentinel contains: %s" % json.dumps(stats))
+                LOGGER.info("Sentinel contains: %s", json.dumps(stats))
                 return stats
         except FileNotFoundError:
             LOGGER.error("Sentinel file not found")
@@ -311,7 +311,7 @@ class DriverWorkloadSubprocessRunner:
                 os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
         except ProcessLookupError:
             LOGGER.info(
-                f"Workload executor process does not exist [PID: {self.pid}]"
+                "Workload executor process does not exist [PID: %s]", self.pid
             )
 
         # Since the default server selection timeout is 30 seconds,
@@ -319,10 +319,10 @@ class DriverWorkloadSubprocessRunner:
         t_wait = 60
         try:
             self.workload_subprocess.wait(timeout=t_wait)
-            LOGGER.info(f"Stopped workload executor [PID: {self.pid}]")
+            LOGGER.info("Stopped workload executor [PID: %s]", self.pid)
         except subprocess.TimeoutExpired:
             LOGGER.info(
-                f"Workload executor is still running, trying to kill it [PID: {self.pid}]"
+                "Workload executor is still running, trying to kill it [PID: %s]", self.pid
             )
 
             try:
@@ -333,7 +333,7 @@ class DriverWorkloadSubprocessRunner:
 
 
 def get_logs(admin_client, project, cluster_name):
-    LOGGER.info(f"Retrieving logs for {cluster_name}")
+    LOGGER.info("Retrieving logs for %s", cluster_name)
     data = (
         admin_client.nds.groups[project.id]
         .clusters[cluster_name]
@@ -402,13 +402,13 @@ def get_logs(admin_client, project, cluster_name):
                 raise AstrolabeTestCaseError(msg)
 
             data = local["data"]
-            LOGGER.info("Log download URL: %s" % data["downloadUrl"])
+            LOGGER.info("Log download URL: %s", data["downloadUrl"])
             # Assume the URL uses the same host as the other API requests, and
             # remove it so that we just have the path.
             url = re.sub(r"\w+://[^/]+", "", data["downloadUrl"])
             if url.startswith("/api"):
                 url = url[4:]
-            LOGGER.info("Retrieving %s" % url)
+            LOGGER.info("Retrieving %s", url)
             resp = admin_client.request("GET", url)
             if resp.status_code != 200:
                 raise AstrolabeTestCaseError(
@@ -420,7 +420,7 @@ def get_logs(admin_client, project, cluster_name):
 
             return True
         except Exception as e:
-            LOGGER.error("Error retrieving logs for '%s': %s" % (cluster_name, e))
+            LOGGER.error("Error retrieving logs for '%s': %s", cluster_name, e)
             # Poller will retry log collection.
             return False
 

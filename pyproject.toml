@@ -56,17 +56,16 @@ version = {attr = "astrolabe.version.__version__"}
 include = ["astrolabe","atlasclient"]
 
 [tool.ruff]
-target-version = "py37"
 line-length = 100
 
 [tool.ruff.lint]
-select = [
-  "E", "F", "W", # flake8
+extend-select = [
   "B",           # flake8-bugbear
   "I",           # isort
   "ARG",         # flake8-unused-arguments
   "C4",          # flake8-comprehensions
   "ICN",         # flake8-import-conventions
+  "G",           # flake8-logging-format
   "PGH",         # pygrep-hooks
   "PIE",         # flake8-pie
   "PL",          # pylint

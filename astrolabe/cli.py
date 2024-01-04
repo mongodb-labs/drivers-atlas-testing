@@ -271,7 +271,7 @@ def delete_all_projects(ctx, org_id):
         try:
             cmd.delete_project(client=ctx.obj.client, project_id=project.id)
             LOGGER.info(
-                f"Successfully deleted project {project.name!r}, id: {project.id!r}"
+                "Successfully deleted project %r, id: %r", project.name, project.id
             )
         except Exception as e:
             LOGGER.exception(e)
@@ -661,7 +661,7 @@ def get_logs_cmd(
             with open("status") as fp:
                 status = fp.read().strip()
                 if status == "success":
-                    LOGGER.info("Test run status is %s, not retrieving logs" % status)
+                    LOGGER.info("Test run status is %s, not retrieving logs", status)
                     return
         else:
             LOGGER.info("Test run status is missing")
@@ -822,7 +822,7 @@ def run_kubernetes_test(
     Runs one Kubernetes test.
     """
     LOGGER.info(
-        f"Running test {spec_test_file}, workload {workload_file}, driver {workload_executor}"
+        "Running test %s, workload %s, driver %s", spec_test_file, workload_file, workload_executor
     )
 
     # The test name is "{spec test filename}-{workload filename}".
@@ -848,7 +848,7 @@ def check_cloud_failure(ctx):
     if os.path.exists("status"):
         with open("status") as fp:
             status = fp.read().strip()
-            LOGGER.info("Test status: %s" % status)
+            LOGGER.info("Test status: %s", status)
             if status == "cloud-failure":
                 LOGGER.info("Cloud failure, exiting with 1")
                 exit(1)
@@ -863,7 +863,7 @@ def check_success(ctx):
     if os.path.exists("status"):
         with open("status") as fp:
             status = fp.read().strip()
-            LOGGER.info("Test status: %s" % status)
+            LOGGER.info("Test status: %s", status)
             if status == "success":
                 LOGGER.info("Success, exiting with 0")
                 exit(0)

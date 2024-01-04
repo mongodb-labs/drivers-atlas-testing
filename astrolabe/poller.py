@@ -51,7 +51,7 @@ class PollerBase:
                 return_value = self._check_ready(obj, attribute, args, kwargs)
                 if return_value:
                     return obj
-            LOGGER.debug(f"Waiting {self.interval:.2f} seconds before retrying")
+            LOGGER.debug("Waiting %.2f seconds before retrying", self.interval)
             sleep(self.interval)
         raise PollingTimeoutError("Polling timed out after %s seconds" % self.timeout)
 
@@ -73,7 +73,7 @@ def poll(check, timeout, subject):
     timer.start()
     ok = False
     while timer.elapsed < timeout:
-        LOGGER.info("Waiting for %s; elapsed: %.1f sec" % (subject, timer.elapsed))
+        LOGGER.info("Waiting for %s; elapsed: %.1f sec", subject, timer.elapsed)
         if check():
             ok = True
             break
