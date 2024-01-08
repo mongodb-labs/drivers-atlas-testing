@@ -39,7 +39,7 @@ export PLATFORM
 # Invoke the workload executor as a background process and store its process ID as NATIVE_WORKLOAD_EXECUTOR_PID
 #     We don't need to build or restore because install-driver.sh handles that
 #     We can't use dotnet run --no-build --no-restore due to https://github.com/dotnet/runtime/issues/38274
-#     Addditionally, we must use the published version to bypass a dependency resolution issue with .NET Core 1.1
+#     Additionally, we must use the published version to bypass a dependency resolution issue with .NET Core 1.1
 set +x # hide connection string in test output
 
 ./.dotnet/dotnet mongo-csharp-driver/tests/AstrolabeWorkloadExecutor/bin/Debug/"${FRAMEWORK}"/publish/workload-executor.dll "${CONNECTION_STRING}" "${WORKLOAD_SPEC}"

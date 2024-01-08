@@ -18,8 +18,8 @@ import logging
 from time import sleep
 
 from astrolabe.exceptions import PollingTimeoutError
-from .timer import Timer
 
+from .timer import Timer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class PollerBase:
                 return_value = self._check_ready(obj, attribute, args, kwargs)
                 if return_value:
                     return obj
-            LOGGER.debug("Waiting {:.2f} seconds before retrying".format(self.interval))
+            LOGGER.debug("Waiting %.2f seconds before retrying", self.interval)
             sleep(self.interval)
         raise PollingTimeoutError("Polling timed out after %s seconds" % self.timeout)
 
@@ -61,7 +61,7 @@ class BooleanCallablePoller(PollerBase):
     its methods."""
 
     @staticmethod
-    def _check_ready(obj, attribute, args=(), kwargs={}):
+    def _check_ready(obj, attribute, args=(), kwargs={}):  # noqa: B006
         """A readiness check that evaluates to True if the `attribute`
         method of the `obj` object returns boolean True when called with
         the provided args and kwargs."""
@@ -73,14 +73,13 @@ def poll(check, timeout, subject):
     timer.start()
     ok = False
     while timer.elapsed < timeout:
-        LOGGER.info("Waiting for %s; elapsed: %.1f sec" % (subject, timer.elapsed))
+        LOGGER.info("Waiting for %s; elapsed: %.1f sec", subject, timer.elapsed)
         if check():
             ok = True
             break
-        else:
-            # Prevent unintentional busy loops, always sleep here even if
-            # the check function takes a non-trivial amount of time
-            # (e.g. if it performs network I/O).
-            sleep(1)
+        # Prevent unintentional busy loops, always sleep here even if
+        # the check function takes a non-trivial amount of time
+        # (e.g. if it performs network I/O).
+        sleep(1)
     if not ok:
         raise PollingTimeoutError("Timed out while waiting for %s" % subject)

@@ -19,8 +19,6 @@ from pprint import pprint
 from urllib.parse import unquote_plus
 
 import click
-from atlasclient import AtlasApiBaseError, AtlasApiError, AtlasClient
-from atlasclient.exceptions import AtlasClientError
 
 import astrolabe.commands as cmd
 from astrolabe.atlas_runner import MultiTestRunner, SingleTestRunner
@@ -43,6 +41,8 @@ from astrolabe.utils import (
     require_requests_ipv4,
 )
 from astrolabe.validator import validator_factory
+from atlasclient import AtlasApiBaseError, AtlasApiError, AtlasClient
+from atlasclient.exceptions import AtlasClientError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -214,7 +214,6 @@ def check_connection(ctx):
 @cli.group("organizations")
 def atlas_organizations():
     """Commands related to Atlas Organizations."""
-    pass
 
 
 @atlas_organizations.command("list")
@@ -235,7 +234,6 @@ def get_organization_by_id(ctx, org_id):
 @cli.group("projects")
 def atlas_projects():
     """Commands related to Atlas Projects."""
-    pass
 
 
 @atlas_projects.command("ensure")
@@ -273,9 +271,7 @@ def delete_all_projects(ctx, org_id):
         try:
             cmd.delete_project(client=ctx.obj.client, project_id=project.id)
             LOGGER.info(
-                "Successfully deleted project {!r}, id: {!r}".format(
-                    project.name, project.id
-                )
+                "Successfully deleted project %r, id: %r", project.name, project.id
             )
         except Exception as e:
             LOGGER.exception(e)
@@ -301,7 +297,6 @@ def enable_project_access_from_anywhere(ctx, project_name):
 @cli.group("users")
 def atlas_users():
     """Commands related to Atlas Users."""
-    pass
 
 
 @atlas_users.command("create-admin-user")
@@ -334,7 +329,6 @@ def list_users(ctx, project_name):
 @cli.group("clusters")
 def atlas_clusters():
     """Commands related to Atlas Clusters."""
-    pass
 
 
 @atlas_clusters.command("create-dedicated")
@@ -472,8 +466,8 @@ def delete_cluster(ctx, project_name, cluster_name):
 def delete_all_clusters(ctx, project_name):
     """Delete all Atlas Clusters in the given Atlas Project."""
     click.confirm(
-        "This will delete all clusters under the project {}. "
-        "Do you want to continue?".format(project_name),
+        f"This will delete all clusters under the project {project_name}. "
+        "Do you want to continue?",
         abort=True,
     )
     project = ctx.obj.client.groups.byName[project_name].get().data
@@ -487,7 +481,6 @@ def delete_all_clusters(ctx, project_name):
 @cli.group("info")
 def help_topics():
     """Help topics for astrolabe users."""
-    pass
 
 
 @help_topics.command("configuration")
@@ -499,7 +492,6 @@ def help_configuration_options():
 @cli.group("validate")
 def validate():
     """Commands for validating test components"""
-    pass
 
 
 @validate.command("workload-executor")
@@ -523,7 +515,6 @@ def validate_workload_executor(workload_executor, startup_time, connection_strin
 @cli.group("atlas-tests")
 def atlas_tests():
     """Commands related to running APM spec tests."""
-    pass
 
 
 @atlas_tests.command("run-one")
@@ -670,7 +661,7 @@ def get_logs_cmd(
             with open("status") as fp:
                 status = fp.read().strip()
                 if status == "success":
-                    LOGGER.info("Test run status is %s, not retrieving logs" % status)
+                    LOGGER.info("Test run status is %s, not retrieving logs", status)
                     return
         else:
             LOGGER.info("Test run status is missing")
@@ -814,7 +805,6 @@ def stats(ctx):
 @cli.group("kubernetes-tests")
 def kubernetes_tests():
     """Commands related to running Kubernetes spec tests."""
-    pass
 
 
 @kubernetes_tests.command("run-one")
@@ -832,7 +822,7 @@ def run_kubernetes_test(
     Runs one Kubernetes test.
     """
     LOGGER.info(
-        f"Running test {spec_test_file}, workload {workload_file}, driver {workload_executor}"
+        "Running test %s, workload %s, driver %s", spec_test_file, workload_file, workload_executor
     )
 
     # The test name is "{spec test filename}-{workload filename}".
@@ -858,7 +848,7 @@ def check_cloud_failure(ctx):
     if os.path.exists("status"):
         with open("status") as fp:
             status = fp.read().strip()
-            LOGGER.info("Test status: %s" % status)
+            LOGGER.info("Test status: %s", status)
             if status == "cloud-failure":
                 LOGGER.info("Cloud failure, exiting with 1")
                 exit(1)
@@ -873,7 +863,7 @@ def check_success(ctx):
     if os.path.exists("status"):
         with open("status") as fp:
             status = fp.read().strip()
-            LOGGER.info("Test status: %s" % status)
+            LOGGER.info("Test status: %s", status)
             if status == "success":
                 LOGGER.info("Success, exiting with 0")
                 exit(0)

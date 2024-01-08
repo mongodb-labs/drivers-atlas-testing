@@ -18,7 +18,6 @@ from collections import namedtuple
 
 from atlasclient.utils import JSONObject
 
-
 ClientConfiguration = namedtuple(
     "AtlasClientConfiguration", ["base_url", "api_version", "auth", "timeout"]
 )

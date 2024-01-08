@@ -16,28 +16,26 @@ import datetime
 import json
 import logging
 import os
+import re
 import signal
+import socket
 import subprocess
 import sys
-import re
-import socket
-import requests.packages.urllib3.util.connection as urllib3_cn
-from hashlib import sha256
 from contextlib import closing
+from hashlib import sha256
 from time import sleep
 
 import click
 import junitparser
-
+import requests.packages.urllib3.util.connection as urllib3_cn
 from pymongo import MongoClient
 
 from .exceptions import (
-    WorkloadExecutorError,
     AstrolabeTestCaseError,
     PrematureExitError,
+    WorkloadExecutorError,
 )
 from .poller import poll
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -206,35 +204,35 @@ class DriverWorkloadSubprocessRunner:
 
         try:
             os.remove(self.sentinel)
-            LOGGER.debug("Cleaned up sentinel file at {}".format(self.sentinel))
+            LOGGER.debug("Cleaned up sentinel file at %s", self.sentinel)
         except FileNotFoundError:
             pass
 
         try:
             os.remove(self.events)
-            LOGGER.debug("Cleaned up events file at {}".format(self.events))
+            LOGGER.debug("Cleaned up events file at %s", self.events)
         except FileNotFoundError:
             pass
 
         _args = [workload_executor, connection_string, json.dumps(driver_workload)]
         if not self.is_windows:
             args = _args
-            self.workload_subprocess = subprocess.Popen(args, preexec_fn=os.setsid)
+            self.workload_subprocess = subprocess.Popen(args, preexec_fn=os.setsid)  # noqa: PLW1509, S603
         else:
             args = ["C:/cygwin/bin/bash"]
             args.extend(_args)
             self.workload_subprocess = subprocess.Popen(
-                args, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                args, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP  # noqa: S603
             )
 
-        LOGGER.debug("Subprocess argument list: {}".format(args))
-        LOGGER.info("Started workload executor [PID: {}]".format(self.pid))
+        LOGGER.debug("Subprocess argument list: %s", args)
+        LOGGER.info("Started workload executor [PID: %s]", self.pid)
 
         try:
             # Wait for the workload executor to start.
             LOGGER.info(
-                "Waiting {} seconds for the workload executor "
-                "subprocess to start".format(startup_time)
+                "Waiting %s seconds for the workload executor "
+                "subprocess to start", startup_time
             )
             self.workload_subprocess.wait(timeout=startup_time)
         except subprocess.TimeoutExpired:
@@ -251,7 +249,7 @@ class DriverWorkloadSubprocessRunner:
     def stop(self):
         """Stop the process, verifying it didn't already exit."""
 
-        LOGGER.info("Stopping workload executor [PID: {}]".format(self.pid))
+        LOGGER.info("Stopping workload executor [PID: %s]", self.pid)
 
         try:
             if not self.is_windows:
@@ -269,11 +267,11 @@ class DriverWorkloadSubprocessRunner:
         t_wait = 60
         try:
             self.workload_subprocess.wait(timeout=t_wait)
-            LOGGER.info("Stopped workload executor [PID: {}]".format(self.pid))
+            LOGGER.info("Stopped workload executor [PID: %s]", self.pid)
         except subprocess.TimeoutExpired:
             raise WorkloadExecutorError(
-                "The workload executor did not terminate {} seconds "
-                "after sending the termination signal".format(t_wait)
+                f"The workload executor did not terminate {t_wait} seconds "
+                "after sending the termination signal"
             )
 
         # Workload executors wrapped in shell scripts can report that they've
@@ -287,10 +285,10 @@ class DriverWorkloadSubprocessRunner:
 
     def read_stats(self):
         try:
-            LOGGER.info("Reading sentinel file {!r}".format(self.sentinel))
-            with open(self.sentinel, "r") as fp:
+            LOGGER.info("Reading sentinel file %s", self.sentinel)
+            with open(self.sentinel) as fp:
                 stats = json.load(fp)
-                LOGGER.info("Sentinel contains: %s" % json.dumps(stats))
+                LOGGER.info("Sentinel contains: %s", json.dumps(stats))
                 return stats
         except FileNotFoundError:
             LOGGER.error("Sentinel file not found")
@@ -313,7 +311,7 @@ class DriverWorkloadSubprocessRunner:
                 os.kill(self.workload_subprocess.pid, signal.CTRL_BREAK_EVENT)
         except ProcessLookupError:
             LOGGER.info(
-                "Workload executor process does not exist [PID: {}]".format(self.pid)
+                "Workload executor process does not exist [PID: %s]", self.pid
             )
 
         # Since the default server selection timeout is 30 seconds,
@@ -321,12 +319,10 @@ class DriverWorkloadSubprocessRunner:
         t_wait = 60
         try:
             self.workload_subprocess.wait(timeout=t_wait)
-            LOGGER.info("Stopped workload executor [PID: {}]".format(self.pid))
+            LOGGER.info("Stopped workload executor [PID: %s]", self.pid)
         except subprocess.TimeoutExpired:
             LOGGER.info(
-                "Workload executor is still running, trying to kill it [PID: {}]".format(
-                    self.pid
-                )
+                "Workload executor is still running, trying to kill it [PID: %s]", self.pid
             )
 
             try:
@@ -337,7 +333,7 @@ class DriverWorkloadSubprocessRunner:
 
 
 def get_logs(admin_client, project, cluster_name):
-    LOGGER.info(f"Retrieving logs for {cluster_name}")
+    LOGGER.info("Retrieving logs for %s", cluster_name)
     data = (
         admin_client.nds.groups[project.id]
         .clusters[cluster_name]
@@ -385,14 +381,13 @@ def get_logs(admin_client, project, cluster_name):
                 if data["status"] == "SUCCESS":
                     local["data"] = data
                     return True
-                elif data["status"] != "IN_PROGRESS":
+                if data["status"] != "IN_PROGRESS":
                     raise AstrolabeTestCaseError(
                         "Unexpected log collection job status: %s: %s"
                         % (data["status"], data)
                     )
-                else:
-                    # status == 'IN_PROGRESS', continue polling for logs to be ready
-                    return False
+                # status == 'IN_PROGRESS', continue polling for logs to be ready
+                return False
 
             poll(
                 check,
@@ -407,13 +402,13 @@ def get_logs(admin_client, project, cluster_name):
                 raise AstrolabeTestCaseError(msg)
 
             data = local["data"]
-            LOGGER.info("Log download URL: %s" % data["downloadUrl"])
+            LOGGER.info("Log download URL: %s", data["downloadUrl"])
             # Assume the URL uses the same host as the other API requests, and
             # remove it so that we just have the path.
             url = re.sub(r"\w+://[^/]+", "", data["downloadUrl"])
             if url.startswith("/api"):
                 url = url[4:]
-            LOGGER.info("Retrieving %s" % url)
+            LOGGER.info("Retrieving %s", url)
             resp = admin_client.request("GET", url)
             if resp.status_code != 200:
                 raise AstrolabeTestCaseError(
@@ -425,7 +420,7 @@ def get_logs(admin_client, project, cluster_name):
 
             return True
         except Exception as e:
-            LOGGER.error("Error retrieving logs for '%s': %s" % (cluster_name, e))
+            LOGGER.error("Error retrieving logs for '%s': %s", cluster_name, e)
             # Poller will retry log collection.
             return False
 

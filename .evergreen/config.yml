@@ -23,12 +23,14 @@ timeout:
         ls -la
 
 functions:
-  "install astrolabe":
+  "fetch source":
     # Clone astrolabe.
     - command: git.get_project
       type: setup
       params:
         directory: astrolabe-src
+
+  "install astrolabe":
     # Make sure virtualenv is installed.
     - command: shell.exec
       type: setup
@@ -105,6 +107,19 @@ functions:
             ./integrations/${DRIVER_DIRNAME}/install-driver.sh
           fi
 
+  "lint and format":
+    - command: subprocess.exec
+      type: test
+      params:
+        working_dir: astrolabe-src
+        binary: bash
+        script: |
+          set -eux
+          astrolabevenv/bin/activate
+          python -m pip install -q pre-commit check-manifest
+          pre-commit run --all-files --hook-stage=manual
+          check-manifest -v
+ 
   "validate executor":
     # Run a MongoDB instance locally.
     - command: shell.exec
@@ -415,8 +430,9 @@ functions:
 
 # Functions to run before the test.
 pre:
+  - func: "fetch source"
   - func: "install astrolabe"
-  - func: "install driver"
+  - func: "install driver"  
 
 # Functions to run after the test.
 post:
@@ -427,6 +443,17 @@ post:
   - func: "upload event logs"
 
 tasks:
+  # Linting and formatting
+  - name: lint-and-format
+    commands:
+      - func: "lint and format"
+
+  # Installation:
+  - name: installation
+    commands:
+      - func: "install astrolabe"
+      - func: "install driver"
+
   # Workload executor validation task (patch-only).
   - name: validate-workload-executor
     patch_only: true
@@ -786,7 +813,21 @@ axes:
           CC: /opt/mongodbtoolchain/v4/bin/gcc
           CXX: /opt/mongodbtoolchain/v4/bin/g++
 
+task_groups:
+  - name: lint_and_format_task_group
+    setup_group:
+      - func: "fetch source"
+    tasks:
+      - "lint-and-format"
+
 buildvariants:
+- name: lint-and-format
+  display_name: "Lint and Format"
+  run_on:
+    - rhel8.7-large
+  tasks:
+    - name: "lint_and_format_task_group"
+
 - matrix_name: "tests-ruby"
   matrix_spec:
     driver: ["ruby-master"]
@@ -896,4 +937,5 @@ buildvariants:
     driver: ["c-master"]
     platform: ["ubuntu-18.04"]
     runtime: ["c-gcc", "c-clang"]
-  tasks: [".all"]
+  tasks: 
+    - ".all"

@@ -164,7 +164,7 @@ User-Facing API
 
 The Test Orchestrator MUST be an executable that supports the following invocation pattern::
 
-	./test-orchestrator atlas-tests run-one path/to/workload-spec.yml -e path/to/workload-executor
+  ./test-orchestrator atlas-tests run-one path/to/workload-spec.yml -e path/to/workload-executor
 
 where:
 

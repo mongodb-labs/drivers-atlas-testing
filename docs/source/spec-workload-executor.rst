@@ -44,7 +44,7 @@ After accepting the inputs, the workload executor:
    * MUST NOT augment the incoming connection string with any additional URI options.
 
 #. MUST parse the incoming driver workload spec document and set up the driver's
-  unified test runner to execute the provided workload.
+   unified test runner to execute the provided workload.
 
    .. note::
 

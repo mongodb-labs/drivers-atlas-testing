@@ -1,12 +1,11 @@
-from __future__ import print_function
-import sys
+import inspect
 import json
 import os
-import time
 import signal
-import inspect
-
+import sys
+import time
 from collections import defaultdict
+
 import pymongo
 
 # we insert this path into the sys.path because we want to be able to import
@@ -14,7 +13,7 @@ import pymongo
 # pymongo (this works because pymongo is installed with pip flag -e)
 test_path = os.path.dirname(os.path.dirname(inspect.getfile(pymongo)))
 sys.path.insert(0, test_path)
-from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop
+from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop  # noqa: E402
 
 WIN32 = sys.platform in ("win32", "cygwin")
 
@@ -57,7 +56,7 @@ def workload_runner(mongodb_uri, test_workload):
         "numSuccesses": entity_map["successes"],
         "numIterations": entity_map["iterations"],
     }
-    print("Workload statistics: {!r}".format(results))
+    print(f"Workload statistics: {results!r}")
 
     events = {
         "events": entity_map["events"],
@@ -65,7 +64,7 @@ def workload_runner(mongodb_uri, test_workload):
         "failures": entity_map["failures"],
     }
     cur_dir = os.path.abspath(os.curdir)
-    print("Writing statistics to directory {!r}".format(cur_dir))
+    print(f"Writing statistics to directory {cur_dir!r}")
     with open("results.json", "w") as fr:
         json.dump(results, fr)
     with open("events.json", "w") as fr:
@@ -82,7 +81,7 @@ if __name__ == "__main__":
         # PyYAML is imported locally to avoid ImportErrors on EVG.
         import yaml
 
-        with open(driver_workload, "r") as fp:
-            workload_spec = yaml.load(fp, Loader=yaml.FullLoader)
+        with open(driver_workload) as fp:
+            workload_spec = yaml.safe_load(fp, Loader=yaml.FullLoader)
 
     workload_runner(connection_string, workload_spec)
