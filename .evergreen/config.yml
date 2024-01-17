@@ -414,7 +414,7 @@ functions:
         permissions: public-read
         content_type: ${content_type|application/json}
         display_name: "events.json"
-	optional: true
+        optional: true
 
 # Functions to run before the test.
 pre:
