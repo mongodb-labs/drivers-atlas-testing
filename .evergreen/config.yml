@@ -395,6 +395,7 @@ functions:
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "mongodb-logs.tar.gz"
+        optional: true
 
   "upload event logs":
     - command: shell.exec
@@ -416,6 +417,7 @@ functions:
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "events.json.gz"
+        optional: true
     # If gzip doesn't exist (Windows?) upload the uncompressed events also.
     - command: s3.put
       type: setup
@@ -428,6 +430,7 @@ functions:
         permissions: public-read
         content_type: ${content_type|application/json}
         display_name: "events.json"
+        optional: true
 
 # Functions to run before the test.
 pre:
