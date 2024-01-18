@@ -381,6 +381,7 @@ functions:
     - command: attach.xunit_results
       type: setup
       params:
+        continue_on_err: true      # Because there may be no xml output
         file: "astrolabe-src/xunit-output/*.xml"
 
   "upload server logs":
