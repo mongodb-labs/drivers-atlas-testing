@@ -383,6 +383,13 @@ functions:
       params:
         continue_on_err: true      # Because there may be no xml output
         file: "astrolabe-src/xunit-output/*.xml"
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: astrolabe-src
+        script: |
+          # Ensure the full task succeeds.
+          echo "Finish xunit upload"
 
   "upload server logs":
     - command: s3.put
