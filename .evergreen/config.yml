@@ -376,6 +376,7 @@ functions:
         continue_on_err: true       # Because script may not exist OR platform may not be Windows.
         add_expansions_to_env: true
         script: |
+          ls astrolabe-src/xunit-output
           rm -f xunit-output/failure_*.xml
     # Upload the xunit-format test results.
     - command: attach.xunit_results
