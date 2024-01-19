@@ -369,14 +369,16 @@ functions:
     # Evergreen fails tasks when the process exits with success but an xunit
     # file is present with a failure. Delete the files where failures are
     # expected.
+    # Also ensure there is at least one xml file, so that the upload step does not fail.
     - command: shell.exec
       type: setup
       params:
         working_dir: astrolabe-src
-        continue_on_err: true       # Because script may not exist OR platform may not be Windows.
         add_expansions_to_env: true
         script: |
-          rm -f xunit-output/failure_*.xml
+          mkdir -p xunit-output
+          rm -rf xunit-output/failure_*.xml
+          echo "<?xml version='1.0' encoding='utf-8'?><testsuites></testsuites>" > xunit-output/test.xml
     # Upload the xunit-format test results.
     - command: attach.xunit_results
       type: setup
@@ -799,10 +801,10 @@ axes:
         variables:
           GOROOT: /opt/golang/go1.20
           GOPATH: /home/ubuntu/go
-      - id: php-74
-        display_name: PHP 7.4
+      - id: php-82
+        display_name: PHP 8.2
         variables:
-          PHP_VERSION: 7.4
+          PHP_VERSION: 8.2
       - id: rust-latest
         display_name: Rust Latest
       - id: "c-clang"
@@ -922,8 +924,8 @@ buildvariants:
 - matrix_name: "tests-php"
   matrix_spec:
     driver: ["php-master"]
-    platform: ubuntu-18.04
-    runtime: php-74
+    platform: ubuntu-22.04
+    runtime: php-82
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
