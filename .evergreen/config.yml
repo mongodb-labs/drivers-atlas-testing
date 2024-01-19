@@ -376,6 +376,7 @@ functions:
         working_dir: astrolabe-src
         add_expansions_to_env: true
         script: |
+          mkdir -p xunit-output
           rm -rf xunit-output/failure_*.xml
           echo "<?xml version='1.0' encoding='utf-8'?><testsuites></testsuites>" > xunit-output/test.xml
     # Upload the xunit-format test results.
