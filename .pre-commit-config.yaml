@@ -46,6 +46,19 @@ repos:
     additional_dependencies: [sphinx]
     args: ["--ignore-directives=doctest,testsetup,todo,automodule","--ignore-substitutions=release", "--report-level=error"]
 
+- repo: https://github.com/executablebooks/mdformat
+  rev: 0.7.17
+  hooks:
+    - id: mdformat
+      args: ["--wrap=120"]
+      additional_dependencies:
+        [mdformat-gfm]
+
+- repo: https://github.com/tcort/markdown-link-check
+  rev: v3.11.2
+  hooks:
+    - id: markdown-link-check
+
 # We use the Python version instead of the original version which seems to require Docker
 # https://github.com/koalaman/shellcheck-precommit
 - repo: https://github.com/shellcheck-py/shellcheck-py
