@@ -13,8 +13,43 @@
 # limitations under the License.
 
 """Utilities for the Python client for the MongoDB Atlas API."""
+from __future__ import annotations
+from functools import wraps
+from time import sleep
+from typing import Callable, Generic, TypeVar
 
 import json
+import logging
+
+logger: logging.getLogger(__name__)
+
+T = TypeVar("T")
+
+
+def retry(
+    func: Callable[..., Generic[T]],
+    attempts: int = 5,
+    interval: float = 2,
+) -> Callable[..., T]:
+    """Generic retry wrapper
+
+    :param func: Function to try
+    :param attempts: Number of times to attempt a retry, defaults to 5
+    :param interval: Wait time between retries, defaults to 2
+    """
+
+    @wraps(func)
+    def _retry(*args, **kwargs):
+        for attempt in range(attempts):
+            try:
+                return func(*args, **kwargs)
+            except Exception as exc:
+                _last_exc = exc
+                logger.debug("Failed execution of func: %s, retry attempt %s/%s", func.__name__, attempt, attempts)
+            sleep(interval)
+        raise _last_exc
+
+    return _retry
 
 
 class JSONObject(dict):

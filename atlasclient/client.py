@@ -26,12 +26,15 @@ from atlasclient.exceptions import (
     AtlasClientError,
     AtlasRateLimitError,
 )
-from atlasclient.utils import JSONObject
+from atlasclient.utils import JSONObject, retry
 
 LOGGER = logging.getLogger(__name__)
 
 
 _EMPTY_PATH_ERR_MSG_TEMPLATE = "Calling {} on an empty API path is not " "supported."
+
+# Retryable request operation
+_request = retry(requests.request)
 
 
 class _ApiComponent:
@@ -223,10 +226,10 @@ class AtlasClient:
             "timeout": self.config.timeout,
         }
 
-        LOGGER.debug("Request (%s %s %s)", method, url,request_kwargs)
+        LOGGER.debug("Request (%s %s %s)", method, url, request_kwargs)
 
         try:
-            response = requests.request(method, url, **request_kwargs)
+            response = _request(method, url, **request_kwargs)
         except requests.RequestException as e:
             raise AtlasClientError(str(e), resource_url=url, request_method=method)
 
