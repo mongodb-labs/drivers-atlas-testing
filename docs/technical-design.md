@@ -62,7 +62,7 @@ Subordinate of an *Atlas Project* in Atlas’ Organizations and Projects
 hierarchy[^1], an Atlas Cluster is a set of nodes comprising a MongoDB
 deployment.
 
-Atlas Project  
+**Atlas Project**  
 Subordinate of an *Atlas Organization* in Atlas’ Organizations and
 Projects hierarchy[^2]. Each Atlas Organization can contain multiple
 Atlas Projects.
