@@ -95,7 +95,7 @@ Cluster State
 The state of an *Atlas Cluster* as advertised by the “stateName” field
 in the response of the Get One Cluster[^7] endpoint.
 
-Test Scenario File  
+**Test Scenario File**  
 A file containing a language and driver-agnostic description of a single
 *Atlas Planned Maintenance Test*. Each file specifies a *Planned
 Maintenance Scenario* and the associated *Driver Workload*.
