@@ -70,7 +70,7 @@ Atlas Projects.
 **Atlas Organization**  
 The top-level entity in Atlas’ Organizations and Projects hierarchy[^3].
 
-Atlas Planned Maintenance Test  
+**Atlas Planned Maintenance Test**  
 An integration test that involves running a *Driver Workload* using a
 MongoDB Driver against an *Atlas Cluster* that is in the midst of
 applying a *Planned Maintenance Scenario*.
