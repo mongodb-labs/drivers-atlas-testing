@@ -91,7 +91,7 @@ Set of cluster configuration parameters that be applied to an existing
 *Atlas Cluster* via the Modify Advanced Configuration Options for One
 Cluster[^6] endpoint.
 
-Cluster State  
+**Cluster State**  
 The state of an *Atlas Cluster* as advertised by the “stateName” field
 in the response of the Get One Cluster[^7] endpoint.
 
