@@ -100,7 +100,7 @@ A file containing a language and driver-agnostic description of a single
 *Atlas Planned Maintenance Test*. Each file specifies a *Planned
 Maintenance Scenario* and the associated *Driver Workload*.
 
-Planned Maintenance Scenario  
+**Planned Maintenance Scenario**  
 Description of a plan to modify the *Cluster Configuration Options* of a
 running *Atlas Cluster*. A maintenance plan is described fully by an
 associated set of initial and final *Cluster Configuration Options*.
