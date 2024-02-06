@@ -113,7 +113,7 @@ A user-implemented, driver-specific script responsible for parsing a
 *Driver Workload* and translating it into actual driver operations that
 are run against the test cluster.
 
-Test Orchestrator  
+**Test Orchestrator**  
 User-facing command-line utility that accepts a *Workload Executor* and
 a *Test Scenario File* and runs an *Atlas Planned Maintenance Test*.
 
