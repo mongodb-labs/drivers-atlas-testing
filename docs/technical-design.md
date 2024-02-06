@@ -57,7 +57,7 @@ document are to be interpreted as described in [RFC
 
 ### Terms
 
-Atlas Cluster  
+**Atlas Cluster**  
 Subordinate of an *Atlas Project* in Atlas’ Organizations and Projects
 hierarchy[^1], an Atlas Cluster is a set of nodes comprising a MongoDB
 deployment.
