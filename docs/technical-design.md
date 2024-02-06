@@ -105,7 +105,7 @@ Description of a plan to modify the *Cluster Configuration Options* of a
 running *Atlas Cluster*. A maintenance plan is described fully by an
 associated set of initial and final *Cluster Configuration Options*.
 
-Driver Workload  
+**Driver Workload**  
 A language-agnostic description of MongoDB driver operations.
 
 Workload Executor  
