@@ -81,7 +81,7 @@ configure an *Atlas Cluster* via the *Atlas API*. There are two kinds of
 cluster configuration options - *Basic Configuration Options* and
 *Advanced Configuration Options*.
 
-Basic Configuration Options  
+**Basic Configuration Options**  
 Set of cluster configuration parameters that can be used to create a new
 *Atlas Cluster* via the Create One Cluster[^4] endpoint, or that can be
 applied to an existing cluster via the Modify One Cluster[^5] endpoint.
