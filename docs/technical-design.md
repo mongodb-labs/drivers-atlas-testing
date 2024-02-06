@@ -108,7 +108,7 @@ associated set of initial and final *Cluster Configuration Options*.
 **Driver Workload**  
 A language-agnostic description of MongoDB driver operations.
 
-Workload Executor  
+**Workload Executor**  
 A user-implemented, driver-specific script responsible for parsing a
 *Driver Workload* and translating it into actual driver operations that
 are run against the test cluster.
