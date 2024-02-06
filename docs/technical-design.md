@@ -86,7 +86,7 @@ Set of cluster configuration parameters that can be used to create a new
 *Atlas Cluster* via the Create One Cluster[^4] endpoint, or that can be
 applied to an existing cluster via the Modify One Cluster[^5] endpoint.
 
-Advanced Configuration Options  
+**Advanced Configuration Options**  
 Set of cluster configuration parameters that be applied to an existing
 *Atlas Cluster* via the Modify Advanced Configuration Options for One
 Cluster[^6] endpoint.
