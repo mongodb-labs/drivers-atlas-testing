@@ -67,7 +67,7 @@ Subordinate of an *Atlas Organization* in Atlas’ Organizations and
 Projects hierarchy[^2]. Each Atlas Organization can contain multiple
 Atlas Projects.
 
-Atlas Organization  
+**Atlas Organization**  
 The top-level entity in Atlas’ Organizations and Projects hierarchy[^3].
 
 Atlas Planned Maintenance Test  
