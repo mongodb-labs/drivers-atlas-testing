@@ -75,7 +75,7 @@ An integration test that involves running a *Driver Workload* using a
 MongoDB Driver against an *Atlas Cluster* that is in the midst of
 applying a *Planned Maintenance Scenario*.
 
-Cluster Configuration Options  
+**Cluster Configuration Options**  
 Umbrella term used to refer to all parameters that can be used to
 configure an *Atlas Cluster* via the *Atlas API*. There are two kinds of
 cluster configuration options - *Basic Configuration Options* and
