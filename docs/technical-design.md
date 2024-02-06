@@ -6,29 +6,29 @@ made during the conception and initial implementation of the `astrolabe`
 framework. For up-to-date information on how to use `astrolabe`, please
 see the `integration-guide`.
 
-Title  
+**Title**
 Testing Drivers against Atlas Planned Maintenance
 
-Author  
+**Author**
 Prashant Mital
 
-Lead  
+**Lead**  
 Matt Broadstone
 
-Advisors  
+**Advisors**  
 Andrew Davidson, Sheeri Cabral, Will Shulman, Jeremy Mikola, Ian Whalen,
 Rachelle Palmer
 
-Status  
+**Status**  
 Approved
 
-Type  
+**Type**
 Process
 
-Minimum Server Version  
+**Minimum Server Version**  
 N/A
 
-Last Modified  
+**Last Modified**  
 January 28, 2020
 
 ## Abstract
