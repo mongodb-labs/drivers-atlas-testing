@@ -117,7 +117,7 @@ are run against the test cluster.
 User-facing command-line utility that accepts a *Workload Executor* and
 a *Test Scenario File* and runs an *Atlas Planned Maintenance Test*.
 
-Atlas API  
+**Atlas API**  
 [REST API](https://docs.atlas.mongodb.com/api/) that provides
 programmatic access to MongoDB Atlas.
 
