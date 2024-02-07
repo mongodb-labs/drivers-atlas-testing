@@ -21,7 +21,7 @@ from typing import Callable, Generic, TypeVar
 import json
 import logging
 
-logger: logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
