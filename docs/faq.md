@@ -36,7 +36,7 @@ MongoDB Atlas restricts the number of clusters in an Atlas Project to
 25. Since [this
 project](https://github.com/mongodb-labs/drivers-atlas-testing) runs the
 entire build matrix in its in [evergreen
-configuration](https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/.evergreen/config.yml)
+configuration](https://github.com/mongodb-labs/drivers-atlas-testing/blob/main/.evergreen/config.yml)
 under a single Atlas project, it often ends up running into this
 limitation which causes hard-to-diagnose test failures (see
 [#45](https://github.com/mongodb-labs/drivers-atlas-testing/issues/45),

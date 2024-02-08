@@ -272,7 +272,7 @@ function workloadRunner(connectionString: string, workload: object): void {
 ## Reference Implementation
 
 [Ruby's workload
-executor](https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/integrations/ruby/workload-executor)
+executor](https://github.com/mongodb-labs/drivers-atlas-testing/blob/main/integrations/ruby/workload-executor)
 serves as the reference implementation of the script described by this
 specification.
 
