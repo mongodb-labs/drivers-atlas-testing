@@ -70,7 +70,7 @@ shell script such that exposes the API desired by the
 
 For example, PyMongo's `astrolabe` integration uses this pattern to
 implement its [workload
-executor](https://github.com/mongodb-labs/drivers-atlas-testing/blob/master/integrations/python/pymongo/workload-executor).
+executor](https://github.com/mongodb-labs/drivers-atlas-testing/blob/main/integrations/python/pymongo/workload-executor).
 
 ### Testing/validating a workload executor script
 
