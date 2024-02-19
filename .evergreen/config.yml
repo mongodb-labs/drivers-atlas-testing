@@ -464,105 +464,105 @@ tasks:
   # Workload executor validation task (patch-only).
   - name: validate-workload-executor
     patch_only: true
-    tags: ["all"]
+    tags: ["all", "validate"]
     commands:
       - func: "validate executor"
 
   # Atlas test tasks
   # ================
   - name: atlas-retryReads-move-sharded
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/move-sharded.yml
   - name: atlas-retryReads-move
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/move.yml
   - name: atlas-retryReads-primaryRemoval
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/primaryRemoval.yml
   - name: atlas-retryReads-primaryTakeover
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/primaryTakeover.yml
   - name: atlas-retryReads-processRestart-sharded
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/processRestart-sharded.yml
   - name: atlas-retryReads-processRestart
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/processRestart.yml
   - name: atlas-retryReads-resizeCluster
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/resizeCluster.yml
   - name: atlas-retryReads-testFailover-sharded
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/testFailover-sharded.yml
   - name: atlas-retryReads-testFailover
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/testFailover.yml
   - name: atlas-retryReads-toggleServerSideJS
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/toggleServerSideJS.yml
   - name: atlas-retryReads-vmRestart-sharded
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/vmRestart-sharded.yml
   - name: atlas-retryReads-vmRestart
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/vmRestart.yml
   - name: atlas-retryWrites-resizeCluster
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryWrites.yml
           TEST_FILE: tests/atlas/resizeCluster.yml
   - name: atlas-retryWrites-toggleServerSideJS
-    tags: ["all"]
+    tags: ["all", "atlas"]
     commands:
       - func: "run atlas test"
         vars:
@@ -914,8 +914,8 @@ buildvariants:
       - "dotnet-sync-net6"
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
-    # Only run the Kind tasks for the .NET driver on Linux.
-    - ".kind"
+    # Don't run Atlas tasks for the .NET driver on Linux.
+    - ".all !.atlas"
 - matrix_name: "tests-go"
   matrix_spec:
     driver: ["go-master"]
