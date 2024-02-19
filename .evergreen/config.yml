@@ -773,6 +773,10 @@ axes:
         display_name: CPython-3.7-Windows
         variables:
           PYTHON_BINARY: "C:/python/Python37/python.exe"
+      - id: ruby-32
+        display_name: Ruby 3.2
+        variables:
+          RVM_RUBY: "ruby-3.2"
       - id: node-16
         display_name: Node v16
         variables:
@@ -840,8 +844,8 @@ buildvariants:
 - matrix_name: "tests-ruby"
   matrix_spec:
     driver: ["ruby-master"]
-    platform: ubuntu-18.04
-    runtime: python39
+    platform: ubuntu-22.04
+    runtime: ruby-32
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     - ".all"
