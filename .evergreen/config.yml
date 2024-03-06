@@ -471,98 +471,98 @@ tasks:
   # Atlas test tasks
   # ================
   - name: atlas-retryReads-move-sharded
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read1"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/move-sharded.yml
   - name: atlas-retryReads-move
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read1"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/move.yml
   - name: atlas-retryReads-primaryRemoval
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read2"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/primaryRemoval.yml
   - name: atlas-retryReads-primaryTakeover
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read2"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/primaryTakeover.yml
   - name: atlas-retryReads-processRestart-sharded
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read3"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/processRestart-sharded.yml
   - name: atlas-retryReads-processRestart
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read3"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/processRestart.yml
   - name: atlas-retryReads-resizeCluster
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read4"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/resizeCluster.yml
   - name: atlas-retryReads-testFailover-sharded
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read4"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/testFailover-sharded.yml
   - name: atlas-retryReads-testFailover
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read5"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/testFailover.yml
   - name: atlas-retryReads-toggleServerSideJS
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read5"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/toggleServerSideJS.yml
   - name: atlas-retryReads-vmRestart-sharded
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read6"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/vmRestart-sharded.yml
   - name: atlas-retryReads-vmRestart
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "read6"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryReads.yml
           TEST_FILE: tests/atlas/vmRestart.yml
   - name: atlas-retryWrites-resizeCluster
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "write1"]
     commands:
       - func: "run atlas test"
         vars:
           WORKLOAD_FILE: workloads/retryWrites.yml
           TEST_FILE: tests/atlas/resizeCluster.yml
   - name: atlas-retryWrites-toggleServerSideJS
-    tags: ["all", "atlas"]
+    tags: ["all", "atlas", "write1"]
     commands:
       - func: "run atlas test"
         vars:
