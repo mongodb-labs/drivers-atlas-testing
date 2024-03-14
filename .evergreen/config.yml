@@ -803,6 +803,16 @@ axes:
         variables:
           ASYNC: "false"
           FRAMEWORK: "net6.0"
+      - id: dotnet-async-net8
+        display_name: dotnet-async-net8
+        variables:
+          ASYNC: "true"
+          FRAMEWORK: "net8.0"
+      - id: dotnet-sync-net8
+        display_name: dotnet-sync-net8
+        variables:
+          ASYNC: "false"
+          FRAMEWORK: "net8.0"
       - id: go-20
         display_name: Go v1.20
         variables:
@@ -905,6 +915,8 @@ buildvariants:
     runtime:
       - "dotnet-async-net6"
       - "dotnet-sync-net6"
+      - "dotnet-async-net8"
+      - "dotnet-sync-net8"
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
@@ -916,6 +928,8 @@ buildvariants:
     runtime:
       - "dotnet-async-net6"
       - "dotnet-sync-net6"
+      - "dotnet-async-net8"
+      - "dotnet-sync-net8"
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Don't run Atlas tasks for the .NET driver on Linux.
