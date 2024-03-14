@@ -43,9 +43,9 @@ else
 fi
 
 # /p required to get around https://github.com/dotnet/sdk/issues/12159
-./.dotnet/dotnet build mongo-csharp-driver /p:Platform="Any CPU" -c Debug # platform needs a space when building
+./.dotnet/dotnet build mongo-csharp-driver /p:Platform="Any CPU" -c Release # platform needs a space when building
 ./.dotnet/dotnet publish mongo-csharp-driver/tests/AstrolabeWorkloadExecutor \
-    -c Debug \
+    -c Release \
     --no-build --no-restore \
     --framework "${FRAMEWORK}" \
     /p:Platform="AnyCpu" # platform does not need a space when publishing
