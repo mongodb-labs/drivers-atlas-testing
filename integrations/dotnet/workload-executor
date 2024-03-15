@@ -42,6 +42,6 @@ export PLATFORM
 #     Additionally, we must use the published version to bypass a dependency resolution issue with .NET Core 1.1
 set +x # hide connection string in test output
 
-./.dotnet/dotnet mongo-csharp-driver/tests/AstrolabeWorkloadExecutor/bin/Debug/"${FRAMEWORK}"/publish/workload-executor.dll "${CONNECTION_STRING}" "${WORKLOAD_SPEC}"
+./.dotnet/dotnet mongo-csharp-driver/tests/AstrolabeWorkloadExecutor/bin/Release/"${FRAMEWORK}"/publish/workload-executor.dll "${CONNECTION_STRING}" "${WORKLOAD_SPEC}"
 
 set -x

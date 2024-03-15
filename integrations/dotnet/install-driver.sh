@@ -27,6 +27,7 @@ if [[ "$OS" =~ Windows|windows ]]; then
         https://dot.net/v1/dotnet-install.ps1
 
     powershell.exe '.\integrations\dotnet\dotnet-install.ps1 -Channel 6.0 -InstallDir .dotnet -NoPath'
+    powershell.exe '.\integrations\dotnet\dotnet-install.ps1 -Channel 8.0 -InstallDir .dotnet -NoPath'
 else
     # Download the dotnet installation script, retrying up to 5 times on any errors.
     curl -sSL \
@@ -38,11 +39,13 @@ else
         https://dot.net/v1/dotnet-install.sh
 
     bash ./integrations/dotnet/dotnet-install.sh -Channel 6.0 --install-dir .dotnet --no-path
+    bash ./integrations/dotnet/dotnet-install.sh -Channel 8.0 --install-dir .dotnet --no-path
 fi
 
 # /p required to get around https://github.com/dotnet/sdk/issues/12159
-./.dotnet/dotnet build mongo-csharp-driver /p:Platform="Any CPU" # platform needs a space when building
+./.dotnet/dotnet build mongo-csharp-driver /p:Platform="Any CPU" -c Release # platform needs a space when building
 ./.dotnet/dotnet publish mongo-csharp-driver/tests/AstrolabeWorkloadExecutor \
+    -c Release \
     --no-build --no-restore \
     --framework "${FRAMEWORK}" \
     /p:Platform="AnyCpu" # platform does not need a space when publishing
