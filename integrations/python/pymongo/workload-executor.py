@@ -30,6 +30,8 @@ else:
 
 
 def workload_runner(mongodb_uri, test_workload):
+    # Run the class setup function.
+    UnifiedSpecTestMixinV1.setUpClass()
     runner = UnifiedSpecTestMixinV1()
     runner.TEST_SPEC = test_workload
     UnifiedSpecTestMixinV1.TEST_SPEC = test_workload
