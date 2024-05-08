@@ -757,7 +757,7 @@ axes:
         run_on: windows-64-vsMulti-small
         batchtime: 10080  # 7 days
         variables:
-          PYTHON3_BINARY: "C:/python/Python37/python.exe"
+          PYTHON3_BINARY: "C:/python/Python38/python.exe"
           PYTHON_BIN_DIR: "Scripts"
 
   # The 'runtime' axis specifies the language runtime to use.
@@ -872,7 +872,7 @@ buildvariants:
   matrix_spec:
     driver: ["pymongo-master"]
     platform: ["windows-64"]
-    runtime: ["python37-windows"]
+    runtime: ["python38-windows"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
