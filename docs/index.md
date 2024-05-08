@@ -1,4 +1,4 @@
-# Welcome to astrolabe's documentation!
+# Astrolabe
 
 **astrolabe** is a toolkit for testing MongoDB driver behavior during
 common MongoDB cluster reconfiguration operations. It currently supports
