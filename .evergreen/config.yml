@@ -54,7 +54,7 @@ functions:
         continue_on_err: true
         command: |
           cat /etc/resolv.conf
-    # Create virtualenv using a CPython 3.7+ binary.
+    # Create virtualenv using a CPython 3.8+ binary.
     - command: subprocess.exec
       type: setup
       params:
@@ -757,7 +757,7 @@ axes:
         run_on: windows-64-vsMulti-small
         batchtime: 10080  # 7 days
         variables:
-          PYTHON3_BINARY: "C:/python/Python37/python.exe"
+          PYTHON3_BINARY: "C:/python/Python38/python.exe"
           PYTHON_BIN_DIR: "Scripts"
 
   # The 'runtime' axis specifies the language runtime to use.
@@ -769,10 +769,10 @@ axes:
         display_name: CPython-3
         variables:
           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
-      - id: python37-windows
-        display_name: CPython-3.7-Windows
+      - id: python38-windows
+        display_name: CPython-3.8-Windows
         variables:
-          PYTHON_BINARY: "C:/python/Python37/python.exe"
+          PYTHON_BINARY: "C:/python/Python38/python.exe"
       - id: ruby-32
         display_name: Ruby 3.2
         variables:
@@ -872,7 +872,7 @@ buildvariants:
   matrix_spec:
     driver: ["pymongo-master"]
     platform: ["windows-64"]
-    runtime: ["python37-windows"]
+    runtime: ["python38-windows"]
   display_name: "${driver} ${platform} ${runtime}"
   tasks:
     # Kind tasks can't run on Windows, so exclude them.
