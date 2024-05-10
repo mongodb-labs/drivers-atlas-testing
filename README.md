@@ -47,7 +47,7 @@ Astrolabe requires [Click](https://pypi.org/project/click/),
 
 ## Documentation
 
-Documentation is available on [ReadtheDocs][(http://drivers-atlas-testing.readthedocs.io/en/latest/).
+Documentation is available on [ReadtheDocs](http://drivers-atlas-testing.readthedocs.io/en/latest/).
 
 To build the documentation, you will need to install
 [mkdocs](https://www.mkdocs.org/getting-started/). 
