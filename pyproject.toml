@@ -39,9 +39,6 @@ dependencies = [
     "tabulate>=0.8,<0.9",
 ]
 
-[project.optional-dependencies]
-docs = ["sphinx"]
-
 [project.scripts]
 astrolabe = "astrolabe.cli:cli"
 

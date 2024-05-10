@@ -1,4 +1,6 @@
-# Technical Design: Testing Drivers Against Atlas Planned Maintenance
+# Technical Design
+
+Testing Drivers Against Atlas Planned Maintenance
 
 This document is **not** updated regularly. It's only purpose is to
 provide the reader with information about design choices and decisions
