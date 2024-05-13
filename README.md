@@ -1,5 +1,7 @@
 # astrolabe
 
+[![Documentation Status](https://readthedocs.org/projects/drivers-atlas-testing/badge/?version=latest)](http://drivers-atlas-testing.readthedocs.io/en/latest/?badge=latest)
+
 Developer tools for testing
 [Drivers](https://docs.mongodb.com/ecosystem/drivers/) against [MongoDB
 Atlas](https://www.mongodb.com/cloud/atlas). See
@@ -45,7 +47,7 @@ Astrolabe requires [Click](https://pypi.org/project/click/),
 
 ## Documentation
 
-Documentation is available on [ReadtheDocs](drivers-atlas-testing.readthedocs.io).
+Documentation is available on [ReadtheDocs](http://drivers-atlas-testing.readthedocs.io/en/latest/).
 
 To build the documentation, you will need to install
 [mkdocs](https://www.mkdocs.org/getting-started/). 
