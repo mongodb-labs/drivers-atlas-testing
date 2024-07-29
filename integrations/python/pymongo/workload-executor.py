@@ -33,8 +33,6 @@ def workload_runner(mongodb_uri, test_workload):
     runner = UnifiedSpecTestMixinV1()
     runner.TEST_SPEC = test_workload
     UnifiedSpecTestMixinV1.TEST_SPEC = test_workload
-    # Run the class setup function before running the instance setup function.
-    UnifiedSpecTestMixinV1.setUpClass()
     runner.setUp()
     # this is necessary because there isn't a mongo instance on
     # localhost:27017 on evergreen, so we have to patch it to use the client
