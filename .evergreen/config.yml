@@ -684,12 +684,12 @@ axes:
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-java-driver"
           DRIVER_REVISION: "master"
           ASTROLABE_EXECUTOR_STARTUP_TIME: 15
-      - id: dotnet-master
-        display_name: "dotnet (master)"
+      - id: dotnet-main
+        display_name: "dotnet (main)"
         variables:
           DRIVER_DIRNAME: "dotnet"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-csharp-driver"
-          DRIVER_REVISION: "master"
+          DRIVER_REVISION: "main"
           ASTROLABE_EXECUTOR_STARTUP_TIME: 60
           # The .NET driver currently doesn't support loading TLS and CA certs from connection
           # string params, so override the standard Kind connection string with one that uses
@@ -910,7 +910,7 @@ buildvariants:
     - ".all"
 - matrix_name: "tests-dotnet-windows"
   matrix_spec:
-    driver: ["dotnet-master"]
+    driver: ["dotnet-main"]
     platform: ["windows-64"]
     runtime:
       - "dotnet-async-net6"
@@ -923,7 +923,7 @@ buildvariants:
     - ".all !.kind"
 - matrix_name: "tests-dotnet-linux"
   matrix_spec:
-    driver: ["dotnet-master"]
+    driver: ["dotnet-main"]
     platform: ["ubuntu-18.04"]
     runtime:
       - "dotnet-async-net6"
