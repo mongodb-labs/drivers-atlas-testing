@@ -910,7 +910,7 @@ buildvariants:
     - ".all"
 - matrix_name: "tests-dotnet-windows"
   matrix_spec:
-    driver: ["dotnet-master"]
+    driver: ["dotnet-main"]
     platform: ["windows-64"]
     runtime:
       - "dotnet-async-net6"
@@ -923,7 +923,7 @@ buildvariants:
     - ".all !.kind"
 - matrix_name: "tests-dotnet-linux"
   matrix_spec:
-    driver: ["dotnet-master"]
+    driver: ["dotnet-main"]
     platform: ["ubuntu-18.04"]
     runtime:
       - "dotnet-async-net6"
