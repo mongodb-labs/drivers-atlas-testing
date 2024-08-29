@@ -270,12 +270,14 @@ class AtlasTestCase:
                     timer.start()
                     timeout = op_spec.get("timeout", 90)
 
+                    LOGGER.debug(f"Waiting up to {timeout}s for primary node to be in region '{region}'")
                     with mongo_client(self.get_connection_string()) as mc:
                         while True:
                             rsc = mc.admin.command("replSetGetConfig")
+                            members = rsc["config"]["members"]
                             member = next(
                                 m
-                                for m in rsc["config"]["members"]
+                                for m in members
                                 if m["horizons"]["PUBLIC"] == "%s:%s" % mc.primary
                             )
                             member_region = member["tags"]["region"]
@@ -285,10 +287,11 @@ class AtlasTestCase:
 
                             if timer.elapsed > timeout:
                                 raise Exception(
-                                    "Primary in cluster not in expected region '%s' (actual region '%s')"
-                                    % (region, member_region)
+                                    f"Primary node ({mc.primary}) not in expected region '{region}' within {timeout}s (current region: '{member_region}'; all members: {members})"
                                 )
                             sleep(5)
+
+                    LOGGER.debug(f"Waited for {timer.elapsed}s for primary node to be in region '{region}'")
 
                 else:
                     raise Exception("Unrecognized operation %s" % op_name)
@@ -355,8 +358,9 @@ class AtlasTestCase:
         # (30+ seconds in some circumstances); scenarios that perform
         # VM restarts in sharded clusters should use explicit sleep operations
         # after the restarts until this is fixed.
-        LOGGER.info("Waiting to wait for cluster %s to become idle", self.cluster_name)
-        sleep(5)
+        LOGGER.info("Waiting 15s before checking cluster %s idle status after configuration update", self.cluster_name)
+        sleep(15)
+
         LOGGER.info("Waiting for cluster %s to become idle", self.cluster_name)
         timer = Timer()
         timer.start()
