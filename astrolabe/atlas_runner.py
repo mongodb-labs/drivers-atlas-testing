@@ -453,8 +453,8 @@ class SpecTestRunnerBase:
         self.persist_clusters = persist_clusters
         self.no_create = no_create
         self.workload_startup_time = workload_startup_time
-        # Hardcoded to 12 hours, can be configurable in the future
-        self.project_expiration_threshold_seconds = 12 * 60 * 60
+        # Hardcoded to 2 hours, can be configurable in the future
+        self.project_expiration_threshold_seconds = 2 * 60 * 60
 
         # Set up Atlas for tests.
         # Step-1: ensure validity of the organization.
