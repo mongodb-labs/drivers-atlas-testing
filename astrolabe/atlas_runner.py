@@ -198,7 +198,16 @@ class AtlasTestCase:
                         LOGGER.info("Pushing process arguments update")
                         self.cluster_url.processArgs.patch(**process_args)
 
-                    # Step-4: wait until maintenance completes (cluster is IDLE).
+                    # There is sometimes a delay in the status change after
+                    # initiating maintenance operations
+                    # (https://jira.mongodb.org/browse/PRODTRIAGE-1232). The
+                    # duration of the delay is inconsistent, so first wait for
+                    # the cluster to have status "updating" before then waiting
+                    # for status "idle".
+                    self.wait_for_updating()
+
+                    # Step-4: wait until maintenance completes (cluster status
+                    # is "idle").
                     self.wait_for_idle()
                     self.verify_cluster_configuration_matches(final_config)
                     LOGGER.info("Cluster maintenance complete")
@@ -250,6 +259,14 @@ class AtlasTestCase:
                         .clusters[self.cluster_name]
                         .reboot.post(api_version="private")
                     )
+
+                    # There is sometimes a delay in the status change after
+                    # initiating maintenance operations
+                    # (https://jira.mongodb.org/browse/PRODTRIAGE-1232). The
+                    # duration of the delay is inconsistent, so first wait for
+                    # the cluster to have status "updating" before then waiting
+                    # for status "idle".
+                    self.wait_for_updating()
 
                     self.wait_for_idle()
 
@@ -344,26 +361,16 @@ class AtlasTestCase:
         finally:
             self.workload_runner.terminate()
 
-    def wait_for_idle(self):
-        # Small delay to account for Atlas not updating cluster state
-        # synchronously potentially in all maintenance operations
-        # (https://jira.mongodb.org/browse/PRODTRIAGE-1232).
-        # VM restarts in sharded clusters require a much longer wait
-        # (30+ seconds in some circumstances); scenarios that perform
-        # VM restarts in sharded clusters should use explicit sleep operations
-        # after the restarts until this is fixed.
+    def wait_for_state(self, target_state):
         LOGGER.info(
-            "Waiting 15s before checking cluster %s idle status after configuration update",
+            "Cluster %s: Waiting for cluster to be target state %s",
             self.cluster_name,
+            target_state,
         )
-        sleep(15)
-
-        LOGGER.info("Waiting for cluster %s to become idle", self.cluster_name)
         timer = Timer()
         timer.start()
         ok = False
         timeout = self.config.polling_timeout
-        wanted_state = "idle"
         last_notified = 0
         while timer.elapsed < timeout:
             sleep(1.0 / self.config.polling_frequency)
@@ -371,18 +378,18 @@ class AtlasTestCase:
             try:
                 cluster_info = self.cluster_url.get().data
             except AtlasClientError as e:
-                LOGGER.error("Error getting cluster status: %e", e)
+                LOGGER.error("Cluster %s: Error getting cluster status: %e", self.cluster_name, e)
                 continue
 
             actual_state = cluster_info.stateName.lower()
-            if actual_state == wanted_state:
+            if actual_state == target_state:
                 ok = True
                 break
 
-            msg = "Cluster %s: current state: %s; wanted state: %s; waited for %.1f sec" % (
+            msg = "Cluster %s: current state: %s; target state: %s; waited for %.1fs" % (
                 self.cluster_name,
                 actual_state,
-                wanted_state,
+                target_state,
                 timer.elapsed,
             )
             now = monotonic()
@@ -392,8 +399,25 @@ class AtlasTestCase:
                 LOGGER.info(msg)
             else:
                 LOGGER.debug(msg)
+
         if not ok:
-            raise PollingTimeoutError("Polling timed out after %s seconds", timeout)
+            raise PollingTimeoutError(
+                "Cluster %s: Polling timed out after %.1fs; current state: %s, target state: %s"
+                % (self.cluster_name, timer.elapsed, actual_state, target_state)
+            )
+
+        LOGGER.info(
+            "Cluster %s: Reached target state %s after waiting %.1fs",
+            self.cluster_name,
+            target_state,
+            timer.elapsed,
+        )
+
+    def wait_for_idle(self):
+        self.wait_for_state("idle")
+
+    def wait_for_updating(self):
+        self.wait_for_state("updating")
 
     def wait_for_planning(self, start_time):
         timer = Timer()
