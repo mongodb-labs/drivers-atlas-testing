@@ -103,7 +103,7 @@ functions:
         add_expansions_to_env: true
         script: |
           if [ "Windows_NT" = "$OS" ]; then
-            C:/cygwin/bin/sh integrations/${DRIVER_DIRNAME}/install-driver.sh
+            C:/cygwin/bin/bash integrations/${DRIVER_DIRNAME}/install-driver.sh
           else
             ./integrations/${DRIVER_DIRNAME}/install-driver.sh
           fi
@@ -129,7 +129,7 @@ functions:
         include_expansions_in_env: ["MONGODB_VERSION"]
         working_dir: astrolabe-src
         script: |
-          sh .evergreen/run-mongodb.sh
+          .evergreen/run-mongodb.sh
     # Validate the workload executor against the local MongoDB instance.
     - command: subprocess.exec
       type: test

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -o xtrace
 
 # User configurable-options
@@ -32,4 +32,4 @@ for i in $(find ${DRIVERS_TOOLS}/.evergreen -name \*.sh); do
 done
 
 # Run mongo-orchestration
-sh $DRIVERS_TOOLS/.evergreen/run-orchestration.sh
+$DRIVERS_TOOLS/.evergreen/run-orchestration.sh
