@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -o xtrace
 
 "$PYTHON_BINARY" --version
