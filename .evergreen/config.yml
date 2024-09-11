@@ -703,14 +703,14 @@ axes:
           DRIVER_DIRNAME: "go"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-go-driver"
           DRIVER_REVISION: "master"
-      - id: php-master
-        display_name: "PHP (master)"
+      - id: php-1x
+        display_name: "PHP (1.x)"
         variables:
           DRIVER_DIRNAME: "php"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-php-library"
-          DRIVER_REVISION: "master"
+          DRIVER_REVISION: "v1.x"
           PHPC_REPO: "https://github.com/mongodb/mongo-php-driver"
-          PHPC_BRANCH: "master"
+          PHPC_BRANCH: "v1.x"
       - id: rust-main
         display_name: "Rust (main)"
         variables:
@@ -944,7 +944,7 @@ buildvariants:
     - ".all"
 - matrix_name: "tests-php"
   matrix_spec:
-    driver: ["php-master"]
+    driver: ["php-1x"]
     platform: ubuntu-22.04
     runtime: php-82
   display_name: "${driver} ${platform} ${runtime}"
