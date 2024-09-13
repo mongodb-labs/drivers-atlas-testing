@@ -80,7 +80,10 @@ php --ri mongodb
 
 # Install composer and dependencies
 install_composer
-php composer.phar update
+php composer.phar update --working-dir=${PHPLIB_PATH}
 
 # Allow simple-phpunit to install its own PHPUnit dependencies
-php vendor/bin/simple-phpunit install
+php ${PHPLIB_PATH}/vendor/bin/simple-phpunit install
+
+# The symlink helps to include the library and tests with a simple path
+ln -s ${PHPLIB_PATH}/vendor ./vendor
