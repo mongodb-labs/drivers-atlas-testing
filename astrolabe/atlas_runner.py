@@ -281,8 +281,10 @@ class AtlasTestCase:
                     LOGGER.debug(
                         f"Waiting up to {timeout}s for primary node to be in region '{region}'"
                     )
+
+                    ok = False
                     with mongo_client(self.get_connection_string()) as mc:
-                        while True:
+                        while timer.elapsed < timeout:
                             rsc = mc.admin.command("replSetGetConfig")
                             members = rsc["config"]["members"]
                             member = next(
@@ -293,13 +295,25 @@ class AtlasTestCase:
                             member_region = member["tags"]["region"]
 
                             if region == member_region:
+                                ok = True
                                 break
 
-                            if timer.elapsed > timeout:
-                                raise Exception(
-                                    f"Primary node ({mc.primary}) not in expected region '{region}' within {timeout}s (current region: '{member_region}'; all members: {members})"
-                                )
                             sleep(5)
+
+                    # If the primary isn't in the target region by the timeout,
+                    # log the cluster state every 5 seconds for the next 30
+                    # minutes to help us understand confusing behavior with the
+                    # cluster state. After logging the cluster state for 30
+                    # minutes, raise an exception.
+                    #
+                    # See https://jira.mongodb.org/browse/PRODTRIAGE-1232 for
+                    # more context.
+                    if not ok:
+                        self.log_cluster_status(timeout=1800)
+
+                        raise Exception(
+                            f"Primary node ({mc.primary}) not in expected region '{region}' within {timeout}s (current region: '{member_region}'; all members: {members})"
+                        )
 
                     LOGGER.debug(
                         f"Waited for {timer.elapsed}s for primary node to be in region '{region}'"
@@ -360,6 +374,28 @@ class AtlasTestCase:
             return junit_test
         finally:
             self.workload_runner.terminate()
+
+    def log_cluster_status(self, timeout=1800):
+        timer = Timer()
+        timer.start()
+
+        LOGGER.info("Cluster %s: logging cluster state for %.1fs", self.cluster_name, timeout)
+
+        while timer.elapsed < timeout:
+            sleep(5)
+
+            try:
+                cluster_info = self.cluster_url.get().data
+            except AtlasClientError as e:
+                LOGGER.error("Cluster %s: Error getting cluster status: %e", self.cluster_name, e)
+                continue
+
+            LOGGER.info(
+                "Cluster %s: state: %s; logged for %.1fs",
+                self.cluster_name,
+                cluster_info.stateName,
+                timer.elapsed,
+            )
 
     def wait_for_state(self, target_state):
         LOGGER.info(
