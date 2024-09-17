@@ -309,11 +309,13 @@ class AtlasTestCase:
                     # See https://jira.mongodb.org/browse/PRODTRIAGE-1232 for
                     # more context.
                     if not ok:
+                        msg = f"Primary node ({mc.primary}) not in expected region '{region}' within {timeout}s (current region: '{member_region}'; all members: {members})"
+                        LOGGER.error(msg)
+
+                        LOGGER.info("Logging cluster state for 30m after assertPrimaryRegion failure.")
                         self.log_cluster_status(timeout=1800)
 
-                        raise Exception(
-                            f"Primary node ({mc.primary}) not in expected region '{region}' within {timeout}s (current region: '{member_region}'; all members: {members})"
-                        )
+                        raise Exception(msg)
 
                     LOGGER.debug(
                         f"Waited for {timer.elapsed}s for primary node to be in region '{region}'"
