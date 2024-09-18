@@ -282,8 +282,8 @@ class AtlasTestCase:
                         f"Waiting up to {timeout}s for primary node to be in region '{region}'"
                     )
 
-                    ok = False
                     with mongo_client(self.get_connection_string()) as mc:
+                        ok = False
                         while timer.elapsed < timeout:
                             rsc = mc.admin.command("replSetGetConfig")
                             members = rsc["config"]["members"]
@@ -300,24 +300,44 @@ class AtlasTestCase:
 
                             sleep(5)
 
-                    # If the primary isn't in the target region by the timeout,
-                    # log the cluster state every 5 seconds for the next 30
-                    # minutes to help us understand confusing behavior with the
-                    # cluster state. After logging the cluster state for 30
-                    # minutes, raise an exception.
-                    #
-                    # See https://jira.mongodb.org/browse/PRODTRIAGE-1232 for
-                    # more context.
-                    if not ok:
-                        msg = f"Primary node ({mc.primary}) not in expected region '{region}' within {timeout}s (current region: '{member_region}'; all members: {members})"
-                        LOGGER.error(msg)
+                        # If the primary isn't in the target region by the
+                        # timeout, log the cluster state every 5 seconds for the
+                        # next 30 minutes to help us understand confusing
+                        # behavior with the cluster state. After logging the
+                        # cluster state for 30 minutes, check if the primary is
+                        # in the target region again. If it still isn't in the
+                        # target region, raise an exception.
+                        #
+                        # See https://jira.mongodb.org/browse/PRODTRIAGE-1232
+                        # and https://jira.mongodb.org/browse/DRIVERS-2964 for
+                        # more context.
+                        #
+                        # TODO: Figure out a more reliable way to check for
+                        # cluster updates, or figure out why cluster state is
+                        # unreliable, then remove this extra logging and extra
+                        # region check.
+                        if not ok:
+                            LOGGER.error(
+                                f"Primary node ({mc.primary}) not in expected region '{region}' within {timeout}s. (current region: '{member_region}'; all members: {members})"
+                            )
+                            LOGGER.info("Logging cluster state for 30m after assertPrimaryRegion failure, then checking primary region again.")
+                            self.log_cluster_status(timeout=1800)
 
-                        LOGGER.info("Logging cluster state for 30m after assertPrimaryRegion failure.")
-                        self.log_cluster_status(timeout=1800)
+                            rsc = mc.admin.command("replSetGetConfig")
+                            members = rsc["config"]["members"]
+                            member = next(
+                                m
+                                for m in members
+                                if m["horizons"]["PUBLIC"] == "%s:%s" % mc.primary
+                            )
+                            member_region = member["tags"]["region"]
 
-                        raise Exception(msg)
+                            if region != member_region:
+                                raise Exception(
+                                    f"Primary node ({mc.primary}) still not in expected region '{region}' after waiting an extra 30m. (current region: '{member_region}'; all members: {members})"
+                                )
 
-                    LOGGER.debug(
+                    LOGGER.info(
                         f"Waited for {timer.elapsed}s for primary node to be in region '{region}'"
                     )
 
