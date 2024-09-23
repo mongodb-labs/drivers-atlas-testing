@@ -8,7 +8,6 @@ use function MongoDB\BSON\fromJSON;
 use function MongoDB\BSON\toPHP;
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/vendor/bin/.phpunit/phpunit/vendor/autoload.php';
 
 class Logger
 {
