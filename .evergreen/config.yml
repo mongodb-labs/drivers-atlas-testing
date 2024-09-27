@@ -678,11 +678,11 @@ axes:
           DRIVER_REVISION: "main"
           ASTROLABE_EXECUTOR_STARTUP_TIME: 45
       - id: java-master
-        display_name: "Java (master)"
+        display_name: "Java (main)"
         variables:
           DRIVER_DIRNAME: "java/sync"
           DRIVER_REPOSITORY: "https://github.com/mongodb/mongo-java-driver"
-          DRIVER_REVISION: "master"
+          DRIVER_REVISION: "main"
           ASTROLABE_EXECUTOR_STARTUP_TIME: 15
       - id: dotnet-main
         display_name: "dotnet (main)"
