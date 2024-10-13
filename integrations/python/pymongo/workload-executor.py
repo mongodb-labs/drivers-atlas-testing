@@ -31,6 +31,7 @@ else:
 
 
 def workload_runner(mongodb_uri, test_workload):
+    print(f"Running workload: {test_workload!r}")
     runner = UnifiedSpecTestMixinV1()
     runner.TEST_SPEC = test_workload
     UnifiedSpecTestMixinV1.TEST_SPEC = test_workload
@@ -39,6 +40,7 @@ def workload_runner(mongodb_uri, test_workload):
     # localhost:27017 on evergreen, so we have to patch it to use the client
     # specified in the workload runner
     runner.client = pymongo.MongoClient(mongodb_uri)
+    print("Running scenario")
     try:
         assert len(test_workload["tests"]) == 1
         runner.run_scenario(test_workload["tests"][0], uri=mongodb_uri)
