@@ -75,6 +75,7 @@ def workload_runner(mongodb_uri, test_workload):
 
 
 if __name__ == "__main__":
+    print("Starting up workload executor")
     connection_string, driver_workload = sys.argv[1], sys.argv[2]
     try:
         workload_spec = json.loads(driver_workload)
