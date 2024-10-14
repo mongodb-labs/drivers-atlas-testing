@@ -31,9 +31,9 @@ else:
 
 def workload_runner(mongodb_uri, test_workload):
     runner = UnifiedSpecTestMixinV1()
+    # Note: we cannot use setUpClass or tearDownClass since we're overriding the client for the tests.
     runner.TEST_SPEC = test_workload
     UnifiedSpecTestMixinV1.TEST_SPEC = test_workload
-    UnifiedSpecTestMixinV1.setUpClass()
     runner.setUp()
     # this is necessary because there isn't a mongo instance on
     # localhost:27017 on evergreen, so we have to patch it to use the client
@@ -48,7 +48,6 @@ def workload_runner(mongodb_uri, test_workload):
         ]
     finally:
         runner.tearDown()
-        UnifiedSpecTestMixinV1.tearDownClass()
     entity_map = defaultdict(list, runner.entity_map._entities)
     for entity_type in ["successes", "iterations"]:
         if entity_type not in entity_map:
