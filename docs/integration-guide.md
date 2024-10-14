@@ -153,14 +153,14 @@ systems are **strongly advised** to use the custom
 distro for running their tests. See `faq-why-custom-distro` for details.
 
 The Atlas Planned Maintenance tests can be run on all platforms which
-have a Python 3.8+ binary installed. Each entry to the `platform` axis
+have a Python 3.9+ binary installed. Each entry to the `platform` axis
 has the following fields:
 
 - `id` (required): unique identifier for this `platform` axis entry.
 - `display_name` (optional): plaintext name for this platform that will
   be used to display test runs.
 - `run_on` (required): evergreen distro name for this platform
-- `variables.PYTHON3_BINARY` (required): path to the Python 3.8+ binary
+- `variables.PYTHON3_BINARY` (required): path to the Python 3.9+ binary
   on the distro. This is used to run `astrolabe`.
 - `variables.PYTHON_BIN_DIR` (required): name of directory in which
   Python install executables. This is always `bin` on \*nix systems and
@@ -172,11 +172,11 @@ platform:
     - id: platform
       display_name: OS
       values:
-        - id: ubuntu-16.04
-          display_name: "Ubuntu 16.04"
-          run_on: ubuntu1604-test
+        - id: ubuntu-20.04
+          display_name: "Ubuntu 20.04"
+          run_on: ubuntu2004-test
           variables:
-            PYTHON3_BINARY: "/opt/python/3.8/bin/python3"
+            PYTHON3_BINARY: "/opt/python/3.9/bin/python3"
             PYTHON_BIN_DIR: "bin"
 
 To encourage re-use of `platform` entries across driver projects, it is

@@ -18,7 +18,7 @@ API](https://docs.atlas.mongodb.com/api/) via a fluent interface. The
 `atlasclient` and also contains the test harnesses necessary to run
 Atlas Planned Maintenance specification tests.
 
-Astrolabe supports Python 3.8+.
+Astrolabe supports Python 3.9+.
 
 ## Installation
 
@@ -36,7 +36,7 @@ python -m pip install .
 
 ## Dependencies
 
-Astrolabe supports CPython 3.8+.
+Astrolabe supports CPython 3.9+.
 
 Astrolabe requires [Click](https://pypi.org/project/click/),
 [requests](https://pypi.org/project/requests/),

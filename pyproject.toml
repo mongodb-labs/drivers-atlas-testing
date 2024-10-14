@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Command-line utility for testing Drivers against MongoDB Atlas <https://www.mongodb.com/cloud/atlas>"
 readme = "README.rst"
 license = {file="LICENSE"}
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 authors = [
     { name = "Prashant Mital", email = "mongodb-user@googlegroups.com" },
 ]
@@ -23,8 +23,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development :: Testing",
 ]

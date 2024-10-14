@@ -10,7 +10,7 @@ Kubernetes test scenarios.
 
 `astrolabe` runs on Linux, OSX and Windows.
 
-Running `astrolabe` requires Python 3.8 or later. To check the version
+Running `astrolabe` requires Python 3.9 or later. To check the version
 of Python you are running, do:
 
 ``` bash
