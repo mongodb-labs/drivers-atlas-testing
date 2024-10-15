@@ -8,4 +8,5 @@ export NODE_LTS_VERSION="$NODE_LTS_VERSION"
 export NPM_VERSION=9
 
 cd ${PROJECT_DIRECTORY}
-. .evergreen/install-dependencies.sh
+source .evergreen/prepare-shell.sh
+source .evergreen/install-dependencies.sh
