@@ -48,6 +48,7 @@ from .timer import Timer
 from .utils import mongo_client
 
 LOGGER = logging.getLogger(__name__)
+_POST_CLUSTER_CREATION_SLEEP = 60
 
 
 class AtlasTestCase:
@@ -670,8 +671,10 @@ class SpecTestRunnerBase:
             # Select a case whose cluster is ready.
             active_case.wait_for_idle()
             LOGGER.info("Test cluster %r is ready", active_case.cluster_name)
+            LOGGER.info("Sleeping for %s seconds", _POST_CLUSTER_CREATION_SLEEP)
             # Suggested solution to https://jira.mongodb.org/browse/CLOUDP-274484
-            _time.sleep(60)
+            _time.sleep(_POST_CLUSTER_CREATION_SLEEP)
+
 
             # Run the case.
             xunit_test = active_case.run(
