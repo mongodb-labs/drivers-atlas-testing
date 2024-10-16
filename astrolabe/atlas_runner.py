@@ -670,6 +670,8 @@ class SpecTestRunnerBase:
             # Select a case whose cluster is ready.
             active_case.wait_for_idle()
             LOGGER.info("Test cluster %r is ready", active_case.cluster_name)
+            # Suggested solution to https://jira.mongodb.org/browse/CLOUDP-274484
+            _time.sleep(60)
 
             # Run the case.
             xunit_test = active_case.run(
