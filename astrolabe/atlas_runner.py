@@ -281,7 +281,6 @@ class AtlasTestCase:
                     LOGGER.debug(
                         f"Waiting up to {timeout}s for primary node to be in region '{region}'"
                     )
-
                     with mongo_client(self.get_connection_string()) as mc:
                         ok = False
                         while timer.elapsed < timeout:
