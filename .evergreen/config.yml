@@ -99,6 +99,7 @@ functions:
     - command: shell.exec
       type: setup
       params:
+        shell: bash
         working_dir: astrolabe-src
         add_expansions_to_env: true
         script: |
