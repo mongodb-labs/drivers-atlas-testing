@@ -219,6 +219,8 @@ functions:
         env:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
+          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
+          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
           CLUSTER_NAME_SALT: ${build_id}
         script: |
           source secrets-export.sh
@@ -251,6 +253,8 @@ functions:
         env:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
+          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
+          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
           CLUSTER_NAME_SALT: ${build_id}
         script: |
           source secrets-export.sh
@@ -275,6 +279,8 @@ functions:
         env:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
+          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
+          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
           CLUSTER_NAME_SALT: ${build_id}
         script: |
           set -eux
