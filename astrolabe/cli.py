@@ -174,6 +174,9 @@ def cli(
         timeout=http_timeout,
     )
 
+    print("do we have an admin user?", atlas_admin_api_username)
+    print("do we have an admin password?", atlas_admin_api_password[:3])
+
     if atlas_admin_api_username:
         admin_client = AtlasClient(
             base_url=atlas_base_url,
@@ -580,6 +583,8 @@ def run_atlas_test(
 
     if os.path.exists("status"):
         os.unlink("status")
+
+    print("do we have an admin client?", ctx.obj.admin_client is not None)
 
     # Initialize the test runner. The test runner constructor performs a bunch of the Atlas setup
     # and can raise exceptions due to Atlas cluster provisioning problems. Treat any exception that
