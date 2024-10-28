@@ -220,6 +220,7 @@ functions:
           ATLAS_PROJECT_BASE_NAME: ${project}
           CLUSTER_NAME_SALT: ${build_id}
         script: |
+          source secrets-export.sh
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
             run-one ${TEST_FILE} \
             --workload-file ${WORKLOAD_FILE} \
