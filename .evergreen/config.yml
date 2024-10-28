@@ -213,6 +213,7 @@ functions:
       type: test
       params:
         working_dir: astrolabe-src
+        shell: bash
         # Next commands will exit with appropriate status
         continue_on_err: true
         env:
@@ -246,6 +247,7 @@ functions:
       type: setup
       params:
         working_dir: astrolabe-src
+        shell: bash
         env:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
@@ -269,6 +271,7 @@ functions:
       type: setup
       params:
         working_dir: astrolabe-src
+        shell: bash
         env:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
