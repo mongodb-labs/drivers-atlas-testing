@@ -219,6 +219,8 @@ functions:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
         script: |
+          pwd
+          ls
           source secrets-export.sh
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
             run-one ${TEST_FILE} \
