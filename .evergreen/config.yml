@@ -218,10 +218,8 @@ functions:
         env:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
+          CLUSTER_NAME_SALT: ${build_id}
         script: |
-          pwd
-          ls
-          source secrets-export.sh
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
             run-one ${TEST_FILE} \
             --workload-file ${WORKLOAD_FILE} \
