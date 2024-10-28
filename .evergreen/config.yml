@@ -114,6 +114,7 @@ functions:
       type: setup
       params:
         binary: bash
+        working_dir: astrolabe-src
         args: [.evergreen/setup-secrets.sh]
 
   "lint and format":
@@ -217,15 +218,8 @@ functions:
         env:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
-          CLUSTER_NAME_SALT: ${build_id}
-          ATLAS_API_USERNAME: ${atlas_key}
-          ATLAS_API_PASSWORD: ${atlas_secret}
-          ATLAS_API_BASE_URL: ${atlas_url}
-          ATLAS_ORGANIZATION_ID: ${atlas_organization_id}
-          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
-          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
-        add_expansions_to_env: true
         script: |
+          source secrets-export.sh
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
             run-one ${TEST_FILE} \
             --workload-file ${WORKLOAD_FILE} \
@@ -255,14 +249,8 @@ functions:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
           CLUSTER_NAME_SALT: ${build_id}
-          ATLAS_API_USERNAME: ${atlas_key}
-          ATLAS_API_PASSWORD: ${atlas_secret}
-          ATLAS_API_BASE_URL: ${atlas_url}
-          ATLAS_ORGANIZATION_ID: ${atlas_organization_id}
-          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
-          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
-        add_expansions_to_env: true
         script: |
+          source secrets-export.sh
           # Only run after Atlas tasks.
           if [ "${ATLAS}" != "true" ]; then
             echo "Skipping Atlas logs download because it's not a Atlas task."
@@ -284,15 +272,10 @@ functions:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
           CLUSTER_NAME_SALT: ${build_id}
-          ATLAS_API_USERNAME: ${atlas_key}
-          ATLAS_API_PASSWORD: ${atlas_secret}
-          ATLAS_API_BASE_URL: ${atlas_url}
-          ATLAS_ORGANIZATION_ID: ${atlas_organization_id}
-          ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
-          ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
-        add_expansions_to_env: true
         script: |
           set -eux
+          source secrets-export.sh
+
           # Only run after Atlas tasks.
           if [ "${ATLAS}" != "true" ]; then
             echo "Skipping Atlas cluster cleanup because it's not a Atlas task."
