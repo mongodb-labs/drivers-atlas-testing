@@ -109,6 +109,14 @@ functions:
             ./integrations/${DRIVER_DIRNAME}/install-driver.sh
           fi
 
+  "setup secrets":
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: astrolabe-src
+        args: [.evergreen/setup-secrets.sh]
+
   "lint and format":
     - command: subprocess.exec
       type: test
@@ -205,20 +213,18 @@ functions:
       type: test
       params:
         working_dir: astrolabe-src
+        shell: bash
         # Next commands will exit with appropriate status
         continue_on_err: true
         env:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
-          CLUSTER_NAME_SALT: ${build_id}
-          ATLAS_API_USERNAME: ${atlas_key}
-          ATLAS_API_PASSWORD: ${atlas_secret}
-          ATLAS_API_BASE_URL: ${atlas_url}
-          ATLAS_ORGANIZATION_ID: ${atlas_organization_id}
           ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
-        add_expansions_to_env: true
+          CLUSTER_NAME_SALT: ${build_id}
+        include_expansions_in_env: [DRIVER_DIRNAME]
         script: |
+          source secrets-export.sh
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
             run-one ${TEST_FILE} \
             --workload-file ${WORKLOAD_FILE} \
@@ -244,18 +250,15 @@ functions:
       type: setup
       params:
         working_dir: astrolabe-src
+        shell: bash
         env:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
-          CLUSTER_NAME_SALT: ${build_id}
-          ATLAS_API_USERNAME: ${atlas_key}
-          ATLAS_API_PASSWORD: ${atlas_secret}
-          ATLAS_API_BASE_URL: ${atlas_url}
-          ATLAS_ORGANIZATION_ID: ${atlas_organization_id}
           ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
-        add_expansions_to_env: true
+          CLUSTER_NAME_SALT: ${build_id}
         script: |
+          source secrets-export.sh
           # Only run after Atlas tasks.
           if [ "${ATLAS}" != "true" ]; then
             echo "Skipping Atlas logs download because it's not a Atlas task."
@@ -273,19 +276,17 @@ functions:
       type: setup
       params:
         working_dir: astrolabe-src
+        shell: bash
         env:
           ATLAS_PROJECT_NAME: ${ATLAS_PROJECT_NAME}
           ATLAS_PROJECT_BASE_NAME: ${project}
-          CLUSTER_NAME_SALT: ${build_id}
-          ATLAS_API_USERNAME: ${atlas_key}
-          ATLAS_API_PASSWORD: ${atlas_secret}
-          ATLAS_API_BASE_URL: ${atlas_url}
-          ATLAS_ORGANIZATION_ID: ${atlas_organization_id}
           ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
-        add_expansions_to_env: true
+          CLUSTER_NAME_SALT: ${build_id}
         script: |
           set -eux
+          source secrets-export.sh
+
           # Only run after Atlas tasks.
           if [ "${ATLAS}" != "true" ]; then
             echo "Skipping Atlas cluster cleanup because it's not a Atlas task."
@@ -388,14 +389,18 @@ functions:
         file: "astrolabe-src/xunit-output/*.xml"
 
   "upload server logs":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${assume_role_arn}
     - command: s3.put
       type: setup
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
+        aws_key: ${AWS_ACCESS_KEY_ID}
+        aws_secret: ${AWS_SECRET_ACCESS_KEY}
+        aws_session_token: ${AWS_SESSION_TOKEN}
         local_file: astrolabe-src/logs.tar.gz
-        remote_file: ${project}/${version_id}/${build_id}-${task_id}-${execution}/server-logs.tar.gz
-        bucket: mciuploads
+        remote_file: ${version_id}/${build_id}-${task_id}-${execution}/server-logs.tar.gz
+        bucket: ${aws_bucket}
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "mongodb-logs.tar.gz"
@@ -410,14 +415,18 @@ functions:
         add_expansions_to_env: true
         script: |
           gzip <events.json >events.json.gz
+    - command: ec2.assume_role
+      params:
+        role_arn: ${assume_role_arn}
     - command: s3.put
       type: setup
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
+        aws_key: ${AWS_ACCESS_KEY_ID}
+        aws_secret: ${AWS_SECRET_ACCESS_KEY}
+        aws_session_token: ${AWS_SESSION_TOKEN}
         local_file: astrolabe-src/events.json.gz
-        remote_file: ${project}/${version_id}/${build_id}-${task_id}-${execution}/events.json.gz
-        bucket: mciuploads
+        remote_file: ${version_id}/${build_id}-${task_id}-${execution}/events.json.gz
+        bucket: ${aws_bucket}
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "events.json.gz"
@@ -426,11 +435,12 @@ functions:
     - command: s3.put
       type: setup
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
+        aws_key: ${AWS_ACCESS_KEY_ID}
+        aws_secret: ${AWS_SECRET_ACCESS_KEY}
+        aws_session_token: ${AWS_SESSION_TOKEN}
         local_file: astrolabe-src/events.json
-        remote_file: ${project}/${version_id}/${build_id}-${task_id}-${execution}/events.json
-        bucket: mciuploads
+        remote_file: ${version_id}/${build_id}-${task_id}-${execution}/events.json
+        bucket: ${aws_bucket}
         permissions: public-read
         content_type: ${content_type|application/json}
         display_name: "events.json"
@@ -440,6 +450,7 @@ functions:
 pre:
   - func: "fetch source"
   - func: "install astrolabe"
+  - func: "setup secrets"
   - func: "install driver"
 
 # Functions to run after the test.
@@ -455,12 +466,6 @@ tasks:
   - name: lint-and-format
     commands:
       - func: "lint and format"
-
-  # Installation:
-  - name: installation
-    commands:
-      - func: "install astrolabe"
-      - func: "install driver"
 
   # Workload executor validation task (patch-only).
   - name: validate-workload-executor

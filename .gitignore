@@ -12,3 +12,4 @@ logs.tar.gz
 stats.json
 /docs/build
 status
+secrets-export.sh

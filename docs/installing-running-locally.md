@@ -138,6 +138,10 @@ export ATLAS_ADMIN_API_PASSWORD=<Admin API Private Key>
 export ATLAS_API_BASE_URL=https://cloud-dev.mongodb.com/api/atlas
 ```
 
+You can fetch the secrets from the drivers AWS vault by configuring your SSO
+and running `bash .evergreen/setup-secrets.sh` and then sourcing the 
+`secrets-export.sh` that is created in the repo root.
+
 Finally, use the `check-connection` command to confirm that `astrolabe`
 is able to connect to and authenticate with the Atlas API:
 
