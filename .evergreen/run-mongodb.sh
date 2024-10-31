@@ -4,6 +4,7 @@ set -o xtrace
 if [ ! -f ./secrets-export.sh ]; then
   echo "Please run setup-secrets.sh first!"
 fi
+source ./secrets-export.sh
 
 # User configurable-options
 # Each distro in the download script has a latest download.

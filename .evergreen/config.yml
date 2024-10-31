@@ -222,6 +222,7 @@ functions:
           ATLAS_ADMIN_API_USERNAME: ${atlas_admin_api_username}
           ATLAS_ADMIN_API_PASSWORD: ${atlas_admin_api_password}
           CLUSTER_NAME_SALT: ${build_id}
+        include_expansions_in_env: [DRIVER_DIRNAME]
         script: |
           source secrets-export.sh
           astrolabevenv/${PYTHON_BIN_DIR}/astrolabe atlas-tests \
