@@ -2,4 +2,6 @@
 
 set -o errexit
 
+PYMONGO_VIRTUALENV_NAME=${PYMONGO_VIRTUALENV_NAME:-pymongotestvenv}
+
 "$PYMONGO_VIRTUALENV_NAME/$PYTHON_BIN_DIR/python" "integrations/$DRIVER_DIRNAME/workload-executor.py" "$1" "$2"
