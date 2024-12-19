@@ -13,12 +13,13 @@ import pymongo
 # pymongo (this works because pymongo is installed with pip flag -e)
 test_path = os.path.dirname(os.path.dirname(inspect.getfile(pymongo)))
 sys.path.insert(0, test_path)
-from test.unified_format import UnifiedSpecTestMixinV1, interrupt_loop  # noqa: E402
 
 WIN32 = sys.platform in ("win32", "cygwin")
 
 
 def interrupt_handler(signum, frame):
+    # Deferred import
+    from test.unified_format import interrupt_loop
     interrupt_loop()
 
 
@@ -30,15 +31,23 @@ else:
 
 
 def workload_runner(mongodb_uri, test_workload):
+    from pymongo.uri_parser import parse_uri
+    parts = parse_uri(mongodb_uri)
+    os.environ['DB_IP'] = parts['nodelist'][0][0]
+    os.environ['DB_PORT'] = str(parts['nodelist'][0][1])
+    if parts['username']:
+        os.environ['DB_USER'] = parts['username']
+        os.environ['DB_PASSWORD'] = parts['password']
+    if 'tlsCertificateKeyFile' in parts['options']:
+        os.environ['CLIENT_PEM'] = parts['options']['tlsCertificateKeyFile']
+        os.environ['CA_PEM'] = parts['options']['tlsCAFile']
+
+    # Deferred import to pick up os.environ changes.
+    from test.unified_format import UnifiedSpecTestMixinV1
     runner = UnifiedSpecTestMixinV1()
-    # Note: we cannot use setUpClass or tearDownClass since we're overriding the client for the tests.
     runner.TEST_SPEC = test_workload
-    UnifiedSpecTestMixinV1.TEST_SPEC = test_workload
+    runner.setUpClass()
     runner.setUp()
-    # this is necessary because there isn't a mongo instance on
-    # localhost:27017 on evergreen, so we have to patch it to use the client
-    # specified in the workload runner
-    runner.client = pymongo.MongoClient(mongodb_uri)
     try:
         assert len(test_workload["tests"]) == 1
         runner.run_scenario(test_workload["tests"][0], uri=mongodb_uri)
@@ -48,6 +57,7 @@ def workload_runner(mongodb_uri, test_workload):
         ]
     finally:
         runner.tearDown()
+        runner.tearDownClass()
     entity_map = defaultdict(list, runner.entity_map._entities)
     for entity_type in ["successes", "iterations"]:
         if entity_type not in entity_map:
