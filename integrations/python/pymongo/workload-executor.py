@@ -34,7 +34,9 @@ else:
 
 def workload_runner(mongodb_uri, test_workload):
     # Override the client context to use a specific MongoDB URI.
-    client_context.client = pymongo.MongoClient(mongodb_uri)
+    client_context.client = client = pymongo.MongoClient(mongodb_uri)
+    client.admin.command('ping')
+    client_context.connected = True
 
     runner = UnifiedSpecTestMixinV1()
     runner.TEST_SPEC = test_workload
