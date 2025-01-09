@@ -14,12 +14,14 @@ import pymongo
 test_path = os.path.dirname(os.path.dirname(inspect.getfile(pymongo)))
 sys.path.insert(0, test_path)
 
+from test import client_context
+from test.unified_format import UnifiedSpecTestMixinV1
+from test.unified_format import interrupt_loop
+
 WIN32 = sys.platform in ("win32", "cygwin")
 
 
 def interrupt_handler(signum, frame):
-    # Deferred import
-    from test.unified_format import interrupt_loop
     interrupt_loop()
 
 
@@ -31,19 +33,11 @@ else:
 
 
 def workload_runner(mongodb_uri, test_workload):
-    from pymongo.uri_parser import parse_uri
-    parts = parse_uri(mongodb_uri)
-    os.environ['DB_IP'] = parts['nodelist'][0][0]
-    os.environ['DB_PORT'] = str(parts['nodelist'][0][1])
-    if parts['username']:
-        os.environ['DB_USER'] = parts['username']
-        os.environ['DB_PASSWORD'] = parts['password']
-    if 'tlsCertificateKeyFile' in parts['options']:
-        os.environ['CLIENT_PEM'] = parts['options']['tlsCertificateKeyFile']
-        os.environ['CA_PEM'] = parts['options']['tlsCAFile']
+    # Override the client context to use a specific MongoDB URI.
+    client_context.client = client = pymongo.MongoClient(mongodb_uri)
+    client.admin.command('ping')
+    client_context.connected = True
 
-    # Deferred import to pick up os.environ changes.
-    from test.unified_format import UnifiedSpecTestMixinV1
     runner = UnifiedSpecTestMixinV1()
     runner.TEST_SPEC = test_workload
     runner.setUpClass()
